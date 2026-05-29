@@ -1,5 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { Check, Minus } from 'lucide-react';
+import { CreemCheckout } from '@creem_io/nextjs';
+import { useAuth } from '@clerk/nextjs';
 
 const plans = [
   {
@@ -15,10 +19,11 @@ const plans = [
     buttonText: 'Get Started',
     buttonStyle: 'outline' as const,
     href: '/generate',
+    productId: null,
   },
   {
     name: 'Starter',
-    price: 5.99,
+    price: 4.99,
     priceNote: '/mo',
     features: [
       { text: '100 pages per month', included: true },
@@ -28,13 +33,14 @@ const plans = [
       { text: 'PDF export', included: false },
       { text: 'Commercial use', included: false },
     ],
-    buttonText: 'Get Started',
+    buttonText: 'Subscribe',
     buttonStyle: 'filled' as const,
-    href: '/generate',
+    href: null,
+    productId: 'prod_7n0brGEbo1u1yDHsf1gI8r',
   },
   {
     name: 'Pro',
-    price: 12.99,
+    price: 9.99,
     priceNote: '/mo',
     popular: true,
     features: [
@@ -45,22 +51,43 @@ const plans = [
       { text: 'Commercial license', included: true },
       { text: 'Priority support', included: true },
     ],
-    buttonText: 'Get Started',
+    buttonText: 'Subscribe',
     buttonStyle: 'gradient' as const,
-    href: '/generate',
+    href: null,
+    productId: 'prod_15GyxRDvbgQAS0FFKb8ayp',
+  },
+  {
+    name: 'Business',
+    price: 19.99,
+    priceNote: '/mo',
+    features: [
+      { text: '2000 pages per month', included: true },
+      { text: 'All styles', included: true },
+      { text: 'PNG & PDF download', included: true },
+      { text: 'No watermark', included: true },
+      { text: 'Commercial license', included: true },
+      { text: 'Priority support', included: true },
+      { text: 'API access', included: true },
+    ],
+    buttonText: 'Subscribe',
+    buttonStyle: 'filled' as const,
+    href: null,
+    productId: 'prod_3i1ndQTCMKtqaswpGDLwWM',
   },
 ];
 
 export function Pricing() {
+  const { isSignedIn, userId } = useAuth();
+
   return (
     <section id="pricing" className="py-16 md:py-24 bg-background">
-      <div className="container mx-auto px-4 md:px-6 max-w-5xl">
+      <div className="container mx-auto px-4 md:px-6 max-w-6xl">
         <h2 className="font-display text-[32px] md:text-[40px] text-foreground text-center mb-16">
           Simple Pricing
         </h2>
 
-        {/* Pricing Grid - 3 columns */}
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8 items-start">
+        {/* Pricing Grid - 4 columns */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-5 items-start">
           {plans.map((plan) => (
             <div
               key={plan.name}
@@ -118,34 +145,60 @@ export function Pricing() {
               </ul>
 
               {/* CTA Button */}
-              <Link
-                href={plan.href}
-                className={`block w-full py-3.5 rounded-xl font-bold text-center transition-all ${
-                  plan.buttonStyle === 'outline'
-                    ? 'border-2 border-[#E8E0D0] text-foreground hover:border-[#FFB800] hover:text-[#FFB800]'
-                    : plan.buttonStyle === 'filled'
-                    ? 'bg-[#1A1A2E] text-white hover:bg-[#1A1A2E]/90'
-                    : 'text-[#1A1A2E] hover:-translate-y-0.5'
-                }`}
-                style={
-                  plan.buttonStyle === 'gradient'
-                    ? { background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 16px rgba(255,107,107,0.3)' }
-                    : undefined
-                }
-              >
-                {plan.buttonText}
-              </Link>
+              {plan.productId && isSignedIn ? (
+                <CreemCheckout
+                  productId={plan.productId}
+                  successUrl="/generate"
+                  referenceId={userId}
+                  metadata={{ userId: userId }}
+                >
+                  <button
+                    className={`block w-full py-3.5 rounded-xl font-bold text-center transition-all ${
+                      plan.buttonStyle === 'filled'
+                        ? 'bg-[#1A1A2E] text-white hover:bg-[#1A1A2E]/90'
+                        : 'text-[#1A1A2E] hover:-translate-y-0.5'
+                    }`}
+                    style={
+                      plan.buttonStyle === 'gradient'
+                        ? { background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 16px rgba(255,107,107,0.3)' }
+                        : undefined
+                    }
+                  >
+                    {plan.buttonText}
+                  </button>
+                </CreemCheckout>
+              ) : plan.productId ? (
+                // 未登录用户点击跳转登录
+                <Link
+                  href="/generate"
+                  className={`block w-full py-3.5 rounded-xl font-bold text-center transition-all ${
+                    plan.buttonStyle === 'filled'
+                      ? 'bg-[#1A1A2E] text-white hover:bg-[#1A1A2E]/90'
+                      : 'text-[#1A1A2E] hover:-translate-y-0.5'
+                  }`}
+                  style={
+                    plan.buttonStyle === 'gradient'
+                      ? { background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 16px rgba(255,107,107,0.3)' }
+                      : undefined
+                  }
+                >
+                  Sign Up to Subscribe
+                </Link>
+              ) : (
+                <Link
+                  href={plan.href!}
+                  className={`block w-full py-3.5 rounded-xl font-bold text-center transition-all ${
+                    plan.buttonStyle === 'outline'
+                      ? 'border-2 border-[#E8E0D0] text-foreground hover:border-[#FFB800] hover:text-[#FFB800]'
+                      : ''
+                  }`}
+                >
+                  {plan.buttonText}
+                </Link>
+              )}
             </div>
           ))}
         </div>
-
-        {/* Business Plan Note */}
-        <p className="text-center mt-12 text-[15px] text-muted-foreground">
-          Need more?{' '}
-          <Link href="/pricing" className="text-foreground font-semibold hover:text-[#FFB800] transition-colors">
-            Business plan at $29.99/mo →
-          </Link>
-        </p>
       </div>
     </section>
   );

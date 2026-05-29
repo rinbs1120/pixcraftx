@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ColorForge — Create Any Coloring Page in Seconds</title>
+  <!-- Design System: ColorForge Warm-Creative Palette v1.0 -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Inter:wght@400;500;600;700&family=Nunito:wght@600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================
+       DESIGN TOKENS — ColorForge Warm-Creative
+       ============================================ */
+    :root {
+      /* Colors */
+      --color-primary: #FFB800;
+      --color-primary-hover: #E5A600;
+      --color-primary-active: #CC9400;
+      --color-primary-light: #FFF3CC;
+      --color-secondary: #1A1A2E;
+      --color-secondary-hover: #2A2A3E;
+      --color-secondary-active: #3A3A4E;
+      --color-secondary-light: #F0F0F5;
+      --color-accent: #FF6B6B;
+      --color-accent-hover: #E56060;
+      --color-accent-active: #CC5555;
+      --color-accent-light: #FFE0E0;
+      --color-success: #2ECC71;
+      --color-success-hover: #27AE60;
+      --color-success-active: #219A52;
+      --color-success-light: #E8F8EF;
+      --color-bg-primary: #FFFBF0;
+      --color-bg-secondary: #FFF8E8;
+      --color-bg-dark: #1A1A2E;
+      --color-bg-dark-secondary: #24243E;
+      --color-surface: #FFFFFF;
+      --color-text-primary: #1A1A2E;
+      --color-text-secondary: #4A4A5E;
+      --color-text-tertiary: #8A8A9A;
+      --color-text-on-dark: #FFFBF0;
+      --color-text-on-dark-secondary: #B0B0C0;
+      --color-text-on-primary: #1A1A2E;
+      --color-text-link: #CC9400;
+      --color-border: #E8E0D0;
+      --color-border-hover: #D0C8B8;
+      --color-border-dark: #3A3A4E;
+      --color-border-focus: #FFB800;
+
+      /* Gradients */
+      --gradient-primary: linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%);
+      --gradient-primary-hover: linear-gradient(135deg, #E5A600 0%, #E56060 100%);
+      --gradient-warm: linear-gradient(180deg, #FFFBF0 0%, #FFF8E8 100%);
+      --gradient-dark: linear-gradient(180deg, #1A1A2E 0%, #24243E 100%);
+
+      /* Typography */
+      --font-display: 'Fredoka One', 'Nunito', sans-serif;
+      --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+      /* Spacing */
+      --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+      --space-5: 24px; --space-6: 32px; --space-8: 48px; --space-10: 64px;
+      --space-12: 80px; --space-16: 96px;
+
+      /* Border Radius */
+      --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+      --radius-xl: 24px; --radius-full: 9999px;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+      --shadow-md: 0 4px 12px rgba(26,26,46,0.08);
+      --shadow-lg: 0 8px 24px rgba(26,26,46,0.12);
+      --shadow-xl: 0 16px 48px rgba(26,26,46,0.16);
+      --shadow-button: 0 2px 8px rgba(255,184,0,0.3);
+      --shadow-button-hover: 0 4px 16px rgba(255,184,0,0.4);
+      --shadow-gradient: 0 4px 16px rgba(255,107,107,0.3);
+      --shadow-gradient-hover: 0 6px 24px rgba(255,107,107,0.4);
+      --shadow-focus: 0 0 0 3px rgba(255,184,0,0.15);
+
+      /* Transitions */
+      --duration-fast: 150ms; --duration-normal: 250ms;
+      --duration-slow: 500ms; --duration-slower: 800ms;
+      --ease-default: cubic-bezier(0.4,0,0.2,1);
+      --ease-out: cubic-bezier(0,0,0.2,1);
+      --ease-bounce: cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    /* ============================================
+       RESET & BASE
+       ============================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text-primary);
+      background: var(--color-bg-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; font-family: var(--font-body); }
+    ul { list-style: none; }
+    img { max-width: 100%; display: block; }
+
+    /* Focus-visible for accessibility */
+    button:focus-visible, a:focus-visible, input:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    /* ============================================
+       UTILITY
+       ============================================ */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--space-5);
+    }
+
+    /* Scroll-reveal base state */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 600ms var(--ease-out), transform 600ms var(--ease-out);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ============================================
+       INLINE SVG ICON HELPERS
+       ============================================ */
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    .icon-16 { width: 16px; height: 16px; }
+    .icon-20 { width: 20px; height: 20px; }
+    .icon-24 { width: 24px; height: 24px; }
+    .icon-32 { width: 32px; height: 32px; }
+    .icon-40 { width: 40px; height: 40px; }
+    .icon-48 { width: 48px; height: 48px; }
+
+    /* ============================================
+       SECTION 1: NAVBAR
+       ============================================ */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 64px;
+      background: rgba(255,251,240,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 1000;
+      transition: box-shadow var(--duration-normal) var(--ease-default),
+                  border-color var(--duration-normal) var(--ease-default);
+      border-bottom: 1px solid transparent;
+    }
+    .navbar.scrolled {
+      box-shadow: var(--shadow-md);
+      border-bottom-color: var(--color-border);
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 100%;
+    }
+    .navbar-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-family: var(--font-display);
+      font-size: 22px;
+    }
+    .navbar-logo .logo-icon { width: 32px; height: 32px; }
+    .navbar-logo .color-forge .c-color { color: var(--color-primary); }
+    .navbar-logo .color-forge .f-color { color: var(--color-secondary); }
+
+    .navbar-links {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+    }
+    .navbar-links a {
+      font-size: 16px;
+      color: var(--color-text-secondary);
+      transition: color var(--duration-fast) var(--ease-default);
+      font-weight: 500;
+    }
+    .navbar-links a:hover { color: var(--color-primary); }
+
+    .navbar-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+    .btn-login {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      background: none;
+      transition: color var(--duration-fast) var(--ease-default);
+    }
+    .btn-login:hover { color: var(--color-primary); }
+
+    .btn-signup {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 22px;
+      background: var(--color-primary);
+      color: var(--color-text-on-primary);
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-button);
+      transition: background var(--duration-fast) var(--ease-default),
+                  box-shadow var(--duration-fast) var(--ease-default),
+                  transform var(--duration-fast) var(--ease-default);
+    }
+    .btn-signup:hover {
+      background: var(--color-primary-hover);
+      box-shadow: var(--shadow-button-hover);
+      transform: translateY(-1px);
+    }
+    .btn-signup:active {
+      background: var(--color-primary-active);
+      transform: translateY(0);
+    }
+
+    /* Mobile hamburger */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      padding: 8px;
+    }
+    .hamburger span {
+      display: block;
+      width: 22px; height: 2px;
+      background: var(--color-text-primary);
+      border-radius: 2px;
+      transition: transform var(--duration-normal) var(--ease-default),
+                  opacity var(--duration-normal) var(--ease-default);
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* Mobile nav overlay */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      top: 64px; left: 0; right: 0; bottom: 0;
+      background: rgba(255,251,240,0.98);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-8);
+    }
+    .mobile-nav.open { display: flex; }
+    .mobile-nav a {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      transition: color var(--duration-fast) var(--ease-default);
+    }
+    .mobile-nav a:hover { color: var(--color-primary); }
+
+    /* ============================================
+       SECTION 2: HERO
+       ============================================ */
+    .hero {
+      padding-top: 128px;
+      padding-bottom: var(--space-12);
+      background: var(--color-bg-primary);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -120px; right: -80px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(255,184,0,0.12) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 40px; left: -20px;
+      width: 12px; height: 12px;
+      background: var(--color-accent);
+      border-radius: 50%;
+      opacity: 0.3;
+      pointer-events: none;
+      box-shadow:
+        40px -20px 0 0 rgba(46,204,113,0.25),
+        80px 10px 0 0 rgba(255,184,0,0.25),
+        20px -60px 0 0 rgba(255,107,107,0.2);
+    }
+    .hero .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-10);
+      align-items: center;
+    }
+    .hero-text {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: heroFadeIn 800ms var(--ease-out) 500ms forwards;
+    }
+    @keyframes heroFadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hero-text h1 {
+      font-family: var(--font-display);
+      font-size: 56px;
+      line-height: 1.1;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-5);
+    }
+    .hero-text .subtitle {
+      font-size: 18px;
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+      margin-bottom: var(--space-6);
+      max-width: 480px;
+    }
+    .btn-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 16px 36px;
+      background: var(--gradient-primary);
+      color: var(--color-text-on-primary);
+      font-weight: 700;
+      font-size: 17px;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-gradient);
+      transition: box-shadow var(--duration-fast) var(--ease-default),
+                  transform var(--duration-fast) var(--ease-default),
+                  filter var(--duration-fast) var(--ease-default);
+    }
+    .btn-cta:hover {
+      box-shadow: var(--shadow-gradient-hover);
+      transform: translateY(-2px);
+      filter: brightness(1.05);
+    }
+    .btn-cta:active {
+      transform: translateY(0);
+      filter: brightness(0.97);
+    }
+
+    .trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      margin-top: var(--space-5);
+      font-size: 14px;
+      color: var(--color-text-tertiary);
+    }
+    .trust-badges span {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+    .trust-badges .icon { color: var(--color-success); }
+
+    /* Hero cards */
+    .hero-cards {
+      position: relative;
+      height: 440px;
+      opacity: 0;
+      animation: heroFadeIn 800ms var(--ease-out) 700ms forwards;
+    }
+    .hero-card {
+      position: absolute;
+      width: 220px;
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      transition: transform var(--duration-normal) var(--ease-bounce),
+                  box-shadow var(--duration-normal) var(--ease-default);
+    }
+    .hero-card:hover {
+      transform: translateY(-4px) rotate(0deg) !important;
+      box-shadow: var(--shadow-xl);
+    }
+    .hero-card:nth-child(1) { left: 10px; top: 40px; transform: rotate(-3deg); z-index: 1; }
+    .hero-card:nth-child(2) { left: 50%; top: 10px; transform: translateX(-50%) rotate(0deg); z-index: 2; width: 240px; }
+    .hero-card:nth-child(3) { right: 10px; top: 60px; transform: rotate(3deg); z-index: 1; }
+    .hero-card-art {
+      width: 100%;
+      aspect-ratio: 3/4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .hero-card-art svg { width: 100%; height: 100%; }
+    .hero-card-label {
+      padding: var(--space-3) var(--space-4);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      border-top: 1px solid var(--color-border);
+    }
+
+    /* ============================================
+       SECTION 3: TRY IT NOW
+       ============================================ */
+    .try-it {
+      padding: var(--space-12) 0;
+      background: var(--gradient-warm);
+    }
+    .try-it .container { max-width: 700px; }
+    .try-it-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      text-align: center;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+    .try-it-title .icon { color: var(--color-primary); }
+
+    .try-it-input-group {
+      display: flex;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+    .try-it-input-group input {
+      flex: 1;
+      padding: 16px 20px;
+      font-size: 16px;
+      font-family: var(--font-body);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      transition: border-color var(--duration-fast) var(--ease-default),
+                  box-shadow var(--duration-fast) var(--ease-default);
+      outline: none;
+    }
+    .try-it-input-group input:focus {
+      border-color: var(--color-border-focus);
+      box-shadow: var(--shadow-focus);
+    }
+    .try-it-input-group input::placeholder { color: var(--color-text-tertiary); }
+
+    .btn-generate {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 16px 28px;
+      background: var(--gradient-primary);
+      color: var(--color-text-on-primary);
+      font-weight: 700;
+      font-size: 16px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-button);
+      white-space: nowrap;
+      transition: box-shadow var(--duration-fast) var(--ease-default),
+                  transform var(--duration-fast) var(--ease-default),
+                  filter var(--duration-fast) var(--ease-default);
+    }
+    .btn-generate:hover {
+      box-shadow: var(--shadow-button-hover);
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+    .btn-generate:active { transform: translateY(0); }
+    .btn-generate.loading { pointer-events: none; opacity: 0.85; }
+    .btn-generate .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(26,26,46,0.2);
+      border-top-color: var(--color-text-on-primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .btn-generate.loading .spinner { display: block; }
+    .btn-generate.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .style-toggles {
+      display: flex;
+      gap: var(--space-2);
+      justify-content: center;
+      margin-bottom: var(--space-6);
+    }
+    .style-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      border: 2px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-secondary);
+      transition: all var(--duration-fast) var(--ease-default);
+    }
+    .style-toggle:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+    .style-toggle.active {
+      background: var(--color-primary-light);
+      border-color: var(--color-primary);
+      color: var(--color-text-primary);
+    }
+    .style-toggle .icon { color: currentColor; }
+
+    .result-area {
+      background: var(--color-surface);
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-10);
+      text-align: center;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-5);
+      transition: border-color var(--duration-normal) var(--ease-default);
+    }
+    .result-area.has-result {
+      border-style: solid;
+      border-color: var(--color-primary-light);
+      padding: var(--space-6);
+    }
+    .result-placeholder {
+      color: var(--color-text-tertiary);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .result-image {
+      display: none;
+      width: 100%;
+      max-width: 360px;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out);
+    }
+    .result-image.show { display: block; opacity: 1; transform: scale(1); }
+    .result-actions {
+      display: none;
+      gap: var(--space-3);
+      margin-top: var(--space-5);
+    }
+    .result-actions.show { display: flex; }
+
+    .btn-result-action {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      transition: all var(--duration-fast) var(--ease-default);
+    }
+    .btn-regenerate {
+      background: var(--color-secondary-light);
+      color: var(--color-text-primary);
+    }
+    .btn-regenerate:hover { background: var(--color-border); }
+    .btn-download {
+      background: var(--color-primary);
+      color: var(--color-text-on-primary);
+      box-shadow: var(--shadow-button);
+    }
+    .btn-download:hover {
+      background: var(--color-primary-hover);
+      box-shadow: var(--shadow-button-hover);
+      transform: translateY(-1px);
+    }
+    .btn-result-action .icon { color: currentColor; }
+
+    .try-it-footer {
+      text-align: center;
+      font-size: 14px;
+      color: var(--color-text-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-1);
+    }
+
+    /* ============================================
+       SECTION 4: HOW IT WORKS
+       ============================================ */
+    .how-it-works {
+      padding: var(--space-12) 0;
+      background: var(--gradient-dark);
+      color: var(--color-text-on-dark);
+    }
+    .how-it-works .section-title {
+      font-family: var(--font-display);
+      font-size: 40px;
+      text-align: center;
+      color: var(--color-text-on-dark);
+      margin-bottom: var(--space-10);
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: var(--space-5);
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: var(--space-4);
+    }
+    .step-number {
+      width: 48px; height: 48px;
+      background: var(--color-primary);
+      color: var(--color-text-on-primary);
+      font-family: var(--font-display);
+      font-size: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-icon { color: var(--color-primary); }
+    .step-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--color-text-on-dark);
+    }
+    .step-desc {
+      font-size: 15px;
+      color: var(--color-text-on-dark-secondary);
+      line-height: 1.6;
+      max-width: 220px;
+    }
+    .step-arrow { color: var(--color-primary); }
+
+    /* ============================================
+       SECTION 5: USE CASES
+       ============================================ */
+    .use-cases {
+      padding: var(--space-12) 0;
+      background: var(--color-bg-primary);
+    }
+    .use-cases .section-title {
+      font-family: var(--font-display);
+      font-size: 40px;
+      text-align: center;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-10);
+    }
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-5);
+    }
+    .use-case-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6) var(--space-5);
+      position: relative;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--duration-normal) var(--ease-default),
+                  box-shadow var(--duration-normal) var(--ease-default);
+      overflow: hidden;
+    }
+    .use-case-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--color-primary);
+    }
+    .use-case-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .use-case-icon {
+      width: 48px; height: 48px;
+      background: var(--color-primary-light);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-4);
+      color: var(--color-primary-active);
+    }
+    .use-case-type {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+    .use-case-desc {
+      font-size: 15px;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      margin-bottom: var(--space-5);
+    }
+    .use-case-price {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-primary-active);
+      background: var(--color-primary-light);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+    }
+
+    /* ============================================
+       SECTION 6: WHAT CREATORS LOVE (was Social Proof)
+       ============================================ */
+    .social-proof {
+      padding: var(--space-12) 0;
+      background: var(--color-bg-secondary);
+    }
+    .social-proof .section-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      text-align: center;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+    }
+    .social-proof .section-title .icon { color: var(--color-primary); }
+
+    /* Feature highlight cards */
+    .highlight-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-5);
+    }
+    .highlight-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--duration-normal) var(--ease-default),
+                  box-shadow var(--duration-normal) var(--ease-default);
+    }
+    .highlight-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+    .highlight-card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+    .highlight-card-icon {
+      width: 40px; height: 40px;
+      background: var(--color-primary-light);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary-active);
+      flex-shrink: 0;
+    }
+    .highlight-card-tag {
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--color-primary-active);
+      background: var(--color-primary-light);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+    }
+    .highlight-card-text {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+    }
+
+    /* ============================================
+       SECTION 7: PRICING
+       ============================================ */
+    .pricing {
+      padding: var(--space-12) 0;
+      background: var(--color-bg-primary);
+    }
+    .pricing .section-title {
+      font-family: var(--font-display);
+      font-size: 40px;
+      text-align: center;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-10);
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-5);
+      max-width: 960px;
+      margin: 0 auto;
+      align-items: start;
+    }
+    .pricing-card {
+      background: var(--color-surface);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8) var(--space-6);
+      box-shadow: var(--shadow-sm);
+      border: 2px solid transparent;
+      position: relative;
+      transition: transform var(--duration-normal) var(--ease-default),
+                  box-shadow var(--duration-normal) var(--ease-default);
+    }
+    .pricing-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .pricing-card.pro {
+      border-color: var(--color-primary);
+      box-shadow: var(--shadow-md);
+      background: var(--color-primary-light);
+      transform: scale(1.02);
+    }
+    .pricing-card.pro:hover {
+      box-shadow: var(--shadow-xl);
+      transform: scale(1.02) translateY(-4px);
+    }
+
+    .popular-badge {
+      display: none;
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gradient-primary);
+      color: var(--color-text-on-primary);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 5px 22px;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+    .pricing-card.pro .popular-badge { display: block; }
+
+    .pricing-plan-name {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+    .pricing-price {
+      font-family: var(--font-display);
+      font-size: 44px;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+    .pricing-price span {
+      font-size: 16px;
+      font-family: var(--font-body);
+      font-weight: 400;
+      color: var(--color-text-tertiary);
+    }
+    .pricing-features {
+      margin: var(--space-6) 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .pricing-features li {
+      font-size: 15px;
+      color: var(--color-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .pricing-features li .icon { color: var(--color-success); flex-shrink: 0; }
+    .pricing-features li .icon-minus { color: var(--color-text-tertiary); flex-shrink: 0; }
+
+    .btn-pricing {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: var(--radius-lg);
+      text-align: center;
+      transition: all var(--duration-fast) var(--ease-default);
+    }
+    .btn-pricing-outline {
+      background: var(--color-surface);
+      color: var(--color-text-secondary);
+      border: 2px solid var(--color-border);
+    }
+    .btn-pricing-outline:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+    .btn-pricing-filled {
+      background: var(--color-primary);
+      color: var(--color-text-on-primary);
+      box-shadow: var(--shadow-button);
+    }
+    .btn-pricing-filled:hover {
+      background: var(--color-primary-hover);
+      box-shadow: var(--shadow-button-hover);
+      transform: translateY(-1px);
+    }
+    .btn-pricing-gradient {
+      background: var(--gradient-primary);
+      color: var(--color-text-on-primary);
+      box-shadow: var(--shadow-gradient);
+      font-size: 17px;
+    }
+    .btn-pricing-gradient:hover {
+      box-shadow: var(--shadow-gradient-hover);
+      transform: translateY(-1px);
+    }
+
+    .pricing-more {
+      text-align: center;
+      margin-top: var(--space-8);
+      font-size: 15px;
+      color: var(--color-text-secondary);
+    }
+    .pricing-more a {
+      color: var(--color-text-link);
+      font-weight: 600;
+      transition: color var(--duration-fast) var(--ease-default);
+    }
+    .pricing-more a:hover { color: var(--color-primary); }
+
+    /* ============================================
+       SECTION 8: FAQ
+       ============================================ */
+    .faq {
+      padding: var(--space-12) 0;
+      background: var(--color-bg-secondary);
+    }
+    .faq .section-title {
+      font-family: var(--font-display);
+      font-size: 40px;
+      text-align: center;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-10);
+    }
+    .faq-list { max-width: 720px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid var(--color-border); }
+    .faq-question {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-5) 0;
+      background: none;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      text-align: left;
+      transition: color var(--duration-fast) var(--ease-default);
+    }
+    .faq-question:hover { color: var(--color-primary); }
+    .faq-chevron {
+      width: 20px; height: 20px;
+      transition: transform 300ms var(--ease-default);
+      flex-shrink: 0;
+      margin-left: var(--space-4);
+    }
+    .faq-item.open .faq-chevron { transform: rotate(180deg); }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 300ms var(--ease-default), padding 300ms var(--ease-default);
+    }
+    .faq-item.open .faq-answer {
+      max-height: 200px;
+      padding-bottom: var(--space-5);
+    }
+    .faq-answer p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+    }
+
+    /* ============================================
+       SECTION 9: FOOTER
+       ============================================ */
+    .footer {
+      padding: var(--space-10) 0 var(--space-6);
+      background: var(--color-bg-dark);
+      color: var(--color-text-on-dark);
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: var(--space-8);
+      margin-bottom: var(--space-10);
+    }
+    .footer-brand .navbar-logo { margin-bottom: var(--space-4); }
+    .footer-brand p {
+      font-size: 14px;
+      color: var(--color-text-on-dark-secondary);
+      line-height: 1.7;
+      max-width: 260px;
+    }
+    .footer-col h4 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--color-text-on-dark);
+      margin-bottom: var(--space-4);
+    }
+    .footer-col ul {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .footer-col a {
+      font-size: 14px;
+      color: var(--color-text-on-dark-secondary);
+      transition: color var(--duration-fast) var(--ease-default);
+    }
+    .footer-col a:hover { color: var(--color-primary); }
+    .footer-bottom {
+      border-top: 1px solid var(--color-border-dark);
+      padding-top: var(--space-5);
+      text-align: center;
+      font-size: 13px;
+      color: var(--color-text-on-dark-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-1);
+    }
+    .footer-bottom .icon { color: var(--color-accent); }
+
+    /* Footer logo on dark background */
+    .footer-brand .f-color { color: var(--color-text-on-dark); }
+
+    /* Mobile signup button */
+    .mobile-signup-btn { font-size: 18px; padding: 14px 32px; }
+
+    /* Result placeholder sparkle */
+    .result-placeholder-sparkle { color: var(--color-primary); }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 1023px) {
+      .hero .container {
+        grid-template-columns: 1fr;
+        gap: var(--space-8);
+      }
+      .hero-text h1 { font-size: 42px; }
+      .hero-cards {
+        height: 340px;
+        display: flex;
+        justify-content: center;
+        position: relative;
+      }
+      .hero-card { width: 180px; }
+      .hero-card:nth-child(2) { width: 200px; }
+      .hero-card:nth-child(1) { left: 5%; top: 30px; }
+      .hero-card:nth-child(2) { left: 50%; top: 0; }
+      .hero-card:nth-child(3) { right: 5%; top: 40px; }
+      .use-cases-grid { grid-template-columns: repeat(2, 1fr); }
+      .pricing-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+      .pricing-card { padding: var(--space-6) var(--space-5); }
+      .steps { grid-template-columns: 1fr; gap: var(--space-6); }
+      .step-arrow svg { transform: rotate(90deg); }
+    }
+
+    @media (max-width: 767px) {
+      .navbar-links { display: none; }
+      .navbar-actions .btn-login { display: none; }
+      .hamburger { display: flex; }
+
+      .hero { padding-top: 100px; padding-bottom: var(--space-8); }
+      .hero-text h1 { font-size: 36px; }
+      .hero-text .subtitle { font-size: 16px; }
+      .hero-cards { height: 300px; }
+      .hero-card { width: 150px; }
+      .hero-card:nth-child(2) { width: 170px; }
+      .hero-card:nth-child(1) { left: 2%; top: 40px; }
+      .hero-card:nth-child(2) { left: 50%; top: 10px; }
+      .hero-card:nth-child(3) { right: 2%; top: 50px; }
+
+      .try-it-input-group { flex-direction: column; }
+      .btn-generate { justify-content: center; }
+      .style-toggles { flex-wrap: wrap; }
+
+      .use-cases-grid { grid-template-columns: 1fr 1fr; }
+      .highlight-cards { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+
+      .steps { grid-template-columns: 1fr; }
+      .step-arrow svg { transform: rotate(90deg); }
+
+      .footer-top {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-6);
+      }
+
+      .how-it-works .section-title,
+      .use-cases .section-title,
+      .pricing .section-title,
+      .faq .section-title {
+        font-size: 32px;
+      }
+
+      /* Min button size for mobile */
+      .btn-cta, .btn-generate, .btn-pricing {
+        min-height: 48px;
+      }
+    }
+
+    /* ============================================
+       ACCESSIBILITY: Reduced Motion
+       ============================================ */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .hero-text {
+        opacity: 1;
+        transform: none;
+      }
+      .hero-cards {
+        opacity: 1;
+      }
+      .reveal {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== SVG ICON DEFINITIONS (reusable) ========== -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <!-- Check mark -->
+    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <!-- Minus -->
+    <symbol id="icon-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </symbol>
+    <!-- Star / Sparkle -->
+    <symbol id="icon-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
+    </symbol>
+    <!-- Small sparkle (4-point) -->
+    <symbol id="icon-sparkle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+    </symbol>
+    <!-- Refresh / Regenerate -->
+    <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"/>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    </symbol>
+    <!-- Download -->
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </symbol>
+    <!-- Lightning -->
+    <symbol id="icon-lightning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </symbol>
+    <!-- Pencil / Write -->
+    <symbol id="icon-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+    </symbol>
+    <!-- Printer -->
+    <symbol id="icon-printer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 6 2 18 2 18 9"/>
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+      <rect x="6" y="14" width="12" height="8"/>
+    </symbol>
+    <!-- Arrow right -->
+    <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="5" y1="12" x2="19" y2="12"/>
+      <polyline points="12 5 19 12 12 19"/>
+    </symbol>
+    <!-- Person / Child -->
+    <symbol id="icon-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="7" r="4"/>
+      <path d="M5.5 21a6.5 6.5 0 0 1 13 0"/>
+    </symbol>
+    <!-- Person with board (teacher) -->
+    <symbol id="icon-teacher" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="7" r="3"/>
+      <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
+      <rect x="16" y="3" width="6" height="5" rx="1"/>
+      <line x1="18" y1="6" x2="20" y2="6"/>
+    </symbol>
+    <!-- Books -->
+    <symbol id="icon-books" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      <line x1="9" y1="7" x2="16" y2="7"/>
+      <line x1="9" y1="11" x2="14" y2="11"/>
+    </symbol>
+    <!-- Palette -->
+    <symbol id="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/>
+      <circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/>
+      <circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/>
+      <circle cx="6.5" cy="12.5" r="0.5" fill="currentColor"/>
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+    </symbol>
+    <!-- Smile (kids style) -->
+    <symbol id="icon-smile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+      <line x1="9" y1="9" x2="9.01" y2="9"/>
+      <line x1="15" y1="9" x2="15.01" y2="9"/>
+    </symbol>
+    <!-- Flower (mandala style) -->
+    <symbol id="icon-flower" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2a4 4 0 0 1 0 8"/>
+      <path d="M22 12a4 4 0 0 1-8 0"/>
+      <path d="M12 22a4 4 0 0 1 0-8"/>
+      <path d="M2 12a4 4 0 0 1 8 0"/>
+      <path d="M18.3 5.7a4 4 0 0 1-5.6 5.6"/>
+      <path d="M18.3 18.3a4 4 0 0 1-5.6-5.6"/>
+      <path d="M5.7 18.3a4 4 0 0 1 5.6-5.6"/>
+      <path d="M5.7 5.7a4 4 0 0 1 5.6 5.6"/>
+    </symbol>
+    <!-- Pen (detailed style) -->
+    <symbol id="icon-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+      <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+      <path d="M2 2l7.586 7.586"/>
+      <circle cx="11" cy="11" r="2"/>
+    </symbol>
+    <!-- Celebration -->
+    <symbol id="icon-celebration" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5.8 11.3L2 22l10.7-3.79"/>
+      <path d="M4 3h.01"/>
+      <path d="M22 8h.01"/>
+      <path d="M15 2h.01"/>
+      <path d="M22 20h.01"/>
+      <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/>
+      <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11v0c-.11.7-.72 1.22-1.43 1.22H17"/>
+      <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98L9 5"/>
+      <path d="m11 13 1.47 1.47c.47.47.19 1.28-.48 1.34L6 17"/>
+    </symbol>
+    <!-- Heart -->
+    <symbol id="icon-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </symbol>
+  </svg>
+
+  <!-- ========== SECTION 1: NAVBAR ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="navbar-logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none" role="img" aria-label="ColorForge logo">
+          <circle cx="16" cy="16" r="14" fill="#FFB800" opacity="0.15"/>
+          <circle cx="11" cy="13" r="3.5" fill="#FF6B6B"/>
+          <circle cx="21" cy="13" r="3.5" fill="#2ECC71"/>
+          <circle cx="16" cy="21" r="3.5" fill="#FFB800"/>
+          <circle cx="16" cy="13" r="2" fill="#1A1A2E"/>
+        </svg>
+        <span class="color-forge"><span class="c-color">Color</span><span class="f-color">Forge</span></span>
+      </a>
+
+      <div class="navbar-links">
+        <a href="#try-it">Generate</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </div>
+
+      <div class="navbar-actions">
+        <button class="btn-login">Log in</button>
+        <button class="btn-signup">Sign Up</button>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="mobile-nav" id="mobileNav">
+    <a href="#try-it" class="mobile-link">Generate</a>
+    <a href="#pricing" class="mobile-link">Pricing</a>
+    <a href="#faq" class="mobile-link">FAQ</a>
+    <a href="#" class="mobile-link">Log in</a>
+    <button class="btn-signup mobile-signup-btn">Sign Up</button>
+  </div>
+
+  <!-- ========== SECTION 2: HERO ========== -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-text">
+        <h1>Create Any Coloring Page in Seconds</h1>
+        <p class="subtitle">Type what you imagine. Get print-ready line art. For kids, teachers, and creators.</p>
+        <a href="#try-it" class="btn-cta">
+          <span class="icon icon-20"><svg><use href="#icon-sparkle"/></svg></span>
+          Start Creating — Free
+        </a>
+        <div class="trust-badges">
+          <span><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> No credit card</span>
+          <span><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> 5 free pages</span>
+          <span><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> Ready to print</span>
+        </div>
+      </div>
+
+      <div class="hero-cards">
+        <!-- Card 1: Dinosaur (partially colored) -->
+        <div class="hero-card">
+          <div class="hero-card-art">
+            <svg viewBox="0 0 220 290" fill="none" role="img" aria-label="Dinosaur coloring page with partial coloring">
+              <rect width="220" height="290" fill="#FFFDF5"/>
+              <path d="M60 200 C60 160, 80 130, 100 120 C110 115, 120 118, 125 125 C130 118, 145 115, 155 125 C170 140, 170 170, 160 190 L160 230 C160 240, 150 250, 140 250 L130 250 L130 240 L115 240 L115 250 L100 250 C90 250, 85 240, 85 230 L85 200 Z" stroke="#1A1A2E" stroke-width="2.5" fill="none"/>
+              <path d="M60 200 C60 165, 78 135, 98 125 C105 122, 112 123, 118 128 L100 200 L85 200 Z" fill="#2ECC71" opacity="0.4"/>
+              <circle cx="115" cy="132" r="4" fill="#1A1A2E"/>
+              <circle cx="116" cy="131" r="1.5" fill="#FFF"/>
+              <path d="M100 120 L95 105 L105 115" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+              <path d="M110 116 L108 98 L117 112" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+              <path d="M125 118 L127 100 L132 116" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+              <path d="M30 255 L190 255" stroke="#1A1A2E" stroke-width="1.5"/>
+              <path d="M45 255 C45 240, 55 235, 50 255 M50 255 C50 238, 60 232, 55 255" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="175" cy="55" r="18" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+              <line x1="175" y1="28" x2="175" y2="22" stroke="#1A1A2E" stroke-width="1.5"/>
+              <line x1="175" y1="82" x2="175" y2="88" stroke="#1A1A2E" stroke-width="1.5"/>
+              <line x1="148" y1="55" x2="142" y2="55" stroke="#1A1A2E" stroke-width="1.5"/>
+              <line x1="202" y1="55" x2="208" y2="55" stroke="#1A1A2E" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="hero-card-label">Dinosaur — coloring</div>
+        </div>
+
+        <!-- Card 2: Unicorn (pure line art) -->
+        <div class="hero-card">
+          <div class="hero-card-art">
+            <svg viewBox="0 0 240 310" fill="none" role="img" aria-label="Unicorn line art coloring page">
+              <rect width="240" height="310" fill="#FFFCF5"/>
+              <ellipse cx="120" cy="160" rx="45" ry="55" stroke="#1A1A2E" stroke-width="2.5" fill="none"/>
+              <path d="M120 105 L125 60 L130 105" stroke="#1A1A2E" stroke-width="2.5" fill="none"/>
+              <line x1="123" y1="75" x2="128" y2="75" stroke="#1A1A2E" stroke-width="1.5"/>
+              <line x1="122" y1="88" x2="129" y2="88" stroke="#1A1A2E" stroke-width="1.5"/>
+              <path d="M95 115 L88 95 L105 110" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+              <ellipse cx="105" cy="150" rx="6" ry="7" fill="#1A1A2E"/>
+              <ellipse cx="107" cy="148" rx="2" ry="2.5" fill="#FFF"/>
+              <path d="M150 120 C165 130, 170 150, 160 165 C155 175, 165 185, 155 200 C148 210, 160 220, 150 235" stroke="#1A1A2E" stroke-width="2.5" fill="none"/>
+              <path d="M145 115 C158 122, 162 140, 155 155 C150 165, 158 175, 148 190" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+              <path d="M90 200 C85 230, 80 260, 75 285" stroke="#1A1A2E" stroke-width="2.5" fill="none"/>
+              <path d="M130 200 C135 230, 140 260, 145 285" stroke="#1A1A2E" stroke-width="2.5" fill="none"/>
+              <path d="M30 50 L33 43 L36 50 L43 53 L36 56 L33 63 L30 56 L23 53 Z" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <path d="M190 80 L192 75 L194 80 L199 82 L194 84 L192 89 L190 84 L185 82 Z" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="50" cy="100" r="3" stroke="#1A1A2E" stroke-width="1" fill="none"/>
+              <circle cx="200" cy="140" r="4" stroke="#1A1A2E" stroke-width="1" fill="none"/>
+            </svg>
+          </div>
+          <div class="hero-card-label">Unicorn — line art</div>
+        </div>
+
+        <!-- Card 3: Mandala (pure line art) -->
+        <div class="hero-card">
+          <div class="hero-card-art">
+            <svg viewBox="0 0 220 290" fill="none" role="img" aria-label="Mandala line art coloring page">
+              <rect width="220" height="290" fill="#FFFDF8"/>
+              <circle cx="110" cy="145" r="15" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+              <circle cx="110" cy="145" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <ellipse cx="110" cy="115" rx="10" ry="18" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <ellipse cx="110" cy="175" rx="10" ry="18" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <ellipse cx="80" cy="145" rx="18" ry="10" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <ellipse cx="140" cy="145" rx="18" ry="10" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <ellipse cx="89" cy="124" rx="10" ry="18" stroke="#1A1A2E" stroke-width="1.5" fill="none" transform="rotate(45 89 124)"/>
+              <ellipse cx="131" cy="166" rx="10" ry="18" stroke="#1A1A2E" stroke-width="1.5" fill="none" transform="rotate(45 131 166)"/>
+              <ellipse cx="131" cy="124" rx="10" ry="18" stroke="#1A1A2E" stroke-width="1.5" fill="none" transform="rotate(-45 131 124)"/>
+              <ellipse cx="89" cy="166" rx="10" ry="18" stroke="#1A1A2E" stroke-width="1.5" fill="none" transform="rotate(-45 89 166)"/>
+              <circle cx="110" cy="145" r="55" stroke="#1A1A2E" stroke-width="2" fill="none"/>
+              <circle cx="110" cy="145" r="70" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="110" cy="75" r="4" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="110" cy="215" r="4" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="40" cy="145" r="4" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="180" cy="145" r="4" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="110" cy="60" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="156" cy="82" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="178" cy="145" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="156" cy="208" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="110" cy="230" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="64" cy="208" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="42" cy="145" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+              <circle cx="64" cy="82" r="8" stroke="#1A1A2E" stroke-width="1.5" fill="none"/>
+            </svg>
+          </div>
+          <div class="hero-card-label">Mandala — line art</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 3: TRY IT NOW ========== -->
+  <section class="try-it" id="try-it">
+    <div class="container reveal">
+      <h2 class="try-it-title">
+        <span class="icon icon-24"><svg><use href="#icon-sparkle"/></svg></span>
+        Try It Right Now — Free
+      </h2>
+
+      <div class="try-it-input-group">
+        <input type="text" id="promptInput" placeholder="A cute dinosaur playing with...">
+        <button class="btn-generate" id="generateBtn" onclick="handleGenerate()">
+          <span class="btn-text">Generate</span>
+          <span class="spinner"></span>
+        </button>
+      </div>
+
+      <div class="style-toggles">
+        <button class="style-toggle active" data-style="kids" onclick="toggleStyle(this)">
+          <span class="icon icon-16"><svg><use href="#icon-smile"/></svg></span> Kids
+        </button>
+        <button class="style-toggle" data-style="mandala" onclick="toggleStyle(this)">
+          <span class="icon icon-16"><svg><use href="#icon-flower"/></svg></span> Mandala
+        </button>
+        <button class="style-toggle" data-style="detailed" onclick="toggleStyle(this)">
+          <span class="icon icon-16"><svg><use href="#icon-pen"/></svg></span> Detailed
+        </button>
+      </div>
+
+      <div class="result-area" id="resultArea">
+        <p class="result-placeholder" id="resultPlaceholder">
+          Your coloring page will appear here
+          <span class="icon icon-20 result-placeholder-sparkle"><svg><use href="#icon-sparkle"/></svg></span>
+        </p>
+
+        <!-- Kids style result: Simple cat -->
+        <svg class="result-image" id="resultKids" viewBox="0 0 360 480" fill="none" role="img" aria-label="Generated kids-style coloring page showing a cat">
+          <rect width="360" height="480" fill="#FFFDF5"/>
+          <ellipse cx="180" cy="240" rx="80" ry="70" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <path d="M120 185 L110 140 L145 175" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <path d="M240 185 L250 140 L215 175" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <path d="M125 180 L118 150 L140 175" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M235 180 L242 150 L220 175" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <ellipse cx="155" cy="230" rx="12" ry="14" stroke="currentColor" stroke-width="2" fill="none"/>
+          <ellipse cx="205" cy="230" rx="12" ry="14" stroke="currentColor" stroke-width="2" fill="none"/>
+          <ellipse cx="157" cy="228" rx="5" ry="6" fill="currentColor"/>
+          <ellipse cx="207" cy="228" rx="5" ry="6" fill="currentColor"/>
+          <ellipse cx="159" cy="226" rx="2" ry="2" fill="#FFFDF5"/>
+          <ellipse cx="209" cy="226" rx="2" ry="2" fill="#FFFDF5"/>
+          <path d="M175 250 L180 256 L185 250" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M180 256 L180 265" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M180 265 C172 272, 162 268, 158 265" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M180 265 C188 272, 198 268, 202 265" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <line x1="100" y1="248" x2="145" y2="252" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="100" y1="258" x2="145" y2="258" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="215" y1="252" x2="260" y2="248" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="215" y1="258" x2="260" y2="258" stroke="currentColor" stroke-width="1.5"/>
+          <ellipse cx="180" cy="340" rx="65" ry="55" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <ellipse cx="135" cy="380" rx="18" ry="12" stroke="currentColor" stroke-width="2" fill="none"/>
+          <ellipse cx="225" cy="380" rx="18" ry="12" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M245 340 C270 330, 280 310, 275 290 C272 278, 280 270, 290 275" stroke="currentColor" stroke-width="2.5" fill="none"/>
+          <path d="M60 80 L63 70 L66 80 L76 83 L66 86 L63 96 L60 86 L50 83 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M290 100 L292 93 L294 100 L301 102 L294 104 L292 111 L290 104 L283 102 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="80" cy="400" r="5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="300" cy="380" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="100" cy="360" r="20" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M80 360 C90 345, 110 345, 120 360" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M85 348 C95 360, 105 360, 115 348" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        </svg>
+
+        <!-- Mandala style result -->
+        <svg class="result-image" id="resultMandala" viewBox="0 0 360 480" fill="none" role="img" aria-label="Generated mandala-style coloring page">
+          <rect width="360" height="480" fill="#FFFDF5"/>
+          <circle cx="180" cy="240" r="20" stroke="currentColor" stroke-width="2" fill="none"/>
+          <circle cx="180" cy="240" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Inner petals -->
+          <ellipse cx="180" cy="200" rx="12" ry="24" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <ellipse cx="180" cy="280" rx="12" ry="24" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <ellipse cx="140" cy="240" rx="24" ry="12" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <ellipse cx="220" cy="240" rx="24" ry="12" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Diagonal petals -->
+          <ellipse cx="152" cy="212" rx="12" ry="24" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(45 152 212)"/>
+          <ellipse cx="208" cy="268" rx="12" ry="24" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(45 208 268)"/>
+          <ellipse cx="208" cy="212" rx="12" ry="24" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(-45 208 212)"/>
+          <ellipse cx="152" cy="268" rx="12" ry="24" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(-45 152 268)"/>
+          <!-- Middle ring -->
+          <circle cx="180" cy="240" r="60" stroke="currentColor" stroke-width="2" fill="none"/>
+          <!-- Outer petals -->
+          <ellipse cx="180" cy="160" rx="14" ry="26" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <ellipse cx="180" cy="320" rx="14" ry="26" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <ellipse cx="100" cy="240" rx="26" ry="14" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <ellipse cx="260" cy="240" rx="26" ry="14" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <ellipse cx="123" cy="183" rx="14" ry="26" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(45 123 183)"/>
+          <ellipse cx="237" cy="297" rx="14" ry="26" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(45 237 297)"/>
+          <ellipse cx="237" cy="183" rx="14" ry="26" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(-45 237 183)"/>
+          <ellipse cx="123" cy="297" rx="14" ry="26" stroke="currentColor" stroke-width="1.5" fill="none" transform="rotate(-45 123 297)"/>
+          <!-- Outer ring -->
+          <circle cx="180" cy="240" r="100" stroke="currentColor" stroke-width="2" fill="none"/>
+          <circle cx="180" cy="240" r="130" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Outer dots -->
+          <circle cx="180" cy="100" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="180" cy="380" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="40" cy="240" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="320" cy="240" r="6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Scallops -->
+          <circle cx="180" cy="82" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="266" cy="118" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="308" cy="190" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="308" cy="290" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="266" cy="362" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="180" cy="398" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="94" cy="362" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="52" cy="290" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="52" cy="190" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <circle cx="94" cy="118" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Corner decorations -->
+          <path d="M40 40 L50 30 L60 40 L50 50 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M300 40 L310 30 L320 40 L310 50 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M40 440 L50 430 L60 440 L50 450 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M300 440 L310 430 L320 440 L310 450 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        </svg>
+
+        <!-- Detailed style result: Castle -->
+        <svg class="result-image" id="resultDetailed" viewBox="0 0 360 480" fill="none" role="img" aria-label="Generated detailed-style coloring page showing a castle">
+          <rect width="360" height="480" fill="#FFFDF5"/>
+          <!-- Main castle body -->
+          <rect x="100" y="180" width="160" height="160" stroke="currentColor" stroke-width="2" fill="none"/>
+          <!-- Left tower -->
+          <rect x="70" y="130" width="50" height="210" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M70 130 L95 90 L120 130" stroke="currentColor" stroke-width="2" fill="none"/>
+          <!-- Right tower -->
+          <rect x="240" y="130" width="50" height="210" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M240 130 L265 90 L290 130" stroke="currentColor" stroke-width="2" fill="none"/>
+          <!-- Center tower -->
+          <rect x="150" y="100" width="60" height="80" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M150 100 L180 60 L210 100" stroke="currentColor" stroke-width="2" fill="none"/>
+          <!-- Battlements - left tower -->
+          <rect x="70" y="125" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="85" y="125" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="100" y="125" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Battlements - right tower -->
+          <rect x="240" y="125" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="255" y="125" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="270" y="125" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Main battlements -->
+          <rect x="100" y="175" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="120" y="175" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="140" y="175" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="160" y="175" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="180" y="175" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="200" y="175" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="220" y="175" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="240" y="175" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Center battlements -->
+          <rect x="150" y="95" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="165" y="95" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="195" y="95" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Door -->
+          <path d="M160 340 L160 300 A20 20 0 0 1 200 300 L200 340" stroke="currentColor" stroke-width="2" fill="none"/>
+          <!-- Windows -->
+          <rect x="120" y="210" width="20" height="30" rx="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <line x1="130" y1="210" x2="130" y2="240" stroke="currentColor" stroke-width="1"/>
+          <rect x="220" y="210" width="20" height="30" rx="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <line x1="230" y1="210" x2="230" y2="240" stroke="currentColor" stroke-width="1"/>
+          <!-- Tower windows -->
+          <rect x="85" y="160" width="15" height="20" rx="7.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="85" y="200" width="15" height="20" rx="7.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="260" y="160" width="15" height="20" rx="7.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <rect x="260" y="200" width="15" height="20" rx="7.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Center tower window -->
+          <circle cx="180" cy="130" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <line x1="180" y1="120" x2="180" y2="140" stroke="currentColor" stroke-width="1"/>
+          <line x1="170" y1="130" x2="190" y2="130" stroke="currentColor" stroke-width="1"/>
+          <!-- Flag -->
+          <line x1="180" y1="60" x2="180" y2="35" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M180 35 L200 42 L180 49" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Ground -->
+          <path d="M30 340 L330 340" stroke="currentColor" stroke-width="1.5"/>
+          <!-- Trees -->
+          <path d="M40 340 L40 310 L25 320 L40 310 L30 300 L40 310 L35 290 L40 310 L45 290 L40 310 L50 300 L40 310 L55 320 L40 310 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M320 340 L320 310 L305 320 L320 310 L310 300 L320 310 L315 290 L320 310 L325 290 L320 310 L330 300 L320 310 L335 320 L320 310 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Clouds -->
+          <path d="M60 60 C60 50, 70 40, 85 45 C90 35, 105 35, 110 45 C120 40, 130 50, 125 60" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M240 70 C240 60, 250 50, 265 55 C270 45, 285 45, 290 55 C300 50, 310 60, 305 70" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Path to door -->
+          <path d="M160 340 C160 360, 155 380, 140 400 M200 340 C200 360, 205 380, 220 400" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <!-- Brick lines -->
+          <line x1="100" y1="260" x2="260" y2="260" stroke="currentColor" stroke-width="0.8"/>
+          <line x1="100" y1="290" x2="260" y2="290" stroke="currentColor" stroke-width="0.8"/>
+          <line x1="100" y1="320" x2="260" y2="320" stroke="currentColor" stroke-width="0.8"/>
+          <line x1="140" y1="260" x2="140" y2="290" stroke="currentColor" stroke-width="0.8"/>
+          <line x1="180" y1="260" x2="180" y2="290" stroke="currentColor" stroke-width="0.8"/>
+          <line x1="220" y1="260" x2="220" y2="290" stroke="currentColor" stroke-width="0.8"/>
+        </svg>
+
+        <div class="result-actions" id="resultActions">
+          <button class="btn-result-action btn-regenerate" onclick="handleGenerate()">
+            <span class="icon icon-16"><svg><use href="#icon-refresh"/></svg></span>
+            Regenerate
+          </button>
+          <button class="btn-result-action btn-download">
+            <span class="icon icon-16"><svg><use href="#icon-download"/></svg></span>
+            Download PNG
+          </button>
+        </div>
+      </div>
+
+      <p class="try-it-footer">
+        <span class="icon icon-16"><svg><use href="#icon-lightning"/></svg></span>
+        3 free pages, no signup required
+      </p>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 4: HOW IT WORKS ========== -->
+  <section class="how-it-works">
+    <div class="container reveal">
+      <h2 class="section-title">How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-icon icon icon-48"><svg><use href="#icon-pencil"/></svg></div>
+          <div class="step-title">Describe</div>
+          <p class="step-desc">Type what you want — a dinosaur, a mandala, anything you can imagine.</p>
+        </div>
+        <div class="step-arrow icon icon-32"><svg><use href="#icon-arrow-right"/></svg></div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-icon icon icon-48"><svg><use href="#icon-lightning"/></svg></div>
+          <div class="step-title">Generate</div>
+          <p class="step-desc">AI creates a unique, print-ready coloring page in seconds.</p>
+        </div>
+        <div class="step-arrow icon icon-32"><svg><use href="#icon-arrow-right"/></svg></div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-icon icon icon-48"><svg><use href="#icon-printer"/></svg></div>
+          <div class="step-title">Print</div>
+          <p class="step-desc">Download as PNG or PDF and start coloring right away.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 5: USE CASES ========== -->
+  <section class="use-cases">
+    <div class="container reveal">
+      <h2 class="section-title">Made For Everyone</h2>
+      <div class="use-cases-grid">
+        <div class="use-case-card">
+          <div class="use-case-icon icon icon-24"><svg><use href="#icon-person"/></svg></div>
+          <div class="use-case-type">Parents</div>
+          <p class="use-case-desc">Keep kids creative on rainy days with endless custom coloring pages.</p>
+          <span class="use-case-price">→ $5.99/mo</span>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-icon icon icon-24"><svg><use href="#icon-teacher"/></svg></div>
+          <div class="use-case-type">Teachers</div>
+          <p class="use-case-desc">Custom worksheets for any lesson — themed for every subject and holiday.</p>
+          <span class="use-case-price">→ $12.99/mo</span>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-icon icon icon-24"><svg><use href="#icon-books"/></svg></div>
+          <div class="use-case-type">KDP Sellers</div>
+          <p class="use-case-desc">Create books in hours, not weeks. Build entire coloring books with ease.</p>
+          <span class="use-case-price">→ $29.99/mo</span>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-icon icon icon-24"><svg><use href="#icon-palette"/></svg></div>
+          <div class="use-case-type">Adults</div>
+          <p class="use-case-desc">Relax and unwind with intricate mandalas and detailed designs.</p>
+          <span class="use-case-price">→ $5.99/mo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 6: WHAT CREATORS LOVE ========== -->
+  <section class="social-proof">
+    <div class="container reveal">
+      <h2 class="section-title">
+        <span class="icon icon-24"><svg><use href="#icon-celebration"/></svg></span>
+        What Creators Love
+      </h2>
+
+      <div class="highlight-cards">
+        <div class="highlight-card">
+          <div class="highlight-card-header">
+            <div class="highlight-card-icon icon icon-20"><svg><use href="#icon-person"/></svg></div>
+            <span class="highlight-card-tag">Creative Play</span>
+          </div>
+          <p class="highlight-card-text">Kids come up with the wildest ideas — and see them come to life instantly. From space unicorns to underwater dinosaurs, anything goes.</p>
+        </div>
+
+        <div class="highlight-card" style="border: 2px solid var(--color-primary)">
+          <div class="highlight-card-header">
+            <div class="highlight-card-icon icon icon-20"><svg><use href="#icon-lightning"/></svg></div>
+            <span class="highlight-card-tag">Quick Results</span>
+          </div>
+          <p class="highlight-card-text">From idea to print-ready page in under 10 seconds. No design skills needed. Just describe, generate, and print.</p>
+        </div>
+
+        <div class="highlight-card">
+          <div class="highlight-card-header">
+            <div class="highlight-card-icon icon icon-20"><svg><use href="#icon-books"/></svg></div>
+            <span class="highlight-card-tag">Versatile Output</span>
+          </div>
+          <p class="highlight-card-text">Perfect for themed collections. Make holiday sheets, lesson activities, or full coloring books for KDP publishing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 7: PRICING ========== -->
+  <section class="pricing" id="pricing">
+    <div class="container reveal">
+      <h2 class="section-title">Simple Pricing</h2>
+      <div class="pricing-grid">
+        <!-- Free -->
+        <div class="pricing-card">
+          <div class="pricing-plan-name">Free</div>
+          <div class="pricing-price">$0<span>/mo</span></div>
+          <ul class="pricing-features">
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> 5 pages / month</li>
+            <li><span class="icon icon-16 icon-minus"><svg><use href="#icon-minus"/></svg></span> Watermark on pages</li>
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> PNG download</li>
+          </ul>
+          <button class="btn-pricing btn-pricing-outline">Get Free</button>
+        </div>
+
+        <!-- Starter -->
+        <div class="pricing-card">
+          <div class="pricing-plan-name">Starter</div>
+          <div class="pricing-price">$5.99<span>/mo</span></div>
+          <ul class="pricing-features">
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> 100 pages / month</li>
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> No watermark</li>
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> PNG + PDF download</li>
+          </ul>
+          <button class="btn-pricing btn-pricing-filled">Choose</button>
+        </div>
+
+        <!-- Pro -->
+        <div class="pricing-card pro">
+          <div class="popular-badge">Most Popular</div>
+          <div class="pricing-plan-name">Pro</div>
+          <div class="pricing-price">$12.99<span>/mo</span></div>
+          <ul class="pricing-features">
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> 500 pages / month</li>
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> Photo-to-coloring input</li>
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> KDP book builder</li>
+            <li><span class="icon icon-16"><svg><use href="#icon-check"/></svg></span> Commercial use license</li>
+          </ul>
+          <button class="btn-pricing btn-pricing-gradient">Get Started</button>
+        </div>
+      </div>
+
+      <p class="pricing-more">Need more? <a href="#">Business plan at $29.99/mo →</a></p>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 8: FAQ ========== -->
+  <section class="faq" id="faq">
+    <div class="container reveal">
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>What kind of images can I generate?</span>
+            <svg class="faq-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>You can generate any coloring page you can describe — animals, mandalas, fantasy scenes, holiday themes, educational worksheets, and more. The AI adapts to your prompt and style selection.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>Can I use the pages commercially?</span>
+            <svg class="faq-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>Commercial use is available on the Pro plan ($12.99/mo) and above. This includes selling printed coloring books, KDP publishing, and using pages in paid educational materials.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>What formats can I download?</span>
+            <svg class="faq-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>Free users can download PNG files. Starter and Pro plans include both PNG and high-resolution PDF downloads, optimized for printing on standard paper sizes.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>How does the photo-to-coloring feature work?</span>
+            <svg class="faq-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>Upload any photo and our AI converts it into a clean line-art coloring page. Great for turning family photos, pets, or landscapes into personalized coloring activities.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>Can I cancel anytime?</span>
+            <svg class="faq-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+          </button>
+          <div class="faq-answer">
+            <p>Yes, all plans can be canceled at any time with no penalty. You'll keep access until the end of your billing period. No long-term commitments.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 9: FOOTER ========== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="#" class="navbar-logo">
+            <svg class="logo-icon" viewBox="0 0 32 32" fill="none" role="img" aria-label="ColorForge logo">
+              <circle cx="16" cy="16" r="14" fill="#FFB800" opacity="0.15"/>
+              <circle cx="11" cy="13" r="3.5" fill="#FF6B6B"/>
+              <circle cx="21" cy="13" r="3.5" fill="#2ECC71"/>
+              <circle cx="16" cy="21" r="3.5" fill="#FFB800"/>
+              <circle cx="16" cy="13" r="2" fill="#FFFBF0"/>
+            </svg>
+            <span class="color-forge"><span class="c-color">Color</span><span class="f-color">Forge</span></span>
+          </a>
+          <p>AI-powered coloring page generator for kids, teachers, and creators. Turn any idea into print-ready line art.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#try-it">Generate</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Tutorials</a></li>
+            <li><a href="#">Help</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+            <li><a href="#">Refund Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        © 2026 ColorForge. Made with <span class="icon icon-16"><svg><use href="#icon-heart"/></svg></span> for creators.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========== JAVASCRIPT ========== -->
+  <script>
+    // ---- Current style for result switching ----
+    let currentStyle = 'kids';
+
+    // ---- Navbar scroll effect ----
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    // ---- Mobile hamburger ----
+    const hamburger = document.getElementById('hamburger');
+    const mobileNav = document.getElementById('mobileNav');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      mobileNav.classList.toggle('open');
+      document.body.style.overflow = mobileNav.classList.contains('open') ? 'hidden' : '';
+    });
+    document.querySelectorAll('.mobile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('open');
+        mobileNav.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    });
+
+    // ---- Scroll reveal (IntersectionObserver) ----
+    const revealEls = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    revealEls.forEach(el => revealObserver.observe(el));
+
+    // ---- Try It Now: Generate interaction ----
+    function handleGenerate() {
+      const btn = document.getElementById('generateBtn');
+      const resultArea = document.getElementById('resultArea');
+      const resultPlaceholder = document.getElementById('resultPlaceholder');
+      const resultActions = document.getElementById('resultActions');
+
+      // Hide all result images
+      document.querySelectorAll('.result-image').forEach(img => {
+        img.classList.remove('show');
+        img.style.display = 'none';
+      });
+
+      // Start loading
+      btn.classList.add('loading');
+      resultPlaceholder.style.display = 'none';
+      resultActions.classList.remove('show');
+
+      // Simulate generation (2 seconds)
+      setTimeout(() => {
+        btn.classList.remove('loading');
+        resultArea.classList.add('has-result');
+
+        // Show the correct style result
+        const resultId = 'result' + currentStyle.charAt(0).toUpperCase() + currentStyle.slice(1);
+        const resultImage = document.getElementById(resultId);
+        if (resultImage) {
+          resultImage.style.display = 'block';
+          void resultImage.offsetWidth; // Trigger reflow for animation
+          resultImage.classList.add('show');
+        }
+        resultActions.classList.add('show');
+      }, 2000);
+    }
+
+    // ---- Style toggle (now switches result preview) ----
+    function toggleStyle(el) {
+      document.querySelectorAll('.style-toggle').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      currentStyle = el.dataset.style;
+
+      // If already showing a result, switch the displayed SVG
+      const resultArea = document.getElementById('resultArea');
+      if (resultArea.classList.contains('has-result')) {
+        document.querySelectorAll('.result-image').forEach(img => {
+          img.classList.remove('show');
+          img.style.display = 'none';
+        });
+        const resultId = 'result' + currentStyle.charAt(0).toUpperCase() + currentStyle.slice(1);
+        const resultImage = document.getElementById(resultId);
+        if (resultImage) {
+          resultImage.style.display = 'block';
+          void resultImage.offsetWidth;
+          resultImage.classList.add('show');
+        }
+      }
+    }
+
+    // ---- FAQ accordion ----
+    function toggleFaq(btn) {
+      const item = btn.closest('.faq-item');
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!wasOpen) item.classList.add('open');
+    }
+  </script>
+</body>
+</html>

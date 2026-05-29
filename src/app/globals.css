@@ -1,0 +1,200 @@
+@import 'https://fonts.googleapis.cn/css2?family=Fredoka+One&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap';
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * ColorForge Design System - Warm-Creative Palette
+ * Primary: #FFB800 (Warm Yellow)
+ * Secondary: #1A1A2E (Deep Gray)
+ * Accent: #FF6B6B (Coral Orange)
+ * Background: #FFFBF0 (Warm White)
+ * Success: #2ECC71 (Green)
+ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  /* ColorForge Custom Fonts */
+  --font-display: 'Fredoka One', 'Inter', sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-serif: 'Inter', Georgia, 'Times New Roman', Times, serif;
+}
+
+:root {
+  --radius: 0.625rem;
+  
+  /* Primary - Warm Yellow */
+  --primary: #FFB800;
+  --primary-foreground: #1A1A2E;
+  
+  /* Secondary - Deep Gray */
+  --secondary: #1A1A2E;
+  --secondary-foreground: #FFFBF0;
+  
+  /* Background - Warm White */
+  --background: #FFFBF0;
+  --foreground: #1A1A2E;
+  
+  /* Card */
+  --card: #FFFFFF;
+  --card-foreground: #1A1A2E;
+  
+  /* Popover */
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A2E;
+  
+  /* Muted */
+  --muted: #F5F0E8;
+  --muted-foreground: #6B7280;
+  
+  /* Accent - Coral Orange */
+  --accent: #FF6B6B;
+  --accent-foreground: #FFFFFF;
+  
+  /* Destructive */
+  --destructive: #EF4444;
+  
+  /* Border & Input */
+  --border: #E5E0D5;
+  --input: #E5E0D5;
+  --ring: #FFB800;
+  
+  /* Chart colors */
+  --chart-1: #FFB800;
+  --chart-2: #FF6B6B;
+  --chart-3: #2ECC71;
+  --chart-4: #4A90D9;
+  --chart-5: #9B59B6;
+  
+  /* Sidebar */
+  --sidebar: #FFFBF0;
+  --sidebar-foreground: #1A1A2E;
+  --sidebar-primary: #FFB800;
+  --sidebar-primary-foreground: #1A1A2E;
+  --sidebar-accent: #F5F0E8;
+  --sidebar-accent-foreground: #1A1A2E;
+  --sidebar-border: #E5E0D5;
+  --sidebar-ring: #FFB800;
+}
+
+.dark {
+  --primary: #FFB800;
+  --primary-foreground: #1A1A2E;
+  
+  --secondary: #2A2A3E;
+  --secondary-foreground: #FFFBF0;
+  
+  --background: #1A1A2E;
+  --foreground: #FFFBF0;
+  
+  --card: #242438;
+  --card-foreground: #FFFBF0;
+  
+  --popover: #242438;
+  --popover-foreground: #FFFBF0;
+  
+  --muted: #2A2A3E;
+  --muted-foreground: #9CA3AF;
+  
+  --accent: #FF6B6B;
+  --accent-foreground: #FFFFFF;
+  
+  --destructive: #EF4444;
+  
+  --border: #3A3A4E;
+  --input: #3A3A4E;
+  --ring: #FFB800;
+  
+  --chart-1: #FFB800;
+  --chart-2: #FF6B6B;
+  --chart-3: #2ECC71;
+  --chart-4: #4A90D9;
+  --chart-5: #9B59B6;
+  
+  --sidebar: #242438;
+  --sidebar-foreground: #FFFBF0;
+  --sidebar-primary: #FFB800;
+  --sidebar-primary-foreground: #1A1A2E;
+  --sidebar-accent: #2A2A3E;
+  --sidebar-accent-foreground: #FFFBF0;
+  --sidebar-border: #3A3A4E;
+  --sidebar-ring: #FFB800;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+body {
+  @apply font-sans antialiased;
+}
+
+/* ColorForge Utility Classes */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Gradient utilities */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%);
+}
+
+.bg-gradient-warm {
+  background: linear-gradient(180deg, #FFFBF0 0%, #F5F0E8 100%);
+}
+
+.bg-gradient-dark {
+  background: linear-gradient(180deg, #1A1A2E 0%, #242438 100%);
+}
+
+/* Text gradient */
+.text-gradient-primary {
+  background: linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

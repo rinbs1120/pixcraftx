@@ -166,7 +166,7 @@ function HistoryContent() {
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                       <a
-                        href={\`/color?src=\${encodeURIComponent(record.image_url)}\`}
+                        href={`/color?src=${encodeURIComponent(record.image_url)}`}
                         className="p-2 bg-white rounded-full shadow-md hover:bg-amber-50"
                         title="Color It"
                       >

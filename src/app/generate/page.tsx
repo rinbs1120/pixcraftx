@@ -313,7 +313,7 @@ function GenerateContent() {
                 </button>
                 {generatedImageUrl && (
                   <Link
-                    href={\`/color?src=\${encodeURIComponent(generatedImageUrl)}\`}
+                    href={`/color?src=${encodeURIComponent(generatedImageUrl)}`}
                     className="flex-1 py-3 rounded-xl text-[#1A1A2E] font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
                     style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                   >

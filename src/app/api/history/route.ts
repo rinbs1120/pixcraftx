@@ -83,3 +83,60 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
+
+
+export async function POST(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const formData = await req.formData();
+    const imageFile = formData.get('image') as File | null;
+    
+    if (!imageFile) {
+      return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const imageBuffer = await imageFile.arrayBuffer();
+    const timestamp = Date.now();
+    const filePath = `${userId}/colored-${timestamp}.png`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('coloring-pages')
+      .upload(filePath, imageBuffer, {
+        contentType: 'image/png',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('[History] Upload error:', uploadError);
+      return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('coloring-pages')
+      .getPublicUrl(filePath);
+
+    await supabase
+      .from('generation_history')
+      .insert({
+        user_id: userId,
+        prompt: 'Colored version',
+        style: 'colored',
+        image_url: urlData.publicUrl,
+        storage_path: filePath,
+      });
+
+    return NextResponse.json({ success: true, url: urlData.publicUrl });
+  } catch (error) {
+    console.error('[History] POST error:', error);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}

@@ -7,7 +7,7 @@ import { Footer } from '@/components/footer';
 import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2 } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
 import { useAuth } from '@clerk/nextjs';
-import { createClient } from '@supabase/supabase-js';
+
 
 const COLOR_PALETTE = [
   // Reds
@@ -235,34 +235,16 @@ function ColorContent() {
       canvas.toBlob(async (blob) => {
         if (!blob) { setSaveStatus('error'); return; }
         
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        // Call server API to save
+        const formData = new FormData();
+        formData.append('image', blob, 'colored.png');
         
-        const { userId } = await (await import('@clerk/nextjs')).auth();
-        if (!userId) { setSaveStatus('error'); return; }
+        const res = await fetch('/api/history', {
+          method: 'POST',
+          body: formData,
+        });
         
-        const filePath = `${userId}/colored-${Date.now()}.png`;
-        const { error } = await supabase.storage
-          .from('coloring-pages')
-          .upload(filePath, blob, { contentType: 'image/png' });
-        
-        if (error) { setSaveStatus('error'); return; }
-        
-        const { data: urlData } = supabase.storage
-          .from('coloring-pages')
-          .getPublicUrl(filePath);
-        
-        await supabase
-          .from('generation_history')
-          .insert({
-            user_id: userId,
-            prompt: 'Colored version',
-            style: 'colored',
-            image_url: urlData.publicUrl,
-            storage_path: filePath,
-          });
+        if (!res.ok) { setSaveStatus('error'); return; }
         
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus(null), 2000);

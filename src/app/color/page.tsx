@@ -66,7 +66,8 @@ function ColorContent() {
     
     (async () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx) return;
     // Fetch image as blob to avoid CORS issues with canvas
     const img = new Image();
     

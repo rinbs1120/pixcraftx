@@ -71,7 +71,7 @@ function ColorContent() {
     if (!ctx) return;
     // Use server proxy to avoid CORS issues with canvas
     const img = new Image();
-    const proxyUrl = \`/api/proxy-image?url=\${encodeURIComponent(imageUrl)}\`;
+    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
     img.src = proxyUrl;
     
     img.onload = () => {

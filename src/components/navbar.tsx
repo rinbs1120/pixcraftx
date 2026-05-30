@@ -56,7 +56,7 @@ export function Navbar() {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
             {isSignedIn ? (
-              <UserButton afterSignOutUrl="/" />
+              <UserButton />
             ) : (
               <>
                 <SignInButton mode="modal">
@@ -112,7 +112,7 @@ export function Navbar() {
               Pricing
             </Link>
             {isSignedIn ? (
-              <UserButton afterSignOutUrl="/" />
+              <UserButton />
             ) : (
               <div className="flex flex-col gap-4">
                 <SignInButton mode="modal">

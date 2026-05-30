@@ -8,7 +8,7 @@ import { Footer } from '@/components/footer';
 import { Sparkles, Loader2, Download, RotateCcw, Baby, Flower2, PenTool, Upload, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
-import Image from 'next/image';
+
 
 const styles = [
   { id: 'kids', label: 'Kids', icon: Baby, desc: 'Bold lines, simple shapes' },
@@ -243,15 +243,11 @@ function GenerateContent() {
               <div className="bg-card rounded-3xl p-6 shadow-lg border border-border min-h-[500px] flex flex-col">
                 <div className="flex-1 flex items-center justify-center">
                   {generatedImageUrl ? (
-                    <div className="relative w-full h-full">
-                      <Image
+                    <img
                         src={generatedImageUrl}
                         alt="Generated coloring page"
-                        fill
-                        className="object-contain rounded-xl"
-                        unoptimized
+                        className="w-full h-auto max-h-[600px] object-contain rounded-xl"
                       />
-                    </div>
                   ) : isGenerating ? (
                     <div className="text-center">
                       <Loader2 className="w-16 h-16 mx-auto mb-4 text-[#FFB800] animate-spin" />

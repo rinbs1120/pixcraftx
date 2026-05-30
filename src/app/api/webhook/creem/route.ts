@@ -10,6 +10,7 @@ const PRODUCT_PLAN_MAP: Record<string, string> = {
 export const POST = Webhook({
   webhookSecret: process.env.CREEM_WEBHOOK_SECRET!,
   onCheckoutCompleted: async ({ customer, product, metadata }) => {
+    if (!customer || !product) return;
     console.log(`[Creem] Checkout completed: ${customer.email} purchased ${product.name}`);
     
     const plan = PRODUCT_PLAN_MAP[product.id];
@@ -18,7 +19,6 @@ export const POST = Webhook({
       return;
     }
 
-    // 用referenceId（即Clerk userId）或email匹配用户
     const userId = metadata?.referenceId as string | undefined;
     if (!userId) {
       console.error('[Creem] No referenceId in metadata, cannot update user plan');
@@ -32,7 +32,6 @@ export const POST = Webhook({
 
     const currentMonth = new Date().toISOString().slice(0, 7);
 
-    // 更新用户当月usage记录的plan字段
     const { data: existingUsage } = await supabase
       .from('user_usage')
       .select('*')
@@ -52,7 +51,6 @@ export const POST = Webhook({
         .insert({ user_id: userId, month: currentMonth, pages_used: 0, plan });
     }
 
-    // 保存订阅信息到单独表（用于管理取消/续费）
     await supabase
       .from('subscriptions')
       .upsert({
@@ -67,11 +65,13 @@ export const POST = Webhook({
   },
 
   onGrantAccess: async ({ customer, metadata }) => {
+    if (!customer) return;
     const userId = metadata?.referenceId as string;
     console.log(`[Creem] Grant access for user: ${userId}, email: ${customer.email}`);
   },
 
   onRevokeAccess: async ({ customer, metadata }) => {
+    if (!customer) return;
     const userId = metadata?.referenceId as string;
     console.log(`[Creem] Revoke access for user: ${userId}`);
 
@@ -82,7 +82,6 @@ export const POST = Webhook({
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 将plan降回free
     const currentMonth = new Date().toISOString().slice(0, 7);
     await supabase
       .from('user_usage')

@@ -5,7 +5,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Loader2, Download, Trash2, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Download, Trash2, Sparkles, Image as ImageIcon, Palette } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 interface GenerationRecord {
@@ -165,6 +165,13 @@ function HistoryContent() {
                     />
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                      <a
+                        href={\`/color?src=\${encodeURIComponent(record.image_url)}\`}
+                        className="p-2 bg-white rounded-full shadow-md hover:bg-amber-50"
+                        title="Color It"
+                      >
+                        <Palette className="w-4 h-4 text-[#FFB800]" />
+                      </a>
                       <button
                         onClick={() => handleDownload(record.image_url, record.prompt)}
                         className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"

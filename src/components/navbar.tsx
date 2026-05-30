@@ -4,13 +4,39 @@ import Link from 'next/link';
 import { useScrolled } from '@/hooks/use-scrolled';
 import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
-import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { Menu, X, Crown } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export function Navbar() {
   const scrolled = useScrolled();
   const { isSignedIn } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [plan, setPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      setPlan(null);
+      return;
+    }
+    fetch('/api/usage')
+      .then(res => res.json())
+      .then(data => {
+        if (data.plan) setPlan(data.plan);
+      })
+      .catch(() => {});
+  }, [isSignedIn]);
+
+  const planLabel = plan && plan !== 'free'
+    ? plan.charAt(0).toUpperCase() + plan.slice(1)
+    : null;
+
+  const planBadgeClass = plan === 'business'
+    ? 'bg-purple-100 text-purple-700 border-purple-200'
+    : plan === 'pro'
+    ? 'bg-amber-100 text-amber-700 border-amber-200'
+    : plan === 'starter'
+    ? 'bg-green-100 text-green-700 border-green-200'
+    : '';
 
   return (
     <>
@@ -27,7 +53,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center gap-2">
             <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="ColorForge logo">
               <circle cx="16" cy="16" r="14" fill="#FFB800" opacity="0.15" />
-              <circle cx="11" cy="13" r="3.5" fill="#FF6B6B" />
+              <circle cx="11" cy="13" r="3.5" fill="#FF6B6D" />
               <circle cx="21" cy="13" r="3.5" fill="#2ECC71" />
               <circle cx="16" cy="21" r="3.5" fill="#FFB800" />
               <circle cx="16" cy="13" r="2" fill="#1A1A2E" />
@@ -56,7 +82,15 @@ export function Navbar() {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
             {isSignedIn ? (
-              <UserButton />
+              <div className="flex items-center gap-2">
+                {planLabel && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${planBadgeClass}`}>
+                    <Crown className="w-3 h-3" />
+                    {planLabel}
+                  </span>
+                )}
+                <UserButton />
+              </div>
             ) : (
               <>
                 <SignInButton mode="modal">
@@ -65,7 +99,7 @@ export function Navbar() {
                   </button>
                 </SignInButton>
                 <SignUpButton mode="modal">
-                  <button className="px-6 py-2 font-semibold rounded-full transition-all hover:-translate-y-0.5 text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 2px 8px rgba(255,184,0,0.3)' }}>
+                  <button className="px-6 py-2 font-semibold rounded-full transition-all hover:translate-y-0.5 text-[#1A1A2E] hover:bg-[#1A1A2E]/90" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6D 100%)', boxShadow: '0 2px 8px rgba(255,184,0,0.3)' }}>
                     Sign Up
                   </button>
                 </SignUpButton>
@@ -112,7 +146,15 @@ export function Navbar() {
               Pricing
             </Link>
             {isSignedIn ? (
-              <UserButton />
+              <div className="flex items-center gap-3">
+                {planLabel && (
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold border ${planBadgeClass}`}>
+                    <Crown className="w-4 h-4" />
+                    {planLabel}
+                  </span>
+                )}
+                <UserButton />
+              </div>
             ) : (
               <div className="flex flex-col gap-4">
                 <SignInButton mode="modal">

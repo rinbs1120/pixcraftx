@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, Baby, Flower2, PenTool, Upload, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, Baby, Flower2, PenTool, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 
@@ -176,21 +176,7 @@ function GenerateContent() {
                 </div>
               </div>
 
-              {/* Upload Option */}
-              <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-                <label className="block text-sm font-semibold mb-3 text-foreground">
-                  Or upload an image
-                </label>
-                <div className="border-2 border-dashed border-[#E5E0D5] rounded-xl p-8 text-center hover:border-[#FFB800]/50 transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">
-                    Drag & drop or click to upload
-                  </p>
-                  <p className="text-muted-foreground/60 text-xs mt-1">
-                    PNG, JPG up to 10MB
-                  </p>
-                </div>
-              </div>
+
 
               {/* Error Display */}
               {error && (

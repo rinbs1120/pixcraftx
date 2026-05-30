@@ -66,6 +66,7 @@ function ColorContent() {
     
     (async () => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas?.getContext('2d');
     if (!ctx) return;
     // Fetch image as blob to avoid CORS issues with canvas
@@ -121,10 +122,11 @@ function ColorContent() {
   }, [imageUrl]);
 
   const saveToHistory = useCallback(() => {
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx || !canvas) return;
     
-    const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     // Remove any forward history
     historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
     historyRef.current.push(imageData);
@@ -140,14 +142,16 @@ function ColorContent() {
   const undo = useCallback(() => {
     if (historyIndexRef.current <= 0) return;
     historyIndexRef.current--;
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx || !canvas) return;
     ctx.putImageData(historyRef.current[historyIndexRef.current], 0, 0);
   }, []);
 
   const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (tool !== 'fill') return;
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
@@ -166,6 +170,7 @@ function ColorContent() {
     if (tool === 'fill') return;
     setIsDrawing(true);
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
@@ -195,6 +200,7 @@ function ColorContent() {
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
@@ -216,6 +222,7 @@ function ColorContent() {
 
   const handleDownload = useCallback(() => {
     const canvas = canvasRef.current;
+    if (!canvas) { return; }
     if (!canvas) return;
     const link = document.createElement('a');
     link.download = `colorforge-colored-${Date.now()}.png`;
@@ -225,6 +232,7 @@ function ColorContent() {
 
   const handlePrint = useCallback(() => {
     const canvas = canvasRef.current;
+    if (!canvas) { return; }
     if (!canvas) return;
     const dataUrl = canvas.toDataURL('image/png');
     const win = window.open('', '_blank');
@@ -243,6 +251,7 @@ function ColorContent() {
   const handleSaveToHistory = useCallback(async () => {
     if (!isSignedIn || !canvasRef.current) return;
     const canvas = canvasRef.current;
+    if (!canvas) return;
     setSaveStatus('saving');
     
     try {

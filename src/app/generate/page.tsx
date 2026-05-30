@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, Baby, Flower2, PenTool, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, Baby, Flower2, PenTool, AlertCircle, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 

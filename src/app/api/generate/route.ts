@@ -51,17 +51,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Description too long (max 500 characters)' }, { status: 400 });
     }
 
-    // 3. 检查用户额度
+    // 3. 检查用户套餐 - 优先查subscriptions表
+    const { data: subData } = await supabase
+      .from('subscriptions')
+      .select('plan, status')
+      .eq('user_id', userId)
+      .single();
+
+    let plan = 'free';
+    if (subData && subData.status === 'active') {
+      plan = subData.plan || 'free';
+    }
+
+    // 获取本月使用量
     const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: usageData } = await supabase
       .from('user_usage')
-      .select('pages_used, plan')
+      .select('pages_used')
       .eq('user_id', userId)
       .eq('month', currentMonth)
       .single();
 
     const pagesUsed = usageData?.pages_used || 0;
-    const plan = usageData?.plan || 'free';
     const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 5;
 
     if (pagesUsed >= limit) {
@@ -95,7 +106,6 @@ export async function POST(req: NextRequest) {
     const imageResponse = await fetch(tempImageUrl);
     const imageBuffer = await imageResponse.arrayBuffer();
     
-    // 生成唯一文件名: userId/style-timestamp.png
     const timestamp = Date.now();
     const filePath = `${userId}/${style}-${timestamp}.png`;
 
@@ -108,7 +118,6 @@ export async function POST(req: NextRequest) {
 
     if (uploadError) {
       console.error('[Storage] Upload failed:', uploadError);
-      // 降级：如果存储失败，仍然返回临时URL（比完全不能用强）
       return NextResponse.json({
         imageUrl: tempImageUrl,
         style,
@@ -119,7 +128,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 获取永久公开URL
     const { data: urlData } = supabase.storage
       .from('coloring-pages')
       .getPublicUrl(filePath);
@@ -130,16 +138,16 @@ export async function POST(req: NextRequest) {
     if (usageData) {
       await supabase
         .from('user_usage')
-        .update({ pages_used: pagesUsed + 1, updated_at: new Date().toISOString() })
+        .update({ pages_used: pagesUsed + 1, plan, updated_at: new Date().toISOString() })
         .eq('user_id', userId)
         .eq('month', currentMonth);
     } else {
       await supabase
         .from('user_usage')
-        .insert({ user_id: userId, month: currentMonth, pages_used: 1, plan: 'free' });
+        .insert({ user_id: userId, month: currentMonth, pages_used: 1, plan });
     }
 
-    // 8. 记录生成历史（用永久URL）
+    // 8. 记录生成历史
     await supabase
       .from('generation_history')
       .insert({

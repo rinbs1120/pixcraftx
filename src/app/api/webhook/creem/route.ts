@@ -20,6 +20,7 @@ export const POST = Webhook({
   onCheckoutCompleted: async ({ customer, product, metadata }) => {
     if (!customer || !product) return;
     console.log(`[Creem] Checkout completed: ${customer.email} purchased ${product.name}`);
+    console.log(`[Creem] Full metadata:`, JSON.stringify(metadata));
     
     const plan = PRODUCT_PLAN_MAP[product.id];
     if (!plan) {
@@ -27,11 +28,14 @@ export const POST = Webhook({
       return;
     }
 
-    const userId = metadata?.referenceId as string | undefined;
+    // 尝试多种方式获取userId
+    const userId = metadata?.referenceId || metadata?.userId || customer.userId;
     if (!userId) {
-      console.error('[Creem] No referenceId in metadata, cannot update user plan');
+      console.error('[Creem] No userId found in metadata or customer, cannot update user plan');
       return;
     }
+
+    console.log(`[Creem] Updating user ${userId} to plan ${plan}`);
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,6 +44,7 @@ export const POST = Webhook({
 
     const currentMonth = new Date().toISOString().slice(0, 7);
 
+    // 更新user_usage表
     const { data: existingUsage } = await supabase
       .from('user_usage')
       .select('*')
@@ -59,6 +64,7 @@ export const POST = Webhook({
         .insert({ user_id: userId, month: currentMonth, pages_used: 0, plan });
     }
 
+    // 更新subscriptions表
     await supabase
       .from('subscriptions')
       .upsert({
@@ -69,18 +75,18 @@ export const POST = Webhook({
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
-    console.log(`[Creem] User ${userId} plan updated to ${plan}`);
+    console.log(`[Creem] User ${userId} plan updated to ${plan} ✅`);
   },
 
   onGrantAccess: async ({ customer, metadata }) => {
     if (!customer) return;
-    const userId = metadata?.referenceId as string;
+    const userId = metadata?.referenceId || metadata?.userId || customer.userId;
     console.log(`[Creem] Grant access for user: ${userId}, email: ${customer.email}`);
   },
 
   onRevokeAccess: async ({ customer, metadata }) => {
     if (!customer) return;
-    const userId = metadata?.referenceId as string;
+    const userId = metadata?.referenceId || metadata?.userId || customer.userId;
     console.log(`[Creem] Revoke access for user: ${userId}`);
 
     if (!userId) return;

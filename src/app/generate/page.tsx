@@ -41,6 +41,19 @@ function GenerateContent() {
     }
   }, [searchParams]);
 
+  // 获取用户套餐和用量
+  useEffect(() => {
+    if (!isSignedIn) return;
+    fetch('/api/usage')
+      .then(res => res.json())
+      .then(data => {
+        if (data.plan) setPlan(data.plan);
+        if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
+        if (data.limit) setPageLimit(data.limit);
+      })
+      .catch(() => {});
+  }, [isSignedIn]);
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     
@@ -215,11 +228,45 @@ function GenerateContent() {
 
               {/* Usage Display */}
               {isSignedIn && (
-                <div className="text-center text-sm text-muted-foreground">
-                  <span>{pagesUsed}/{pageLimit} pages used this month</span>
-                  {plan === 'free' && pagesUsed >= pageLimit && (
-                    <Link href="/pricing" className="ml-2 text-[#FFB800] font-semibold hover:underline">
-                      Upgrade for more →
+                <div className="bg-card rounded-xl p-4 border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${
+                        plan === 'business' ? 'bg-purple-100 text-purple-700' :
+                        plan === 'pro' ? 'bg-amber-100 text-amber-700' :
+                        plan === 'starter' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {plan}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">
+                        {plan === 'free' ? 'Free Plan' : `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`}
+                      </span>
+                    </div>
+                    {plan !== 'free' && (
+                      <Link href="/pricing" className="text-xs text-muted-foreground hover:text-primary">
+                        Manage →
+                      </Link>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all ${
+                          pagesUsed >= pageLimit ? 'bg-red-400' :
+                          pagesUsed >= pageLimit * 0.8 ? 'bg-amber-400' :
+                          'bg-green-400'
+                        }`}
+                        style={{ width: `${Math.min(100, (pagesUsed / pageLimit) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      {pagesUsed}/{pageLimit}
+                    </span>
+                  </div>
+                  {pagesUsed >= pageLimit && (
+                    <Link href="/pricing" className="block mt-2 text-center text-sm text-[#FFB800] font-semibold hover:underline">
+                      Upgrade for more pages →
                     </Link>
                   )}
                 </div>

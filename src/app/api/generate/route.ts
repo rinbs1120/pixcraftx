@@ -6,16 +6,16 @@ import { auth } from '@clerk/nextjs/server';
 // 风格对应的prompt修饰
 const STYLE_PROMPTS = {
   kids: {
-    prefix: "black and white coloring page for kids, bold thick outlines, simple shapes, clean line art,",
-    suffix: ", no shading, no grayscale, no color, white background, large areas to color, cartoon style"
+    prefix: "coloring book page for children, black and white line drawing only, bold thick outlines, simple shapes, clean line art, pure black ink on white paper,",
+    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, no shadows, white background, large areas to color, cartoon style outline only"
   },
   mandala: {
-    prefix: "black and white mandala coloring page, symmetrical circular pattern, intricate line art,",
-    suffix: ", no shading, no grayscale, no color, white background, zen pattern, repetitive geometric shapes"
+    prefix: "coloring book page, black and white mandala pattern, pure black ink line drawing on white paper, symmetrical circular pattern, intricate line art,",
+    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, white background, zen pattern, repetitive geometric shapes outline only"
   },
   detailed: {
-    prefix: "black and white detailed coloring page for adults, fine lines, intricate details, realistic proportions,",
-    suffix: ", no shading, no grayscale, no color, white background, complex elaborate design, professional illustration"
+    prefix: "coloring book page for adults, black and white line drawing only, fine lines, intricate details, pure black ink on white paper, professional illustration outline,",
+    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, no shadows, white background, complex elaborate design outline only"
   }
 };
 
@@ -88,8 +88,8 @@ export async function POST(req: NextRequest) {
     const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.kids;
     const fullPrompt = `${styleConfig.prefix} ${prompt.trim()} ${styleConfig.suffix}`;
 
-    // 5. 调用Fal.ai生成图片
-    const result = await fal.subscribe('fal-ai/flux/schnell', {
+    // 5. 调用Fal.ai生成图片（flux/dev follows instructions better for B&W）
+    const result = await fal.subscribe('fal-ai/flux/dev', {
       input: {
         prompt: fullPrompt,
         image_size: 'portrait_4_3',

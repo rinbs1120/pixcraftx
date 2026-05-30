@@ -64,10 +64,22 @@ function ColorContent() {
   useEffect(() => {
     if (!imageUrl || !canvasRef.current) return;
     
+    (async () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d')!;
+    // Fetch image as blob to avoid CORS issues with canvas
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    
+    try {
+      const imgResponse = await fetch(imageUrl);
+      const imgBlob = await imgResponse.blob();
+      const blobUrl = URL.createObjectURL(imgBlob);
+      img.src = blobUrl;
+    } catch {
+      // Fallback: try direct load
+      img.crossOrigin = 'anonymous';
+      img.src = imageUrl;
+    }
     
     img.onload = () => {
       // Scale to fit nicely
@@ -103,7 +115,8 @@ function ColorContent() {
       setIsLoading(false);
     };
     
-    img.src = imageUrl;
+    // Direct load fallback (already set in try/catch above)
+    })(); // end async IIFE
   }, [imageUrl]);
 
   const saveToHistory = useCallback(() => {

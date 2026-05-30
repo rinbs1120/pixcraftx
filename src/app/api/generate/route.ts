@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     const fullPrompt = `${styleConfig.prefix} ${prompt.trim()} ${styleConfig.suffix}`;
 
     // 5. 调用Fal.ai生成图片（flux/dev follows instructions better for B&W）
-    const result = await fal.subscribe('fal-ai/flux/dev', {
+    const result = await fal.subscribe('fal-ai/flux/schnell', {
       input: {
         prompt: fullPrompt,
         image_size: 'portrait_4_3',

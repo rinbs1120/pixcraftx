@@ -69,19 +69,10 @@ function ColorContent() {
     if (!canvas) return;
     const ctx = canvas?.getContext('2d');
     if (!ctx) return;
-    // Fetch image as blob to avoid CORS issues with canvas
+    // Use server proxy to avoid CORS issues with canvas
     const img = new Image();
-    
-    try {
-      const imgResponse = await fetch(imageUrl);
-      const imgBlob = await imgResponse.blob();
-      const blobUrl = URL.createObjectURL(imgBlob);
-      img.src = blobUrl;
-    } catch {
-      // Fallback: try direct load
-      img.crossOrigin = 'anonymous';
-      img.src = imageUrl;
-    }
+    const proxyUrl = \`/api/proxy-image?url=\${encodeURIComponent(imageUrl)}\`;
+    img.src = proxyUrl;
     
     img.onload = () => {
       // Scale to fit nicely

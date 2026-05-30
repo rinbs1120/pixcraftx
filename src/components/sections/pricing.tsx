@@ -5,6 +5,20 @@ import { Check, Minus } from 'lucide-react';
 import { CreemCheckout } from '@creem_io/nextjs';
 import { useAuth } from '@clerk/nextjs';
 
+const isTestMode = process.env.NEXT_PUBLIC_CREEM_TEST_MODE === 'true';
+
+const PRODUCT_IDS = isTestMode
+  ? {
+      starter: 'prod_7lVPw6BIdARHnHp0q8NUq',
+      pro: 'prod_5Ys18YHDcghSmzQiH34m1F',
+      business: 'prod_6Ce4UEHVAHQuKD8rXeqrHJ',
+    }
+  : {
+      starter: 'prod_7n0brGEbo1u1yDHsf1gI8r',
+      pro: 'prod_15GyxRDvbgQAS0FFKb8ayp',
+      business: 'prod_3i1ndQTCMKtqaswpGDLwWM',
+    };
+
 const plans = [
   {
     name: 'Free',
@@ -36,7 +50,7 @@ const plans = [
     buttonText: 'Subscribe',
     buttonStyle: 'filled' as const,
     href: null,
-    productId: 'prod_7n0brGEbo1u1yDHsf1gI8r',
+    productId: PRODUCT_IDS.starter,
   },
   {
     name: 'Pro',
@@ -54,7 +68,7 @@ const plans = [
     buttonText: 'Subscribe',
     buttonStyle: 'gradient' as const,
     href: null,
-    productId: 'prod_15GyxRDvbgQAS0FFKb8ayp',
+    productId: PRODUCT_IDS.pro,
   },
   {
     name: 'Business',
@@ -72,7 +86,7 @@ const plans = [
     buttonText: 'Subscribe',
     buttonStyle: 'filled' as const,
     href: null,
-    productId: 'prod_3i1ndQTCMKtqaswpGDLwWM',
+    productId: PRODUCT_IDS.business,
   },
 ];
 
@@ -168,7 +182,6 @@ export function Pricing() {
                   </button>
                 </CreemCheckout>
               ) : plan.productId ? (
-                // 未登录用户点击跳转登录
                 <Link
                   href="/generate"
                   className={`block w-full py-3.5 rounded-xl font-bold text-center transition-all ${

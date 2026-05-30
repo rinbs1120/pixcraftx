@@ -1,11 +1,19 @@
 import { Webhook } from '@creem_io/nextjs';
 import { createClient } from '@supabase/supabase-js';
 
-const PRODUCT_PLAN_MAP: Record<string, string> = {
-  'prod_7n0brGEbo1u1yDHsf1gI8r': 'starter',  // $4.99/月
-  'prod_15GyxRDvbgQAS0FFKb8ayp': 'pro',       // $9.99/月
-  'prod_3i1ndQTCMKtqaswpGDLwWM': 'business',  // $19.99/月
-};
+const isTestMode = process.env.NEXT_PUBLIC_CREEM_TEST_MODE === 'true';
+
+const PRODUCT_PLAN_MAP: Record<string, string> = isTestMode
+  ? {
+      'prod_7lVPw6BIdARHnHp0q8NUq': 'starter',
+      'prod_5Ys18YHDcghSmzQiH34m1F': 'pro',
+      'prod_6Ce4UEHVAHQuKD8rXeqrHJ': 'business',
+    }
+  : {
+      'prod_7n0brGEbo1u1yDHsf1gI8r': 'starter',
+      'prod_15GyxRDvbgQAS0FFKb8ayp': 'pro',
+      'prod_3i1ndQTCMKtqaswpGDLwWM': 'business',
+    };
 
 export const POST = Webhook({
   webhookSecret: process.env.CREEM_WEBHOOK_SECRET!,

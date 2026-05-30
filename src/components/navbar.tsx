@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useScrolled } from '@/hooks/use-scrolled';
-import { SignInButton, SignUpButton, useAuth } from '@clerk/nextjs';
+import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
@@ -56,12 +56,7 @@ export function Navbar() {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
             {isSignedIn ? (
-              <Link
-                href="/history"
-                className="px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-full shadow-md hover:bg-primary/90 transition-all hover:-translate-y-0.5"
-              >
-                My Pages
-              </Link>
+              <UserButton afterSignOutUrl="/" />
             ) : (
               <>
                 <SignInButton mode="modal">
@@ -117,13 +112,7 @@ export function Navbar() {
               Pricing
             </Link>
             {isSignedIn ? (
-              <Link
-                href="/history"
-                className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-md"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                My Pages
-              </Link>
+              <UserButton afterSignOutUrl="/" />
             ) : (
               <div className="flex flex-col gap-4">
                 <SignInButton mode="modal">

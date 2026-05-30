@@ -21,117 +21,171 @@ const COLOR_PALETTE = [
   '#34495E', '#2C3E50', '#1A1A2E', '#000000',
 ];
 
+const SUPABASE_STORAGE_PREFIX = 'https://eurbsafbkffdnfmvcddy.supabase.co/storage/';
+
 function hexToRgb(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return [0, 0, 0];
   return [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)];
 }
 
+// Convert Supabase URL to same-origin rewrite path
+function toLocalUrl(url: string): string {
+  if (url.includes('supabase.co/storage/')) {
+    return url.replace(SUPABASE_STORAGE_PREFIX, '/supabase-storage/');
+  }
+  return url;
+}
+
 function ColorContent() {
   const searchParams = useSearchParams();
   const { isSignedIn } = useAuth();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const baseCanvasRef = useRef<HTMLCanvasElement>(null);   // bottom: original line art
+  const colorCanvasRef = useRef<HTMLCanvasElement>(null);  // top: coloring layer (transparent bg)
   const historyRef = useRef<ImageData[]>([]);
   const historyIndexRef = useRef(-1);
-  
+
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState('#FF6B6B');
   const [tool, setTool] = useState<'fill' | 'brush' | 'eraser'>('fill');
   const [brushSize, setBrushSize] = useState(8);
   const [isDrawing, setIsDrawing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ w: 800, h: 1000 });
 
   useEffect(() => {
     const url = searchParams.get('src');
     if (url) setImageUrl(url);
   }, [searchParams]);
 
-  // Load image onto canvas - always render canvas, load image after
+  // Load image onto base canvas (line art), init color canvas
   useEffect(() => {
     if (!imageUrl) return;
-    
-    // Small delay to ensure canvas is rendered in DOM
-    const timer = setTimeout(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
 
+    const timer = setTimeout(() => {
+      const baseCanvas = baseCanvasRef.current;
+      const colorCanvas = colorCanvasRef.current;
+      if (!baseCanvas || !colorCanvas) {
+        setLoadError('Canvas not ready');
+        return;
+      }
+      const baseCtx = baseCanvas.getContext('2d');
+      const colorCtx = colorCanvas.getContext('2d');
+      if (!baseCtx || !colorCtx) {
+        setLoadError('Cannot get canvas context');
+        return;
+      }
+
+      const localUrl = toLocalUrl(imageUrl);
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      
-      // Use proxy to avoid CORS
-      img.src = '/api/proxy-image?url=' + encodeURIComponent(imageUrl);
-      
+      img.src = localUrl;
+
       img.onload = () => {
         const maxW = 800;
         const maxH = 1000;
         let w = img.width;
         let h = img.height;
-        
+
         if (w > maxW) { h = (maxW / w) * h; w = maxW; }
         if (h > maxH) { w = (maxH / h) * w; h = maxH; }
-        
-        canvas.width = Math.round(w);
-        canvas.height = Math.round(h);
-        
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        historyRef.current = [imageData];
+
+        w = Math.round(w);
+        h = Math.round(h);
+
+        baseCanvas.width = w;
+        baseCanvas.height = h;
+        colorCanvas.width = w;
+        colorCanvas.height = h;
+
+        baseCtx.drawImage(img, 0, 0, w, h);
+
+        // Clear color layer (transparent)
+        colorCtx.clearRect(0, 0, w, h);
+
+        setCanvasSize({ w, h });
+
+        // Save initial color layer state (all transparent)
+        const initialData = colorCtx.getImageData(0, 0, w, h);
+        historyRef.current = [initialData];
         historyIndexRef.current = 0;
-        
+
         setImageLoaded(true);
+        setLoadError(null);
       };
-      
+
       img.onerror = () => {
-        // Try direct load as fallback
-        const img2 = new Image();
-        img2.crossOrigin = 'anonymous';
-        img2.src = imageUrl;
-        img2.onload = () => {
-          const canvas2 = canvasRef.current;
-          if (!canvas2) return;
-          const ctx2 = canvas2.getContext('2d');
-          if (!ctx2) return;
-          
-          const maxW = 800;
-          const maxH = 1000;
-          let w = img2.width;
-          let h = img2.height;
-          if (w > maxW) { h = (maxW / w) * h; w = maxW; }
-          if (h > maxH) { w = (maxH / h) * w; h = maxH; }
-          
-          canvas2.width = Math.round(w);
-          canvas2.height = Math.round(h);
-          ctx2.drawImage(img2, 0, 0, canvas2.width, canvas2.height);
-          
-          const imageData = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
-          historyRef.current = [imageData];
-          historyIndexRef.current = 0;
-          setImageLoaded(true);
-        };
-        img2.onerror = () => {
-          setImageLoaded(true); // Show canvas anyway
-        };
+        // Fallback: fetch blob
+        fetch(localUrl)
+          .then(res => {
+            if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+            return res.blob();
+          })
+          .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            const img2 = new Image();
+            img2.onload = () => {
+              const bc = baseCanvasRef.current;
+              const cc = colorCanvasRef.current;
+              if (!bc || !cc) return;
+              const bCtx = bc.getContext('2d');
+              const cCtx = cc.getContext('2d');
+              if (!bCtx || !cCtx) return;
+
+              let w = img2.width;
+              let h = img2.height;
+              if (w > 800) { h = (800 / w) * h; w = 800; }
+              if (h > 1000) { w = (1000 / h) * w; h = 1000; }
+              w = Math.round(w);
+              h = Math.round(h);
+
+              bc.width = w;
+              bc.height = h;
+              cc.width = w;
+              cc.height = h;
+
+              bCtx.drawImage(img2, 0, 0, w, h);
+              cCtx.clearRect(0, 0, w, h);
+
+              setCanvasSize({ w, h });
+              const initialData = cCtx.getImageData(0, 0, w, h);
+              historyRef.current = [initialData];
+              historyIndexRef.current = 0;
+              setImageLoaded(true);
+              setLoadError(null);
+              URL.revokeObjectURL(blobUrl);
+            };
+            img2.onerror = () => {
+              setLoadError('Failed to load image. Please try generating a new one.');
+              setImageLoaded(true);
+              URL.revokeObjectURL(blobUrl);
+            };
+            img2.src = blobUrl;
+          })
+          .catch(() => {
+            setLoadError('Failed to load image. Please try generating a new one.');
+            setImageLoaded(true);
+          });
       };
-    }, 100);
-    
+    }, 200);
+
     return () => clearTimeout(timer);
   }, [imageUrl]);
 
   const saveToHistory = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const colorCanvas = colorCanvasRef.current;
+    if (!colorCanvas) return;
+    const ctx = colorCanvas.getContext('2d');
     if (!ctx) return;
-    
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, colorCanvas.width, colorCanvas.height);
     historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
     historyRef.current.push(imageData);
     historyIndexRef.current = historyRef.current.length - 1;
-    
+
     if (historyRef.current.length > 30) {
       historyRef.current.shift();
       historyIndexRef.current--;
@@ -141,41 +195,53 @@ function ColorContent() {
   const undo = useCallback(() => {
     if (historyIndexRef.current <= 0) return;
     historyIndexRef.current--;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const colorCanvas = colorCanvasRef.current;
+    if (!colorCanvas) return;
+    const ctx = colorCanvas.getContext('2d');
     if (!ctx) return;
     ctx.putImageData(historyRef.current[historyIndexRef.current], 0, 0);
   }, []);
 
-  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (tool !== 'fill') return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const colorCanvas = colorCanvasRef.current;
+    const baseCanvas = baseCanvasRef.current;
+    if (!colorCanvas || !baseCanvas) return;
+    const ctx = colorCanvas.getContext('2d');
+    const baseCtx = baseCanvas.getContext('2d');
+    if (!ctx || !baseCtx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const rect = colorCanvas.getBoundingClientRect();
+    const scaleX = colorCanvas.width / rect.width;
+    const scaleY = colorCanvas.height / rect.height;
     const x = Math.round((e.clientX - rect.left) * scaleX);
     const y = Math.round((e.clientY - rect.top) * scaleY);
 
-    floodFill(ctx, x, y, hexToRgb(selectedColor));
+    // Flood fill on the color canvas, but read the COMBINED image for boundary detection
+    // Create a temporary merged canvas for flood fill boundary
+    const mergedCanvas = document.createElement('canvas');
+    mergedCanvas.width = colorCanvas.width;
+    mergedCanvas.height = colorCanvas.height;
+    const mergedCtx = mergedCanvas.getContext('2d');
+    if (!mergedCtx) return;
+    mergedCtx.drawImage(baseCanvas, 0, 0);
+    mergedCtx.drawImage(colorCanvas, 0, 0);
+
+    floodFill(ctx, x, y, hexToRgb(selectedColor), mergedCtx);
     saveToHistory();
   }, [tool, selectedColor, saveToHistory]);
 
-  const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (tool === 'fill') return;
     setIsDrawing(true);
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const colorCanvas = colorCanvasRef.current;
+    if (!colorCanvas) return;
+    const ctx = colorCanvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const rect = colorCanvas.getBoundingClientRect();
+    const scaleX = colorCanvas.width / rect.width;
+    const scaleY = colorCanvas.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
@@ -185,24 +251,26 @@ function ColorContent() {
     ctx.lineJoin = 'round';
 
     if (tool === 'eraser') {
-      ctx.strokeStyle = '#FFFFFF';
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
       ctx.lineWidth = brushSize * 3;
     } else {
+      ctx.globalCompositeOperation = 'source-over';
       ctx.strokeStyle = selectedColor;
       ctx.lineWidth = brushSize;
     }
   }, [tool, selectedColor, brushSize]);
 
-  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const colorCanvas = colorCanvasRef.current;
+    if (!colorCanvas) return;
+    const ctx = colorCanvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const rect = colorCanvas.getBoundingClientRect();
+    const scaleX = colorCanvas.width / rect.width;
+    const scaleY = colorCanvas.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
@@ -213,36 +281,71 @@ function ColorContent() {
   const handleCanvasMouseUp = useCallback(() => {
     if (!isDrawing) return;
     setIsDrawing(false);
+    // Reset composite operation
+    const colorCanvas = colorCanvasRef.current;
+    if (colorCanvas) {
+      const ctx = colorCanvas.getContext('2d');
+      if (ctx) ctx.globalCompositeOperation = 'source-over';
+    }
     saveToHistory();
   }, [isDrawing, saveToHistory]);
 
-  const handleDownload = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const link = document.createElement('a');
-    link.download = 'colorforge-colored-' + Date.now() + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+  // Merge both canvases into one for export
+  const getMergedCanvas = useCallback(() => {
+    const baseCanvas = baseCanvasRef.current;
+    const colorCanvas = colorCanvasRef.current;
+    if (!baseCanvas || !colorCanvas) return null;
+
+    const merged = document.createElement('canvas');
+    merged.width = baseCanvas.width;
+    merged.height = baseCanvas.height;
+    const ctx = merged.getContext('2d');
+    if (!ctx) return null;
+
+    ctx.drawImage(baseCanvas, 0, 0);
+    ctx.drawImage(colorCanvas, 0, 0);
+    return merged;
   }, []);
 
+  const handleDownload = useCallback(() => {
+    const merged = getMergedCanvas();
+    if (!merged) return;
+    const link = document.createElement('a');
+    link.download = 'colorforge-colored-' + Date.now() + '.png';
+    link.href = merged.toDataURL('image/png');
+    link.click();
+  }, [getMergedCanvas]);
+
   const handlePrint = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const dataUrl = canvas.toDataURL('image/png');
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write('<html><head><title>ColorForge - Print</title><style>@media print{ @page{margin:0;size:A4;} body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;} img{max-width:100%;max-height:100vh;object-fit:contain;} }</style></head><body><img src="' + dataUrl + '" onload="window.print();window.close();" /></body></html>');
-    win.document.close();
-  }, []);
+    const merged = getMergedCanvas();
+    if (!merged) return;
+    const dataUrl = merged.toDataURL('image/png');
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to print');
+      return;
+    }
+    printWindow.document.write(
+      '<!DOCTYPE html><html><head><title>ColorForge - Print</title>' +
+      '<style>' +
+      '@media print { @page { margin: 0; size: A4; } body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; } img { max-width: 100%; max-height: 100vh; object-fit: contain; } }' +
+      'body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: white; }' +
+      'img { max-width: 90vw; max-height: 90vh; }' +
+      '</style></head><body>' +
+      '<img src="' + dataUrl + '" onload="setTimeout(function(){window.print();},300);" />' +
+      '</body></html>'
+    );
+    printWindow.document.close();
+  }, [getMergedCanvas]);
 
   const handleSaveToHistory = useCallback(async () => {
     if (!isSignedIn) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const merged = getMergedCanvas();
+    if (!merged) return;
     setSaveStatus('saving');
-    
+
     try {
-      canvas.toBlob(async (blob) => {
+      merged.toBlob(async (blob) => {
         if (!blob) { setSaveStatus('error'); return; }
         const formData = new FormData();
         formData.append('image', blob, 'colored.png');
@@ -255,7 +358,7 @@ function ColorContent() {
       setSaveStatus('error');
       setTimeout(() => setSaveStatus(null), 2000);
     }
-  }, [isSignedIn]);
+  }, [isSignedIn, getMergedCanvas]);
 
   if (!imageUrl) {
     return (
@@ -268,6 +371,8 @@ function ColorContent() {
       </>
     );
   }
+
+  const cursorClass = tool === 'fill' ? 'cursor-crosshair' : tool === 'eraser' ? 'cursor-cell' : 'cursor-crosshair';
 
   return (
     <>
@@ -321,16 +426,25 @@ function ColorContent() {
                 {isSignedIn && (
                   <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="w-full py-2.5 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-2 transition-all text-sm font-medium disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}>
                     {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved' : saveStatus === 'error' ? 'Failed' : 'Save to My Pages'}
+                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Failed' : 'Save to My Pages'}
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Right - Canvas - ALWAYS rendered */}
+            {/* Right - Dual Canvas (line art + coloring layer) */}
             <div className="bg-card rounded-3xl p-4 md:p-6 shadow-lg border border-border">
-              <div className="flex items-center justify-center min-h-[500px] relative">
-                {!imageLoaded && (
+              <div
+                ref={containerRef}
+                className="flex items-center justify-center min-h-[500px] relative"
+                onClick={handleCanvasClick}
+                onMouseDown={handleCanvasMouseDown}
+                onMouseMove={handleCanvasMouseMove}
+                onMouseUp={handleCanvasMouseUp}
+                onMouseLeave={handleCanvasMouseUp}
+                style={{ cursor: imageLoaded && !loadError ? (tool === 'fill' ? 'crosshair' : 'default') : 'default' }}
+              >
+                {!imageLoaded && !loadError && (
                   <div className="absolute inset-0 flex items-center justify-center z-10">
                     <div className="text-center">
                       <Loader2 className="w-12 h-12 mx-auto mb-3 text-[#FFB800] animate-spin" />
@@ -338,16 +452,28 @@ function ColorContent() {
                     </div>
                   </div>
                 )}
-                <canvas
-                  ref={canvasRef}
-                  onClick={handleCanvasClick}
-                  onMouseDown={handleCanvasMouseDown}
-                  onMouseMove={handleCanvasMouseMove}
-                  onMouseUp={handleCanvasMouseUp}
-                  onMouseLeave={handleCanvasMouseUp}
-                  className={"max-w-full max-h-[70vh] rounded-xl shadow-md cursor-crosshair " + (imageLoaded ? '' : 'opacity-0')}
-                  style={{ imageRendering: 'auto' }}
-                />
+                {loadError && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <div className="text-center">
+                      <p className="text-red-500 mb-2">{loadError}</p>
+                      <button onClick={() => { setImageLoaded(false); setLoadError(null); window.location.reload(); }} className="px-4 py-2 bg-[#FFB800] rounded-xl text-sm font-medium">Retry</button>
+                    </div>
+                  </div>
+                )}
+                <div className={"relative " + (imageLoaded && !loadError ? '' : 'opacity-0')} style={{ width: '100%', maxWidth: canvasSize.w }}>
+                  {/* Base layer: original line art */}
+                  <canvas
+                    ref={baseCanvasRef}
+                    className="max-w-full max-h-[70vh] rounded-xl shadow-md"
+                    style={{ imageRendering: 'auto', display: 'block', width: '100%', height: 'auto' }}
+                  />
+                  {/* Color layer: transparent, on top */}
+                  <canvas
+                    ref={colorCanvasRef}
+                    className="absolute top-0 left-0 max-w-full max-h-[70vh] rounded-xl"
+                    style={{ imageRendering: 'auto', width: '100%', height: 'auto', cursor: tool === 'fill' ? 'crosshair' : tool === 'eraser' ? 'cell' : 'crosshair' }}
+                  />
+                </div>
               </div>
             </div>
           </div>

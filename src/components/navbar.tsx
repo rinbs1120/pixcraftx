@@ -43,6 +43,11 @@ export function Navbar() {
             <Link href="/generate" className="text-muted-foreground hover:text-primary transition-colors font-medium">
               Generate
             </Link>
+            {isSignedIn && (
+              <Link href="/history" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+                My Pages
+              </Link>
+            )}
             <Link href="/pricing" className="text-muted-foreground hover:text-primary transition-colors font-medium">
               Pricing
             </Link>
@@ -52,10 +57,10 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {isSignedIn ? (
               <Link
-                href="/generate"
+                href="/history"
                 className="px-5 py-2.5 bg-primary text-primary-foreground font-semibold rounded-full shadow-md hover:bg-primary/90 transition-all hover:-translate-y-0.5"
               >
-                Dashboard
+                My Pages
               </Link>
             ) : (
               <>
@@ -95,6 +100,15 @@ export function Navbar() {
             >
               Generate
             </Link>
+            {isSignedIn && (
+              <Link
+                href="/history"
+                className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                My Pages
+              </Link>
+            )}
             <Link
               href="/pricing"
               className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
@@ -104,11 +118,11 @@ export function Navbar() {
             </Link>
             {isSignedIn ? (
               <Link
-                href="/generate"
+                href="/history"
                 className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-md"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Dashboard
+                My Pages
               </Link>
             ) : (
               <div className="flex flex-col gap-4">

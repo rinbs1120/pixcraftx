@@ -29,7 +29,7 @@ export const POST = Webhook({
     }
 
     // 尝试多种方式获取userId
-    const userId = metadata?.referenceId || metadata?.userId || customer.userId;
+    const userId = metadata?.referenceId || metadata?.userId;
     if (!userId) {
       console.error('[Creem] No userId found in metadata or customer, cannot update user plan');
       return;
@@ -80,13 +80,13 @@ export const POST = Webhook({
 
   onGrantAccess: async ({ customer, metadata }) => {
     if (!customer) return;
-    const userId = metadata?.referenceId || metadata?.userId || customer.userId;
+    const userId = metadata?.referenceId || metadata?.userId;
     console.log(`[Creem] Grant access for user: ${userId}, email: ${customer.email}`);
   },
 
   onRevokeAccess: async ({ customer, metadata }) => {
     if (!customer) return;
-    const userId = metadata?.referenceId || metadata?.userId || customer.userId;
+    const userId = metadata?.referenceId || metadata?.userId;
     console.log(`[Creem] Revoke access for user: ${userId}`);
 
     if (!userId) return;

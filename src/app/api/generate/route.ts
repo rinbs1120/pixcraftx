@@ -28,13 +28,8 @@ const PLAN_LIMITS = {
 };
 
 export async function POST(req: NextRequest) {
-  // 调试：检查环境变量是否加载
-  console.log('FAL_KEY exists:', !!process.env.FAL_KEY);
-  console.log('CLERK_SECRET_KEY exists:', !!process.env.CLERK_SECRET_KEY);
-  console.log('SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-  
   try {
-    // 初始化客户端（在请求时才读取环境变量）
+    // 初始化客户端
     fal.config({ credentials: process.env.FAL_KEY! });
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -57,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. 检查用户额度
-    const currentMonth = new Date().toISOString().slice(0, 7); // "2026-05"
+    const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: usageData } = await supabase
       .from('user_usage')
       .select('pages_used, plan')
@@ -91,12 +86,47 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const imageUrl = result.data?.images?.[0]?.url;
-    if (!imageUrl) {
+    const tempImageUrl = result.data?.images?.[0]?.url;
+    if (!tempImageUrl) {
       return NextResponse.json({ error: 'Image generation failed' }, { status: 500 });
     }
 
-    // 6. 更新用户使用量
+    // 6. 下载图片并上传到Supabase Storage
+    const imageResponse = await fetch(tempImageUrl);
+    const imageBuffer = await imageResponse.arrayBuffer();
+    
+    // 生成唯一文件名: userId/style-timestamp.png
+    const timestamp = Date.now();
+    const filePath = `${userId}/${style}-${timestamp}.png`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('coloring-pages')
+      .upload(filePath, imageBuffer, {
+        contentType: 'image/png',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('[Storage] Upload failed:', uploadError);
+      // 降级：如果存储失败，仍然返回临时URL（比完全不能用强）
+      return NextResponse.json({
+        imageUrl: tempImageUrl,
+        style,
+        pagesUsed: pagesUsed + 1,
+        limit,
+        plan,
+        storageWarning: 'Image stored temporarily, may expire',
+      });
+    }
+
+    // 获取永久公开URL
+    const { data: urlData } = supabase.storage
+      .from('coloring-pages')
+      .getPublicUrl(filePath);
+
+    const permanentUrl = urlData.publicUrl;
+
+    // 7. 更新用户使用量
     if (usageData) {
       await supabase
         .from('user_usage')
@@ -109,19 +139,20 @@ export async function POST(req: NextRequest) {
         .insert({ user_id: userId, month: currentMonth, pages_used: 1, plan: 'free' });
     }
 
-    // 7. 记录生成历史
+    // 8. 记录生成历史（用永久URL）
     await supabase
       .from('generation_history')
       .insert({
         user_id: userId,
         prompt: prompt.trim(),
         style,
-        image_url: imageUrl
+        image_url: permanentUrl,
+        storage_path: filePath,
       });
 
-    // 8. 返回结果
+    // 9. 返回结果
     return NextResponse.json({
-      imageUrl,
+      imageUrl: permanentUrl,
       style,
       pagesUsed: pagesUsed + 1,
       limit,

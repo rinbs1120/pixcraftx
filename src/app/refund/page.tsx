@@ -62,8 +62,8 @@ export default function RefundPage() {
             </h2>
             <p className="leading-relaxed mb-6">
               To request a refund, please email us at{' '}
-              <a href="mailto:hello@pixcraftx.com" className="text-primary hover:underline">
-                hello@pixcraftx.com
+              <a href="mailto:jun.partner@coze.email" className="text-primary hover:underline">
+                jun.partner@coze.email
               </a>{' '}
               with the following information:
             </p>
@@ -101,8 +101,8 @@ export default function RefundPage() {
             <p className="leading-relaxed mb-6">
               If you have any questions about this Refund Policy or need assistance with a refund
               request, please contact us at{' '}
-              <a href="mailto:hello@pixcraftx.com" className="text-primary hover:underline">
-                hello@pixcraftx.com
+              <a href="mailto:jun.partner@coze.email" className="text-primary hover:underline">
+                jun.partner@coze.email
               </a>.
             </p>
           </div>

@@ -3,7 +3,7 @@ import { fal } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
 
-// 风格对应的prompt修饰
+// Style-specific prompt modifiers
 const STYLE_PROMPTS = {
   kids: {
     prefix: "coloring book page for children, black and white line drawing only, bold thick outlines, simple shapes, clean line art, pure black ink on white paper,",
@@ -19,7 +19,6 @@ const STYLE_PROMPTS = {
   }
 };
 
-// 额度限制
 const PLAN_LIMITS = {
   free: 5,
   starter: 100,
@@ -27,22 +26,64 @@ const PLAN_LIMITS = {
   business: 2000,
 };
 
+// Creem Moderation API - screens user prompts before AI generation
+// Required by Creem for all AI image/video generation products (effective May 1, 2026)
+async function moderatePrompt(prompt: string, externalId?: string): Promise<'allow' | 'flag' | 'deny'> {
+  const apiKey = process.env.CREEM_API_KEY;
+  if (!apiKey) {
+    console.warn('[Moderation] CREEM_API_KEY not set, skipping moderation');
+    return 'allow'; // Fail open only if key not configured yet (dev mode)
+  }
+
+  try {
+    const baseUrl = apiKey.startsWith('creem_test_')
+      ? 'https://test-api.creem.io'
+      : 'https://api.creem.io';
+
+    const res = await fetch(`${baseUrl}/v1/moderation/prompt`, {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        ...(externalId ? { external_id: externalId } : {}),
+      }),
+      signal: AbortSignal.timeout(5000), // 5s timeout
+    });
+
+    if (!res.ok) {
+      console.error(`[Moderation] API returned ${res.status}`);
+      // FAIL CLOSED: if moderation API errors, block generation
+      return 'deny';
+    }
+
+    const data = await res.json();
+    console.log(`[Moderation] Decision: ${data.decision} for prompt: "${prompt.slice(0, 50)}..."`);
+    return data.decision; // 'allow', 'flag', or 'deny'
+  } catch (err) {
+    console.error('[Moderation] Error:', err);
+    // FAIL CLOSED: if moderation API fails (timeout, network error), block generation
+    return 'deny';
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    // 初始化客户端
     fal.config({ credentials: process.env.FAL_KEY! });
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-    
-    // 1. 验证用户身份
+
+    // 1. Verify user identity
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Please sign in to generate coloring pages' }, { status: 401 });
     }
 
-    // 2. 获取请求参数
+    // 2. Get request parameters
     const { prompt, style = 'kids' } = await req.json();
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
       return NextResponse.json({ error: 'Please enter a description' }, { status: 400 });
@@ -51,7 +92,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Description too long (max 500 characters)' }, { status: 400 });
     }
 
-    // 3. 检查用户套餐 - 优先查subscriptions表
+    // 3. Creem Content Moderation - REQUIRED before any AI generation
+    // Screens user prompt against content policies (violence, CSAM, hate, etc.)
+    const moderationDecision = await moderatePrompt(prompt.trim(), `user_${userId}`);
+    if (moderationDecision === 'deny' || moderationDecision === 'flag') {
+      return NextResponse.json(
+        { error: 'Your prompt could not be processed. Please revise and try again.' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Check user plan limits
     const { data: subData } = await supabase
       .from('subscriptions')
       .select('plan, status')
@@ -63,7 +114,6 @@ export async function POST(req: NextRequest) {
       plan = subData.plan || 'free';
     }
 
-    // 获取本月使用量
     const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: usageData } = await supabase
       .from('user_usage')
@@ -76,19 +126,19 @@ export async function POST(req: NextRequest) {
     const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 5;
 
     if (pagesUsed >= limit) {
-      return NextResponse.json({ 
-        error: 'Monthly limit reached', 
-        limit, 
+      return NextResponse.json({
+        error: 'Monthly limit reached',
+        limit,
         used: pagesUsed,
-        plan 
+        plan
       }, { status: 429 });
     }
 
-    // 4. 构建涂色页专用Prompt
+    // 5. Build coloring page specific prompt
     const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.kids;
     const fullPrompt = `${styleConfig.prefix} ${prompt.trim()} ${styleConfig.suffix}`;
 
-    // 5. 调用Fal.ai生成图片（flux/dev follows instructions better for B&W）
+    // 6. Call Fal.ai to generate image
     const result = await fal.subscribe('fal-ai/flux/schnell', {
       input: {
         prompt: fullPrompt,
@@ -102,10 +152,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Image generation failed' }, { status: 500 });
     }
 
-    // 6. 下载图片并上传到Supabase Storage
+    // 7. Download and upload to Supabase Storage
     const imageResponse = await fetch(tempImageUrl);
     const imageBuffer = await imageResponse.arrayBuffer();
-    
+
     const timestamp = Date.now();
     const filePath = `${userId}/${style}-${timestamp}.png`;
 
@@ -134,7 +184,7 @@ export async function POST(req: NextRequest) {
 
     const permanentUrl = urlData.publicUrl;
 
-    // 7. 更新用户使用量
+    // 8. Update user usage
     if (usageData) {
       await supabase
         .from('user_usage')
@@ -147,7 +197,7 @@ export async function POST(req: NextRequest) {
         .insert({ user_id: userId, month: currentMonth, pages_used: 1, plan });
     }
 
-    // 8. 记录生成历史
+    // 9. Log generation history
     await supabase
       .from('generation_history')
       .insert({
@@ -158,7 +208,7 @@ export async function POST(req: NextRequest) {
         storage_path: filePath,
       });
 
-    // 9. 返回结果
+    // 10. Return result
     return NextResponse.json({
       imageUrl: permanentUrl,
       style,

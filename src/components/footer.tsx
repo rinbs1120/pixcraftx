@@ -3,19 +3,17 @@ import Link from 'next/link';
 const productLinks = [
   { label: 'Generate', href: '/generate' },
   { label: 'Pricing', href: '/pricing' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'FAQ', href: '/faq' },
 ];
 
 const resourceLinks = [
-  { label: 'Blog', href: '#' },
-  { label: 'Tutorials', href: '#' },
-  { label: 'Help', href: '#' },
+  { label: 'Help', href: 'mailto:hello@pixcraftx.com' },
 ];
 
 const legalLinks = [
   { label: 'Privacy Policy', href: '/privacy' },
   { label: 'Terms of Service', href: '/terms' },
-  { label: 'Refund Policy', href: '#' },
+  { label: 'Refund Policy', href: '/refund' },
 ];
 
 export function Footer() {

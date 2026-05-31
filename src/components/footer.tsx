@@ -7,7 +7,7 @@ const productLinks = [
 ];
 
 const resourceLinks = [
-  { label: 'Help', href: 'mailto:hello@pixcraftx.com' },
+  { label: 'Help', href: '/help' },
 ];
 
 const legalLinks = [

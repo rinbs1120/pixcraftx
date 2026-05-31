@@ -50,7 +50,7 @@ const faqs = [
   {
     question: 'How do I request a refund?',
     answer:
-      'You can request a refund within 7 days of purchase by emailing hello@pixcraftx.com with your account information and order number. Please see our Refund Policy for full details on eligibility and processing times.',
+      'You can request a refund within 7 days of purchase by emailing jun.partner@coze.email with your account information and order number. Please see our Refund Policy for full details on eligibility and processing times.',
   },
   {
     question: 'Who made this?',
@@ -86,8 +86,8 @@ export default function FAQPage() {
             </h2>
             <p className="leading-relaxed mb-6">
               We&apos;re here to help! Reach out to us at{' '}
-              <a href="mailto:hello@pixcraftx.com" className="text-primary hover:underline">
-                hello@pixcraftx.com
+              <a href="mailto:jun.partner@coze.email" className="text-primary hover:underline">
+                jun.partner@coze.email
               </a>{' '}
               and we&apos;ll get back to you as soon as possible.
             </p>

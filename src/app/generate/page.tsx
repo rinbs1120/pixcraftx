@@ -98,6 +98,14 @@ const EXAMPLE_PROMPTS = [
   { emoji: '\ud83c\udf84', text: 'Cozy cabin in snowy forest' },
 ];
 
+// Prompt templates for reference image uploads
+const REFERENCE_PROMPTS = [
+  { emoji: '\ud83d\udcf7', text: 'Transform this photo into a coloring page' },
+  { emoji: '\ud83d\udc3e', text: 'Keep the pose, make it a coloring page' },
+  { emoji: '\ud83c\udf3f', text: 'Convert this landscape into a coloring scene' },
+  { emoji: '\ud83d\udc64', text: 'Turn this portrait into a coloring page' },
+];
+
 // Trial pricing info
 const TRIAL_END = new Date('2026-09-01T00:00:00Z');
 const REFERENCE_COST_NORMAL = 3;
@@ -352,6 +360,24 @@ function GenerateContent() {
                 <p className="text-xs text-muted-foreground mt-2">
                   Upload a photo and we'll transform it into a coloring page while keeping the composition
                 </p>
+                {/* Reference prompt suggestions */}
+                {referenceImage && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-2">Prompt suggestions for your reference:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {REFERENCE_PROMPTS.map((ex, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setPrompt(ex.text)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-full border border-[#FFB800]/50 bg-[#FFB800]/5 hover:bg-[#FFB800]/10 transition-all text-[#4A4A5E]"
+                        >
+                          <span>{ex.emoji}</span>
+                          <span>{ex.text}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Style Selection - Visual Cards */}

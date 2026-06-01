@@ -38,61 +38,74 @@ function toLocalUrl(url: string): string {
 
 const ZOOM_LEVELS = [25, 50, 75, 100, 125, 150, 200];
 
-// Close gaps in line art using morphological dilation
-function closeGapsOnCanvas(ctx: CanvasRenderingContext2D, width: number, height: number, radius: number = 1): void {
+// Morphological closing: dilate then erode
+// This closes small gaps in lines without permanently thickening them
+function closeGapsOnCanvas(ctx: CanvasRenderingContext2D, width: number, height: number, radius: number = 2): void {
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
-  const result = new Uint8ClampedArray(data);
   
-  const LINE_THRESHOLD = 80; // brightness below this = line pixel
+  const LINE_THRESHOLD = 100; // brightness below this = line pixel
   
+  // Step 1: Create binary mask (true = line pixel)
+  const mask = new Uint8Array(width * height);
+  for (let i = 0; i < width * height; i++) {
+    const idx = i * 4;
+    const brightness = data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114;
+    mask[i] = brightness < LINE_THRESHOLD ? 1 : 0;
+  }
+  
+  // Step 2: Dilate - expand line regions by radius pixels
+  const dilated = new Uint8Array(width * height);
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 4;
-      const brightness = data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114;
-      
-      // If this pixel is already a line, skip
-      if (brightness < LINE_THRESHOLD) continue;
-      
-      // Check neighbors within radius
-      let nearLine = false;
-      for (let dy = -radius; dy <= radius && !nearLine; dy++) {
-        for (let dx = -radius; dx <= radius && !nearLine; dx++) {
-          if (dx === 0 && dy === 0) continue;
-          const nx = x + dx;
-          const ny = y + dy;
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-          const nIdx = (ny * width + nx) * 4;
-          const nBrightness = data[nIdx] * 0.299 + data[nIdx + 1] * 0.587 + data[nIdx + 2] * 0.114;
-          if (nBrightness < LINE_THRESHOLD) {
-            nearLine = true;
-          }
-        }
-      }
-      
-      // If near a line, make this pixel a line too (close the gap)
-      if (nearLine) {
-        // Use the average of nearby line pixels for smooth look
-        let sumR = 0, sumG = 0, sumB = 0, count = 0;
+      if (mask[y * width + x]) {
+        // Mark all pixels within radius as line
         for (let dy = -radius; dy <= radius; dy++) {
           for (let dx = -radius; dx <= radius; dx++) {
+            if (dx * dx + dy * dy > radius * radius) continue; // circular kernel
             const nx = x + dx;
             const ny = y + dy;
-            if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-            const nIdx = (ny * width + nx) * 4;
-            const nBrightness = data[nIdx] * 0.299 + data[nIdx + 1] * 0.587 + data[nIdx + 2] * 0.114;
-            if (nBrightness < LINE_THRESHOLD) {
-              sumR += data[nIdx]; sumG += data[nIdx + 1]; sumB += data[nIdx + 2]; count++;
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+              dilated[ny * width + nx] = 1;
             }
           }
         }
-        if (count > 0) {
-          result[idx] = Math.round(sumR / count);
-          result[idx + 1] = Math.round(sumG / count);
-          result[idx + 2] = Math.round(sumB / count);
-          result[idx + 3] = 255;
+      }
+    }
+  }
+  
+  // Step 3: Erode - shrink back by radius pixels
+  const closed = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!dilated[y * width + x]) continue;
+      // Check if all pixels within radius are also dilated (line)
+      let allLine = true;
+      for (let dy = -radius; dy <= radius && allLine; dy++) {
+        for (let dx = -radius; dx <= radius && allLine; dx++) {
+          if (dx * dx + dy * dy > radius * radius) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height || !dilated[ny * width + nx]) {
+            allLine = false;
+          }
         }
       }
+      closed[y * width + x] = allLine ? 1 : 0;
+    }
+  }
+  
+  // Step 4: For pixels that are new in closed mask (were NOT line but now ARE),
+  // fill them with black to close gaps
+  const result = new Uint8ClampedArray(data);
+  for (let i = 0; i < width * height; i++) {
+    if (closed[i] && !mask[i]) {
+      const idx = i * 4;
+      // New line pixel - fill with black
+      result[idx] = 0;
+      result[idx + 1] = 0;
+      result[idx + 2] = 0;
+      result[idx + 3] = 255;
     }
   }
   
@@ -150,7 +163,6 @@ function ColorContent() {
         colorCanvas.width = w; colorCanvas.height = h;
         baseCtx.drawImage(img, 0, 0, w, h);
         colorCtx.clearRect(0, 0, w, h);
-        // Store original base layer for gap toggle
         originalBaseRef.current = baseCtx.getImageData(0, 0, w, h);
         setCanvasSize({ w, h });
         const initialData = colorCtx.getImageData(0, 0, w, h);
@@ -252,7 +264,6 @@ function ColorContent() {
     setZoom(bestZoom);
   }, [canvasSize]);
 
-  // Close gaps toggle
   const toggleCloseGaps = useCallback(() => {
     const baseCanvas = baseCanvasRef.current;
     if (!baseCanvas || !originalBaseRef.current) return;
@@ -260,11 +271,11 @@ function ColorContent() {
     if (!ctx) return;
 
     if (gapsClosed) {
-      // Restore original
       ctx.putImageData(originalBaseRef.current, 0, 0);
       setGapsClosed(false);
     } else {
-      // Apply gap closing
+      // Restore original first, then apply closing
+      ctx.putImageData(originalBaseRef.current, 0, 0);
       closeGapsOnCanvas(ctx, canvasSize.w, canvasSize.h, 2);
       setGapsClosed(true);
     }
@@ -447,7 +458,6 @@ function ColorContent() {
                 </div>
               </div>
               
-              {/* Close Gaps toggle */}
               <button 
                 onClick={toggleCloseGaps} 
                 className={"w-full flex items-center gap-2 p-4 rounded-2xl border-2 transition-all shadow-sm " + (gapsClosed ? 'border-[#2ECC71] bg-[#E8FBF0]' : 'border-border bg-card hover:border-[#2ECC71]/50')}
@@ -455,7 +465,7 @@ function ColorContent() {
                 <ShieldCheck className={"w-5 h-5 " + (gapsClosed ? 'text-[#2ECC71]' : 'text-muted-foreground')} />
                 <div className="text-left">
                   <div className={"text-sm font-semibold " + (gapsClosed ? 'text-[#2ECC71]' : 'text-foreground')}>Close Gaps</div>
-                  <div className="text-xs text-muted-foreground">{gapsClosed ? 'Lines thickened, gaps sealed' : 'Fix line gaps to prevent color leaking'}</div>
+                  <div className="text-xs text-muted-foreground">{gapsClosed ? 'Gaps sealed for cleaner fill' : 'Fix line gaps to prevent color leaking'}</div>
                 </div>
               </button>
 
@@ -488,7 +498,6 @@ function ColorContent() {
             </div>
             
             <div className="bg-card rounded-3xl shadow-lg border border-border flex flex-col">
-              {/* Zoom toolbar */}
               <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-b border-border bg-card rounded-t-3xl">
                 <button onClick={zoomOut} disabled={zoom <= ZOOM_LEVELS[0]} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all disabled:opacity-30 disabled:cursor-not-allowed"><ZoomOut className="w-4 h-4" /></button>
                 <span className="text-sm font-medium text-foreground min-w-[48px] text-center">{zoom}%</span>
@@ -497,7 +506,6 @@ function ColorContent() {
                 <button onClick={zoomFit} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all" title="Fit to view"><Maximize2 className="w-4 h-4" /></button>
               </div>
 
-              {/* Canvas area with scroll */}
               <div 
                 ref={scrollContainerRef}
                 className="flex-1 overflow-auto p-4" 

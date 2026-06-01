@@ -6,15 +6,15 @@ import { auth } from '@clerk/nextjs/server';
 // Style-specific prompt modifiers
 // Key requirement: ALL outlines must be fully closed for flood-fill coloring
 const STYLE_PROMPTS = {
-  kids: {
-    prefix: "vector line art coloring page for young children, single main subject, bold thick black outlines minimum 3pt weight, pure black ink on white paper, clean closed contours, complete line borders, simple shapes with large areas to color, isolated subject on plain white background,",
+  simple: {
+    prefix: "vector line art coloring page, bold thick black outlines minimum 3pt weight, pure black ink on white paper, clean closed contours, complete line borders, simple shapes with large areas to color, isolated subject on plain white background,",
     suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, cartoon style outline only, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   },
   mandala: {
     prefix: "vector line art coloring page, symmetrical mandala pattern, pure black ink on white paper, consistent medium line weight, clean closed contours, complete line borders, circular geometric design,",
     suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   },
-  detailed: {
+  intricate: {
     prefix: "vector line art coloring page for adults, fine detailed black outlines, intricate patterns, pure black ink on white paper, professional illustration, clean closed contours, complete line borders, distinct separated elements,",
     suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders including all background elements like trees mountains clouds, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   }
@@ -27,13 +27,21 @@ const PLAN_LIMITS = {
   business: 2000,
 };
 
+// Trial period: image reference costs 2 credits (normally 3)
+// Expires 2026-09-01, after which it reverts to 3
+const TRIAL_END = new Date('2026-09-01T00:00:00Z');
+const REFERENCE_COST_NORMAL = 3;
+const REFERENCE_COST_TRIAL = 2;
+function getReferenceCost(): number {
+  return new Date() < TRIAL_END ? REFERENCE_COST_TRIAL : REFERENCE_COST_NORMAL;
+}
+
 // Creem Moderation API - screens user prompts before AI generation
-// Required by Creem for all AI image/video generation products (effective May 1, 2026)
 async function moderatePrompt(prompt: string, externalId?: string): Promise<'allow' | 'flag' | 'deny'> {
   const apiKey = process.env.CREEM_API_KEY;
   if (!apiKey) {
     console.warn('[Moderation] CREEM_API_KEY not set, skipping moderation');
-    return 'allow'; // Fail open only if key not configured yet (dev mode)
+    return 'allow';
   }
 
   try {
@@ -51,21 +59,19 @@ async function moderatePrompt(prompt: string, externalId?: string): Promise<'all
         prompt,
         ...(externalId ? { external_id: externalId } : {}),
       }),
-      signal: AbortSignal.timeout(5000), // 5s timeout
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!res.ok) {
       console.error(`[Moderation] API returned ${res.status}`);
-      // FAIL CLOSED: if moderation API errors, block generation
       return 'deny';
     }
 
     const data = await res.json();
     console.log(`[Moderation] Decision: ${data.decision} for prompt: "${prompt.slice(0, 50)}..."`);
-    return data.decision; // 'allow', 'flag', or 'deny'
+    return data.decision;
   } catch (err) {
     console.error('[Moderation] Error:', err);
-    // FAIL CLOSED: if moderation API fails (timeout, network error), block generation
     return 'deny';
   }
 }
@@ -85,17 +91,32 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Get request parameters
-    const { prompt, style = 'kids' } = await req.json();
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    let prompt = '';
+    let style = 'simple';
+    let referenceImageUrl: string | null = null;
+
+    const contentType = req.headers.get('content-type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      prompt = (formData.get('prompt') as string || '').trim();
+      style = (formData.get('style') as string || 'simple');
+      referenceImageUrl = formData.get('referenceImageUrl') as string || null;
+    } else {
+      const body = await req.json();
+      prompt = (body.prompt || '').trim();
+      style = body.style || 'simple';
+      referenceImageUrl = body.referenceImageUrl || null;
+    }
+
+    if (!prompt || prompt.length === 0) {
       return NextResponse.json({ error: 'Please enter a description' }, { status: 400 });
     }
     if (prompt.length > 500) {
       return NextResponse.json({ error: 'Description too long (max 500 characters)' }, { status: 400 });
     }
 
-    // 3. Creem Content Moderation - REQUIRED before any AI generation
-    // Screens user prompt against content policies (violence, CSAM, hate, etc.)
-    const moderationDecision = await moderatePrompt(prompt.trim(), `user_${userId}`);
+    // 3. Creem Content Moderation
+    const moderationDecision = await moderatePrompt(prompt, `user_${userId}`);
     if (moderationDecision === 'deny' || moderationDecision === 'flag') {
       return NextResponse.json(
         { error: 'Your prompt could not be processed. Please revise and try again.' },
@@ -125,28 +146,52 @@ export async function POST(req: NextRequest) {
 
     const pagesUsed = usageData?.pages_used || 0;
     const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 5;
+    const creditCost = referenceImageUrl ? getReferenceCost() : 1;
 
-    if (pagesUsed >= limit) {
+    if (pagesUsed + creditCost > limit) {
       return NextResponse.json({
-        error: 'Monthly limit reached',
+        error: 'Not enough credits',
         limit,
         used: pagesUsed,
+        needed: creditCost,
         plan
       }, { status: 429 });
     }
 
     // 5. Build coloring page specific prompt
-    const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.kids;
-    const fullPrompt = `${styleConfig.prefix} ${prompt.trim()} ${styleConfig.suffix}`;
+    const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.simple;
+    let fullPrompt: string;
+
+    if (referenceImageUrl) {
+      fullPrompt = `${styleConfig.prefix} transform this reference image into a coloring page, faithfully following the subject, composition and pose of the reference image, ${prompt} ${styleConfig.suffix}`;
+    } else {
+      fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
+    }
 
     // 6. Call Fal.ai to generate image
-    const result = await fal.subscribe('fal-ai/flux/schnell', {
-      input: {
-        prompt: fullPrompt,
-        image_size: 'portrait_4_3',
-        num_images: 1,
-      },
-    });
+    let result: any;
+
+    if (referenceImageUrl) {
+      // Image-to-image using flux/dev for better quality with reference
+      result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
+        input: {
+          prompt: fullPrompt,
+          image_url: referenceImageUrl,
+          strength: 0.75,
+          image_size: 'portrait_4_3',
+          num_images: 1,
+        },
+      });
+    } else {
+      // Text-to-image using flux/schnell (faster, cheaper)
+      result = await fal.subscribe('fal-ai/flux/schnell', {
+        input: {
+          prompt: fullPrompt,
+          image_size: 'portrait_4_3',
+          num_images: 1,
+        },
+      });
+    }
 
     const tempImageUrl = result.data?.images?.[0]?.url;
     if (!tempImageUrl) {
@@ -172,9 +217,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         imageUrl: tempImageUrl,
         style,
-        pagesUsed: pagesUsed + 1,
+        pagesUsed: pagesUsed + creditCost,
         limit,
         plan,
+        creditCost,
         storageWarning: 'Image stored temporarily, may expire',
       });
     }
@@ -185,17 +231,17 @@ export async function POST(req: NextRequest) {
 
     const permanentUrl = urlData.publicUrl;
 
-    // 8. Update user usage
+    // 8. Update user usage - deduct creditCost
     if (usageData) {
       await supabase
         .from('user_usage')
-        .update({ pages_used: pagesUsed + 1, plan, updated_at: new Date().toISOString() })
+        .update({ pages_used: pagesUsed + creditCost, plan, updated_at: new Date().toISOString() })
         .eq('user_id', userId)
         .eq('month', currentMonth);
     } else {
       await supabase
         .from('user_usage')
-        .insert({ user_id: userId, month: currentMonth, pages_used: 1, plan });
+        .insert({ user_id: userId, month: currentMonth, pages_used: creditCost, plan });
     }
 
     // 9. Log generation history
@@ -203,19 +249,23 @@ export async function POST(req: NextRequest) {
       .from('generation_history')
       .insert({
         user_id: userId,
-        prompt: prompt.trim(),
+        prompt: prompt,
         style,
         image_url: permanentUrl,
         storage_path: filePath,
+        credit_cost: creditCost,
+        has_reference: !!referenceImageUrl,
       });
 
     // 10. Return result
     return NextResponse.json({
       imageUrl: permanentUrl,
       style,
-      pagesUsed: pagesUsed + 1,
+      pagesUsed: pagesUsed + creditCost,
       limit,
       plan,
+      creditCost,
+      hasReference: !!referenceImageUrl,
     });
 
   } catch (error) {

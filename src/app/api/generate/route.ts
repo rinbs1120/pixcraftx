@@ -6,16 +6,16 @@ import { auth } from '@clerk/nextjs/server';
 // Style-specific prompt modifiers
 const STYLE_PROMPTS = {
   kids: {
-    prefix: "coloring book page for children, black and white line drawing only, bold thick outlines, simple shapes, clean line art, pure black ink on white paper,",
-    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, no shadows, white background, large areas to color, cartoon style outline only"
+    prefix: "coloring book page for children, black and white line drawing only, bold thick outlines, simple shapes, clean line art, pure black ink on white paper, fully closed outlines with no gaps, all contour lines must be completely connected,",
+    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, no shadows, white background, large areas to color, cartoon style outline only, every shape must have fully enclosed borders with no open lines or broken strokes"
   },
   mandala: {
-    prefix: "coloring book page, black and white mandala pattern, pure black ink line drawing on white paper, symmetrical circular pattern, intricate line art,",
-    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, white background, zen pattern, repetitive geometric shapes outline only"
+    prefix: "coloring book page, black and white mandala pattern, pure black ink line drawing on white paper, symmetrical circular pattern, intricate line art, fully closed outlines with no gaps, all contour lines must be completely connected,",
+    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, white background, zen pattern, repetitive geometric shapes outline only, every shape must have fully enclosed borders with no open lines or broken strokes"
   },
   detailed: {
-    prefix: "coloring book page for adults, black and white line drawing only, fine lines, intricate details, pure black ink on white paper, professional illustration outline,",
-    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, no shadows, white background, complex elaborate design outline only"
+    prefix: "coloring book page for adults, black and white line drawing only, fine lines, intricate details, pure black ink on white paper, professional illustration outline, fully closed outlines with no gaps, all contour lines must be completely connected,",
+    suffix: ", strictly monochrome, absolutely no colors, no shading, no grayscale, no filled areas, no shadows, white background, complex elaborate design outline only, every shape must have fully enclosed borders with no open lines or broken strokes"
   }
 };
 

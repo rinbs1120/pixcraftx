@@ -44,7 +44,7 @@ function closeGapsOnCanvas(ctx: CanvasRenderingContext2D, width: number, height:
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
   
-  const LINE_THRESHOLD = 100; // brightness below this = line pixel
+  const LINE_THRESHOLD = 200; // brightness below this = line pixel
   
   // Step 1: Create binary mask (true = line pixel)
   const mask = new Uint8Array(width * height);
@@ -276,7 +276,7 @@ function ColorContent() {
     } else {
       // Restore original first, then apply closing
       ctx.putImageData(originalBaseRef.current, 0, 0);
-      closeGapsOnCanvas(ctx, canvasSize.w, canvasSize.h, 2);
+      closeGapsOnCanvas(ctx, canvasSize.w, canvasSize.h, 3);
       setGapsClosed(true);
     }
   }, [gapsClosed, canvasSize]);
@@ -311,7 +311,7 @@ function ColorContent() {
     if (!mergedCtx) return;
     mergedCtx.drawImage(baseCanvas, 0, 0);
     mergedCtx.drawImage(colorCanvas, 0, 0);
-    floodFill(ctx, x, y, hexToRgb(selectedColor), mergedCtx);
+    floodFill(ctx, x, y, hexToRgb(selectedColor), mergedCtx, 32, gapsClosed ? 1 : 0);
     saveToHistory();
   }, [tool, selectedColor, saveToHistory]);
 

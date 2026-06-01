@@ -1,29 +1,37 @@
-import { Pencil, Sparkles, Printer, ArrowRight } from 'lucide-react';
+import { Pencil, Upload, Sparkles, Palette, Printer, ArrowRight } from 'lucide-react';
 
 const steps = [
   {
     number: 1,
-    title: 'Describe',
-    description: 'Type your idea in plain English',
+    title: 'Describe or Upload',
+    description: 'Type what you want, or upload a reference photo to transform',
     icon: Pencil,
+    subIcon: Upload,
   },
   {
     number: 2,
-    title: 'Generate',
-    description: 'AI creates your line art',
+    title: 'Choose Style',
+    description: 'Pick Simple, Mandala, or Intricate to match your vision',
     icon: Sparkles,
   },
   {
     number: 3,
-    title: 'Print',
-    description: 'Download & print instantly',
-    icon: Printer,
+    title: 'Generate',
+    description: 'AI creates a clean, printable line art coloring page',
+    icon: Sparkles,
+  },
+  {
+    number: 4,
+    title: 'Color or Print',
+    description: 'Color it online in your browser, or download and print',
+    icon: Palette,
+    subIcon: Printer,
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section 
+    <section
       className="py-16 md:py-24"
       style={{ background: 'linear-gradient(180deg, #1A1A2E 0%, #24243E 100%)' }}
     >
@@ -32,44 +40,26 @@ export function HowItWorks() {
           How It Works
         </h2>
 
-        {/* Steps Row with Arrows */}
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-0">
-          {steps.map((step, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {steps.map((step, idx) => {
             const Icon = step.icon;
             return (
-              <div key={step.number} className="flex items-center">
-                {/* Step Card */}
-                <div className="flex flex-col items-center text-center px-8 md:px-10">
-                  {/* Number Circle */}
-                  <div 
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-[#FFB800] mb-4"
-                    style={{ background: 'rgba(255,184,0,0.15)' }}
+              <div key={step.number} className="flex flex-col items-center text-center">
+                <div className="relative mb-4">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}
                   >
+                    <Icon className="w-7 h-7 text-[#1A1A2E]" />
+                  </div>
+                  <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-white text-[#1A1A2E] text-xs font-bold flex items-center justify-center">
                     {step.number}
-                  </div>
-                  
-                  {/* Icon */}
-                  <div 
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-                    style={{ background: 'rgba(255,184,0,0.15)' }}
-                  >
-                    <Icon className="w-8 h-8 text-[#FFB800]" />
-                  </div>
-                  
-                  {/* Title */}
-                  <h3 className="font-display text-xl md:text-2xl text-white mb-2">
-                    {step.title}
-                  </h3>
-                  
-                  {/* Description */}
-                  <p className="text-[#B0B0C0] text-sm md:text-base max-w-[140px]">
-                    {step.description}
-                  </p>
+                  </span>
                 </div>
-
-                {/* Arrow (except after last step) */}
-                {index < steps.length - 1 && (
-                  <ArrowRight className="hidden md:block w-6 h-6 text-[#FFB800] mx-2" />
+                <h3 className="font-display text-lg text-white mb-2">{step.title}</h3>
+                <p className="text-sm text-gray-400">{step.description}</p>
+                {idx < steps.length - 1 && (
+                  <ArrowRight className="w-5 h-5 text-[#FFB800] mt-4 hidden md:block" />
                 )}
               </div>
             );

@@ -9,12 +9,12 @@ const highlights = [
   {
     icon: Upload,
     tag: 'Reference Upload',
-    text: 'Upload any photo and we'll transform it into a coloring page while keeping the composition and subject.',
+    text: "Upload any photo and we'll transform it into a coloring page while keeping the composition and subject.",
   },
   {
     icon: Palette,
     tag: 'Color Online',
-    text: 'Don't just generate — color it right in your browser with our built-in digital coloring tool.',
+    text: "Don't just generate — color it right in your browser with our built-in digital coloring tool.",
   },
   {
     icon: Zap,

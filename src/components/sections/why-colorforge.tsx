@@ -1,4 +1,4 @@
-import { Sparkles, Zap, Download } from 'lucide-react';
+import { Sparkles, Upload, Palette, Zap } from 'lucide-react';
 
 const highlights = [
   {
@@ -7,9 +7,14 @@ const highlights = [
     text: 'Describe anything — from "sleepy koala" to "fire-breathing dragon" — and get clean line art instantly.',
   },
   {
-    icon: Download,
-    tag: 'Print-Ready',
-    text: 'High-resolution output at 300 DPI. Perfect for home printers or professional publishing.',
+    icon: Upload,
+    tag: 'Reference Upload',
+    text: 'Upload any photo and we'll transform it into a coloring page while keeping the composition and subject.',
+  },
+  {
+    icon: Palette,
+    tag: 'Color Online',
+    text: 'Don't just generate — color it right in your browser with our built-in digital coloring tool.',
   },
   {
     icon: Zap,
@@ -20,30 +25,21 @@ const highlights = [
 
 export function WhyColorForge() {
   return (
-    <section className="py-16 md:py-24 bg-muted/30">
+    <section className="py-16 md:py-24 bg-background">
       <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-        <h2 className="font-display text-2xl md:text-3xl text-center mb-12 flex items-center justify-center gap-2">
-          <Sparkles className="w-6 h-6 text-primary" />
+        <h2 className="font-display text-2xl md:text-3xl text-center mb-12 font-semibold text-foreground">
           Why ColorForge?
         </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {highlights.map((item) => {
-            const Icon = item.icon;
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {highlights.map((h) => {
+            const Icon = h.icon;
             return (
-              <div
-                key={item.tag}
-                className="bg-card rounded-2xl p-6 shadow-sm hover:shadow-md transition-all hover:-translate-y-1"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <span className="font-display text-sm text-primary bg-primary/10 px-3 py-1 rounded-full">
-                    {item.tag}
-                  </span>
+              <div key={h.tag} className="flex flex-col items-center text-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-[#FFF3CC] flex items-center justify-center">
+                  <Icon className="w-6 h-6 text-[#FFB800]" />
                 </div>
-                <p className="text-muted-foreground leading-relaxed">{item.text}</p>
+                <span className="text-sm font-bold uppercase tracking-wide text-[#FFB800]">{h.tag}</span>
+                <p className="text-sm text-muted-foreground leading-relaxed">{h.text}</p>
               </div>
             );
           })}

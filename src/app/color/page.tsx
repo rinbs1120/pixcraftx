@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, ShieldCheck } from 'lucide-react';
+import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
 import { useAuth } from '@clerk/nextjs';
 
@@ -38,80 +38,6 @@ function toLocalUrl(url: string): string {
 
 const ZOOM_LEVELS = [25, 50, 75, 100, 125, 150, 200];
 
-// Morphological closing: dilate then erode
-// This closes small gaps in lines without permanently thickening them
-function closeGapsOnCanvas(ctx: CanvasRenderingContext2D, width: number, height: number, radius: number = 2): void {
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-  
-  const LINE_THRESHOLD = 200; // brightness below this = line pixel
-  
-  // Step 1: Create binary mask (true = line pixel)
-  const mask = new Uint8Array(width * height);
-  for (let i = 0; i < width * height; i++) {
-    const idx = i * 4;
-    const brightness = data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114;
-    mask[i] = brightness < LINE_THRESHOLD ? 1 : 0;
-  }
-  
-  // Step 2: Dilate - expand line regions by radius pixels
-  const dilated = new Uint8Array(width * height);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (mask[y * width + x]) {
-        // Mark all pixels within radius as line
-        for (let dy = -radius; dy <= radius; dy++) {
-          for (let dx = -radius; dx <= radius; dx++) {
-            if (dx * dx + dy * dy > radius * radius) continue; // circular kernel
-            const nx = x + dx;
-            const ny = y + dy;
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-              dilated[ny * width + nx] = 1;
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  // Step 3: Erode - shrink back by radius pixels
-  const closed = new Uint8Array(width * height);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (!dilated[y * width + x]) continue;
-      // Check if all pixels within radius are also dilated (line)
-      let allLine = true;
-      for (let dy = -radius; dy <= radius && allLine; dy++) {
-        for (let dx = -radius; dx <= radius && allLine; dx++) {
-          if (dx * dx + dy * dy > radius * radius) continue;
-          const nx = x + dx;
-          const ny = y + dy;
-          if (nx < 0 || nx >= width || ny < 0 || ny >= height || !dilated[ny * width + nx]) {
-            allLine = false;
-          }
-        }
-      }
-      closed[y * width + x] = allLine ? 1 : 0;
-    }
-  }
-  
-  // Step 4: For pixels that are new in closed mask (were NOT line but now ARE),
-  // fill them with black to close gaps
-  const result = new Uint8ClampedArray(data);
-  for (let i = 0; i < width * height; i++) {
-    if (closed[i] && !mask[i]) {
-      const idx = i * 4;
-      // New line pixel - fill with black
-      result[idx] = 0;
-      result[idx + 1] = 0;
-      result[idx + 2] = 0;
-      result[idx + 3] = 255;
-    }
-  }
-  
-  imageData.data.set(result);
-  ctx.putImageData(imageData, 0, 0);
-}
 
 function ColorContent() {
   const searchParams = useSearchParams();
@@ -133,7 +59,6 @@ function ColorContent() {
   const [canvasSize, setCanvasSize] = useState({ w: 800, h: 1000 });
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(100);
-  const [gapsClosed, setGapsClosed] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -169,7 +94,6 @@ function ColorContent() {
         historyRef.current = [initialData];
         historyIndexRef.current = 0;
         setImageLoaded(true); setLoadError(null);
-        setGapsClosed(false);
       };
       img.onerror = () => {
         fetch(localUrl)
@@ -195,8 +119,7 @@ function ColorContent() {
               const init = cCtx.getImageData(0, 0, w2, h2);
               historyRef.current = [init]; historyIndexRef.current = 0;
               setImageLoaded(true); setLoadError(null);
-              setGapsClosed(false);
-              URL.revokeObjectURL(blobUrl);
+                    URL.revokeObjectURL(blobUrl);
             };
             img2.onerror = () => { setLoadError('Image load failed'); setImageLoaded(true); URL.revokeObjectURL(blobUrl); };
             img2.src = blobUrl;
@@ -264,22 +187,6 @@ function ColorContent() {
     setZoom(bestZoom);
   }, [canvasSize]);
 
-  const toggleCloseGaps = useCallback(() => {
-    const baseCanvas = baseCanvasRef.current;
-    if (!baseCanvas || !originalBaseRef.current) return;
-    const ctx = baseCanvas.getContext('2d');
-    if (!ctx) return;
-
-    if (gapsClosed) {
-      ctx.putImageData(originalBaseRef.current, 0, 0);
-      setGapsClosed(false);
-    } else {
-      // Restore original first, then apply closing
-      ctx.putImageData(originalBaseRef.current, 0, 0);
-      closeGapsOnCanvas(ctx, canvasSize.w, canvasSize.h, 3);
-      setGapsClosed(true);
-    }
-  }, [gapsClosed, canvasSize]);
 
   useEffect(() => {
     if (!imageLoaded) return;
@@ -311,7 +218,7 @@ function ColorContent() {
     if (!mergedCtx) return;
     mergedCtx.drawImage(baseCanvas, 0, 0);
     mergedCtx.drawImage(colorCanvas, 0, 0);
-    floodFill(ctx, x, y, hexToRgb(selectedColor), mergedCtx, 32, gapsClosed ? 1 : 0);
+    floodFill(ctx, x, y, hexToRgb(selectedColor), mergedCtx, 32);
     saveToHistory();
   }, [tool, selectedColor, saveToHistory]);
 
@@ -458,17 +365,6 @@ function ColorContent() {
                 </div>
               </div>
               
-              <button 
-                onClick={toggleCloseGaps} 
-                className={"w-full flex items-center gap-2 p-4 rounded-2xl border-2 transition-all shadow-sm " + (gapsClosed ? 'border-[#2ECC71] bg-[#E8FBF0]' : 'border-border bg-card hover:border-[#2ECC71]/50')}
-              >
-                <ShieldCheck className={"w-5 h-5 " + (gapsClosed ? 'text-[#2ECC71]' : 'text-muted-foreground')} />
-                <div className="text-left">
-                  <div className={"text-sm font-semibold " + (gapsClosed ? 'text-[#2ECC71]' : 'text-foreground')}>Close Gaps</div>
-                  <div className="text-xs text-muted-foreground">{gapsClosed ? 'Gaps sealed for cleaner fill' : 'Fix line gaps to prevent color leaking'}</div>
-                </div>
-              </button>
-
               {tool !== 'fill' && (
                 <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
                   <h3 className="text-sm font-semibold mb-3 text-foreground">Size</h3>

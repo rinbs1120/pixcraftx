@@ -1,11 +1,13 @@
 // Flood fill algorithm with boundary detection
+// gapTolerance: 0 = strict (brightness < 80 = line), 1 = close gaps mode (brightness < 200 = line)
 export function floodFill(
   ctx: CanvasRenderingContext2D,
   startX: number,
   startY: number,
   fillColor: [number, number, number],
   boundaryCtx?: CanvasRenderingContext2D | null,
-  tolerance: number = 32
+  tolerance: number = 32,
+  gapTolerance: number = 0
 ) {
   const canvas = ctx.canvas;
   const width = canvas.width;
@@ -21,6 +23,9 @@ export function floodFill(
   startX = Math.round(startX);
   startY = Math.round(startY);
   if (startX < 0 || startX >= width || startY < 0 || startY >= height) return;
+  
+  const LINE_THRESHOLD = gapTolerance > 0 ? 200 : 80;
+  
   const startIdx = (startY * width + startX) * 4;
   let startR: number, startG: number, startB: number, startA: number;
   if (useBoundary && boundaryData) {
@@ -36,7 +41,7 @@ export function floodFill(
   }
   if (useBoundary && boundaryData) {
     const brightness = startR * 0.299 + startG * 0.587 + startB * 0.114;
-    if (brightness < 80) return;
+    if (brightness < LINE_THRESHOLD) return;
   }
   if (Math.abs(startR - fillColor[0]) <= tolerance && Math.abs(startG - fillColor[1]) <= tolerance && Math.abs(startB - fillColor[2]) <= tolerance) return;
   const [fillR, fillG, fillB] = fillColor;
@@ -46,7 +51,7 @@ export function floodFill(
   function isLine(idx: number): boolean {
     if (!boundaryData) return false;
     const brightness = boundaryData[idx] * 0.299 + boundaryData[idx + 1] * 0.587 + boundaryData[idx + 2] * 0.114;
-    return brightness < 80;
+    return brightness < LINE_THRESHOLD;
   }
   function matchesStart(idx: number): boolean {
     if (useBoundary && boundaryData) {

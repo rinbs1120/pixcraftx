@@ -183,16 +183,18 @@ export function Pricing() {
                       <span className="text-base text-[#8A8A9A] font-normal">{plan.priceNote}</span>
                     </>
                   ) : plan.originalPrice ? (
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-display text-[28px] text-[#8A8A9A] line-through">
-                        ${plan.originalPrice}
+                    <div className="flex flex-col">
+                      <span className="font-display text-[16px] text-[#8A8A9A] line-through">
+                        ${plan.originalPrice}{plan.priceNote}
                       </span>
-                      <span className="font-display text-[44px] text-foreground">
-                        ${plan.price}
-                      </span>
-                      <span className="text-base text-[#8A8A9A] font-normal">
-                        {plan.priceNote}
-                      </span>
+                      <div className="flex items-baseline">
+                        <span className="font-display text-[44px] text-foreground">
+                          ${plan.price}
+                        </span>
+                        <span className="text-base text-[#8A8A9A] font-normal">
+                          {plan.priceNote}
+                        </span>
+                      </div>
                     </div>
                   ) : (
                     <>

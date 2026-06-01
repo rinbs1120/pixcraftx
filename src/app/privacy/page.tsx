@@ -194,8 +194,8 @@ export default function PrivacyPage() {
               ColorForge is not directed at children under the age of 13. We do not knowingly collect
               personal information from children under 13. If you are a parent or guardian and become
               aware that your child has provided us with personal information, please contact us at{' '}
-              <a href="mailto:jun.partner@coze.email" className="text-primary hover:underline">
-                jun.partner@coze.email
+              <a href="mailto:support@pixcraftx.com" className="text-primary hover:underline">
+                support@pixcraftx.com
               </a>{' '}
               and we will take steps to delete such information. Parents and guardians should supervise
               their children&apos;s use of our service to ensure appropriate use of AI-generated content.
@@ -255,8 +255,8 @@ export default function PrivacyPage() {
             <p className="leading-relaxed mb-6">
               If you have any questions, concerns, or requests regarding this Privacy Policy or our data
               practices, please contact us at:{' '}
-              <a href="mailto:jun.partner@coze.email" className="text-primary hover:underline">
-                jun.partner@coze.email
+              <a href="mailto:support@pixcraftx.com" className="text-primary hover:underline">
+                support@pixcraftx.com
               </a>
             </p>
 

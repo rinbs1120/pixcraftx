@@ -65,10 +65,10 @@ export default function HelpPage() {
             <div className="bg-[#1A1A2E] rounded-lg p-6 my-8 text-center">
               <p className="text-lg text-[#FFFBF0] mb-2">Email Support</p>
               <a
-                href="mailto:jun.partner@coze.email"
+                href="mailto:support@pixcraftx.com"
                 className="text-xl text-[#FFB800] hover:underline font-display"
               >
-                jun.partner@coze.email
+                support@pixcraftx.com
               </a>
             </div>
 

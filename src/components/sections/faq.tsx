@@ -40,6 +40,11 @@ const faqs = [
     answer:
       'All pages can be downloaded as high-resolution PNG files. Pro and Business plans also support PDF export for easy printing.',
   },
+  {
+    question: 'What AI technology powers ColorForge?',
+    answer:
+      'ColorForge uses advanced AI image generation models powered by Fal.ai, including the Flux model family. Our AI transforms your text descriptions and reference images into clean, printable coloring pages. All generated content is AI-created and should be reviewed before use.',
+  },
 ];
 
 export function FAQ() {

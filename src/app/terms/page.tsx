@@ -44,7 +44,7 @@ export default function TermsPage() {
             </h2>
             <p className="leading-relaxed mb-6">
               ColorForge is an AI-powered coloring page generator that allows users to create custom
-              coloring pages from text descriptions. The Service uses artificial intelligence models to
+              coloring pages from text descriptions. The Service uses AI models powered by Fal.ai (including the Flux model family) to
               transform your text prompts into printable coloring page images. The Service is provided
               through our website at pixcraftx.com and may include features such as image generation,
               image storage, and image downloading in various formats.
@@ -156,8 +156,8 @@ export default function TermsPage() {
             <p className="leading-relaxed mb-6">
               If you are unsatisfied with the Service, you may request a refund within 7 days of your
               purchase by contacting us at{' '}
-              <a href="mailto:jun.partner@coze.email" className="text-primary hover:underline">
-                jun.partner@coze.email
+              <a href="mailto:support@pixcraftx.com" className="text-primary hover:underline">
+                support@pixcraftx.com
               </a>. Refund requests made after 7 days will be considered on a case-by-case basis.
               All payments are processed by Creem, and refunds will be issued through the same payment
               method used for the original purchase.
@@ -210,8 +210,8 @@ export default function TermsPage() {
               We respect intellectual property rights. If you believe that any content on our Service
               infringes your copyright, you may submit a notification under the Digital Millennium
               Copyright Act (DMCA) by providing the following information to{' '}
-              <a href="mailto:jun.partner@coze.email" className="text-primary hover:underline">
-                jun.partner@coze.email
+              <a href="mailto:support@pixcraftx.com" className="text-primary hover:underline">
+                support@pixcraftx.com
               </a>:
             </p>
             <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
@@ -282,8 +282,8 @@ export default function TermsPage() {
             </h2>
             <p className="leading-relaxed mb-6">
               If you have any questions or concerns about these Terms of Service, please contact us at:{' '}
-              <a href="mailto:jun.partner@coze.email" className="text-primary hover:underline">
-                jun.partner@coze.email
+              <a href="mailto:support@pixcraftx.com" className="text-primary hover:underline">
+                support@pixcraftx.com
               </a>
             </p>
           </div>

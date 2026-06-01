@@ -514,7 +514,7 @@ function GenerateContent() {
               {/* Feedback */}
               <div className="text-center">
                 <a
-                  href="mailto:jun.partner@coze.email?subject=ColorForge%20Feedback"
+                  href="mailto:support@pixcraftx.com?subject=ColorForge%20Feedback"
                   className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#FFB800] transition-colors"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />

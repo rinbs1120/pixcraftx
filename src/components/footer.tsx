@@ -102,6 +102,9 @@ export function Footer() {
             © {currentYear} ColorForge. Made with{' '}
             <span className="text-[#FF6B6B]">❤</span> for creators.
           </p>
+          <p className="text-center text-xs text-[#808090] mt-2">
+            AI-powered by Fal.ai Flux models. All generated content is AI-created.
+          </p>
         </div>
       </div>
     </footer>

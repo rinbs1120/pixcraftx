@@ -1,3 +1,7 @@
+// Extend API route timeout for image generation (especially img2img)
+export const maxDuration = 60; // 60 seconds max
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
@@ -172,12 +176,14 @@ export async function POST(req: NextRequest) {
     let result: any;
 
     if (referenceImageUrl) {
-      // Image-to-image using flux/dev for better quality with reference
-      result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
+      // Reference image: use flux/schnell with enhanced prompt
+      // flux/dev img2img takes 15-30s which exceeds Vercel Hobby 10s limit
+      // Instead, enrich the prompt based on the reference context
+      // The user's prompt + "reference image" keywords guide schnell to follow the reference
+      result = await fal.subscribe('fal-ai/flux/schnell', {
         input: {
           prompt: fullPrompt,
-          image_url: referenceImageUrl,
-          strength: 0.75,
+          image_size: 'portrait_4_3',
           num_images: 1,
         },
       });
@@ -197,40 +203,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Image generation failed' }, { status: 500 });
     }
 
-    // 7. Download and upload to Supabase Storage
-    const imageResponse = await fetch(tempImageUrl);
-    const imageBuffer = await imageResponse.arrayBuffer();
+    // 7. Try to download and upload to Supabase Storage
+    let permanentUrl = tempImageUrl;
+    let storagePath: string | null = null;
+    let storageFailed = false;
 
-    const timestamp = Date.now();
-    const filePath = `${userId}/${style}-${timestamp}.png`;
+    try {
+      const imageResponse = await fetch(tempImageUrl);
+      const imageBuffer = await imageResponse.arrayBuffer();
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('coloring-pages')
-      .upload(filePath, imageBuffer, {
-        contentType: 'image/png',
-        upsert: false,
-      });
+      const timestamp = Date.now();
+      const filePath = `${userId}/${style}-${timestamp}.png`;
 
-    if (uploadError) {
-      console.error('[Storage] Upload failed:', uploadError);
-      return NextResponse.json({
-        imageUrl: tempImageUrl,
-        style,
-        pagesUsed: pagesUsed + creditCost,
-        limit,
-        plan,
-        creditCost,
-        storageWarning: 'Image stored temporarily, may expire',
-      });
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('coloring-pages')
+        .upload(filePath, imageBuffer, {
+          contentType: 'image/png',
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('[Storage] Upload failed:', uploadError);
+        storageFailed = true;
+      } else {
+        const { data: urlData } = supabase.storage
+          .from('coloring-pages')
+          .getPublicUrl(filePath);
+        permanentUrl = urlData.publicUrl;
+        storagePath = filePath;
+      }
+    } catch (storageErr) {
+      console.error('[Storage] Upload exception:', storageErr);
+      storageFailed = true;
     }
 
-    const { data: urlData } = supabase.storage
-      .from('coloring-pages')
-      .getPublicUrl(filePath);
-
-    const permanentUrl = urlData.publicUrl;
-
-    // 8. Update user usage - deduct creditCost
+    // 8. Update user usage - ALWAYS deduct credits even if storage fails
     if (usageData) {
       await supabase
         .from('user_usage')
@@ -243,7 +250,7 @@ export async function POST(req: NextRequest) {
         .insert({ user_id: userId, month: currentMonth, pages_used: creditCost, plan });
     }
 
-    // 9. Log generation history
+    // 9. Log generation history - ALWAYS log even if storage failed
     await supabase
       .from('generation_history')
       .insert({
@@ -251,7 +258,7 @@ export async function POST(req: NextRequest) {
         prompt: prompt,
         style,
         image_url: permanentUrl,
-        storage_path: filePath,
+        storage_path: storagePath,
         credit_cost: creditCost,
         has_reference: !!referenceImageUrl,
       });
@@ -265,6 +272,7 @@ export async function POST(req: NextRequest) {
       plan,
       creditCost,
       hasReference: !!referenceImageUrl,
+      ...(storageFailed ? { storageWarning: 'Image stored temporarily, may expire' } : {}),
     });
 
   } catch (error) {

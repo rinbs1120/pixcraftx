@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, ShieldCheck } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
 import { useAuth } from '@clerk/nextjs';
 
@@ -38,12 +38,75 @@ function toLocalUrl(url: string): string {
 
 const ZOOM_LEVELS = [25, 50, 75, 100, 125, 150, 200];
 
+// Close gaps in line art using morphological dilation
+function closeGapsOnCanvas(ctx: CanvasRenderingContext2D, width: number, height: number, radius: number = 1): void {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const result = new Uint8ClampedArray(data);
+  
+  const LINE_THRESHOLD = 80; // brightness below this = line pixel
+  
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const brightness = data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114;
+      
+      // If this pixel is already a line, skip
+      if (brightness < LINE_THRESHOLD) continue;
+      
+      // Check neighbors within radius
+      let nearLine = false;
+      for (let dy = -radius; dy <= radius && !nearLine; dy++) {
+        for (let dx = -radius; dx <= radius && !nearLine; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+          const nIdx = (ny * width + nx) * 4;
+          const nBrightness = data[nIdx] * 0.299 + data[nIdx + 1] * 0.587 + data[nIdx + 2] * 0.114;
+          if (nBrightness < LINE_THRESHOLD) {
+            nearLine = true;
+          }
+        }
+      }
+      
+      // If near a line, make this pixel a line too (close the gap)
+      if (nearLine) {
+        // Use the average of nearby line pixels for smooth look
+        let sumR = 0, sumG = 0, sumB = 0, count = 0;
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+            const nIdx = (ny * width + nx) * 4;
+            const nBrightness = data[nIdx] * 0.299 + data[nIdx + 1] * 0.587 + data[nIdx + 2] * 0.114;
+            if (nBrightness < LINE_THRESHOLD) {
+              sumR += data[nIdx]; sumG += data[nIdx + 1]; sumB += data[nIdx + 2]; count++;
+            }
+          }
+        }
+        if (count > 0) {
+          result[idx] = Math.round(sumR / count);
+          result[idx + 1] = Math.round(sumG / count);
+          result[idx + 2] = Math.round(sumB / count);
+          result[idx + 3] = 255;
+        }
+      }
+    }
+  }
+  
+  imageData.data.set(result);
+  ctx.putImageData(imageData, 0, 0);
+}
+
 function ColorContent() {
   const searchParams = useSearchParams();
   const { isSignedIn } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);
   const colorCanvasRef = useRef<HTMLCanvasElement>(null);
+  const originalBaseRef = useRef<ImageData | null>(null);
   const historyRef = useRef<ImageData[]>([]);
   const historyIndexRef = useRef(-1);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -57,27 +120,13 @@ function ColorContent() {
   const [canvasSize, setCanvasSize] = useState({ w: 800, h: 1000 });
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(100);
+  const [gapsClosed, setGapsClosed] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const url = searchParams.get('src');
     if (url) setImageUrl(url);
   }, [searchParams]);
-
-  // Auto-fit zoom on image load
-  useEffect(() => {
-    if (!imageLoaded) return;
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const containerW = container.clientWidth - 32; // padding
-    const containerH = container.clientHeight - 32;
-    const fitW = (containerW / canvasSize.w) * 100;
-    const fitH = (containerH / canvasSize.h) * 100;
-    const fitZoom = Math.min(fitW, fitH, 100);
-    // Find closest zoom level
-    const bestZoom = ZOOM_LEVELS.reduce((prev, curr) => Math.abs(curr - fitZoom) < Math.abs(prev - fitZoom) ? curr : prev);
-    setZoom(bestZoom);
-  }, [imageLoaded, canvasSize]);
 
   useEffect(() => {
     if (!imageUrl) return;
@@ -101,11 +150,14 @@ function ColorContent() {
         colorCanvas.width = w; colorCanvas.height = h;
         baseCtx.drawImage(img, 0, 0, w, h);
         colorCtx.clearRect(0, 0, w, h);
+        // Store original base layer for gap toggle
+        originalBaseRef.current = baseCtx.getImageData(0, 0, w, h);
         setCanvasSize({ w, h });
         const initialData = colorCtx.getImageData(0, 0, w, h);
         historyRef.current = [initialData];
         historyIndexRef.current = 0;
         setImageLoaded(true); setLoadError(null);
+        setGapsClosed(false);
       };
       img.onerror = () => {
         fetch(localUrl)
@@ -126,10 +178,12 @@ function ColorContent() {
               cc.width = w2; cc.height = h2;
               bCtx.drawImage(img2, 0, 0, w2, h2);
               cCtx.clearRect(0, 0, w2, h2);
+              originalBaseRef.current = bCtx.getImageData(0, 0, w2, h2);
               setCanvasSize({ w: w2, h: h2 });
               const init = cCtx.getImageData(0, 0, w2, h2);
               historyRef.current = [init]; historyIndexRef.current = 0;
               setImageLoaded(true); setLoadError(null);
+              setGapsClosed(false);
               URL.revokeObjectURL(blobUrl);
             };
             img2.onerror = () => { setLoadError('Image load failed'); setImageLoaded(true); URL.revokeObjectURL(blobUrl); };
@@ -197,6 +251,37 @@ function ColorContent() {
     const bestZoom = ZOOM_LEVELS.reduce((prev, curr) => Math.abs(curr - fitZoom) < Math.abs(prev - fitZoom) ? curr : prev);
     setZoom(bestZoom);
   }, [canvasSize]);
+
+  // Close gaps toggle
+  const toggleCloseGaps = useCallback(() => {
+    const baseCanvas = baseCanvasRef.current;
+    if (!baseCanvas || !originalBaseRef.current) return;
+    const ctx = baseCanvas.getContext('2d');
+    if (!ctx) return;
+
+    if (gapsClosed) {
+      // Restore original
+      ctx.putImageData(originalBaseRef.current, 0, 0);
+      setGapsClosed(false);
+    } else {
+      // Apply gap closing
+      closeGapsOnCanvas(ctx, canvasSize.w, canvasSize.h, 2);
+      setGapsClosed(true);
+    }
+  }, [gapsClosed, canvasSize]);
+
+  useEffect(() => {
+    if (!imageLoaded) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const containerW = container.clientWidth - 32;
+    const containerH = container.clientHeight - 32;
+    const fitW = (containerW / canvasSize.w) * 100;
+    const fitH = (containerH / canvasSize.h) * 100;
+    const fitZoom = Math.min(fitW, fitH, 100);
+    const bestZoom = ZOOM_LEVELS.reduce((prev, curr) => Math.abs(curr - fitZoom) < Math.abs(prev - fitZoom) ? curr : prev);
+    setZoom(bestZoom);
+  }, [imageLoaded, canvasSize]);
 
   const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (tool !== 'fill') return;
@@ -281,7 +366,6 @@ function ColorContent() {
     }
   }, [isDrawing, saveToHistory]);
 
-  // Mouse wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
@@ -362,6 +446,19 @@ function ColorContent() {
                   <button onClick={() => setTool('eraser')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'eraser' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Eraser className="w-5 h-5" /><span className="text-xs font-medium">Eraser</span></button>
                 </div>
               </div>
+              
+              {/* Close Gaps toggle */}
+              <button 
+                onClick={toggleCloseGaps} 
+                className={"w-full flex items-center gap-2 p-4 rounded-2xl border-2 transition-all shadow-sm " + (gapsClosed ? 'border-[#2ECC71] bg-[#E8FBF0]' : 'border-border bg-card hover:border-[#2ECC71]/50')}
+              >
+                <ShieldCheck className={"w-5 h-5 " + (gapsClosed ? 'text-[#2ECC71]' : 'text-muted-foreground')} />
+                <div className="text-left">
+                  <div className={"text-sm font-semibold " + (gapsClosed ? 'text-[#2ECC71]' : 'text-foreground')}>Close Gaps</div>
+                  <div className="text-xs text-muted-foreground">{gapsClosed ? 'Lines thickened, gaps sealed' : 'Fix line gaps to prevent color leaking'}</div>
+                </div>
+              </button>
+
               {tool !== 'fill' && (
                 <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
                   <h3 className="text-sm font-semibold mb-3 text-foreground">Size</h3>

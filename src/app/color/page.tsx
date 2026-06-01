@@ -6,7 +6,6 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
-import { autoCloseGaps } from '@/lib/closeGaps';
 import { useAuth } from '@clerk/nextjs';
 
 const COLOR_PALETTE = [
@@ -90,8 +89,6 @@ function ColorContent() {
         baseCtx.drawImage(img, 0, 0, w, h);
         colorCtx.clearRect(0, 0, w, h);
         originalBaseRef.current = baseCtx.getImageData(0, 0, w, h);
-        // Auto-close line art gaps for cleaner fills
-        autoCloseGaps(baseCtx, w, h);
         setCanvasSize({ w, h });
         const initialData = colorCtx.getImageData(0, 0, w, h);
         historyRef.current = [initialData];
@@ -118,8 +115,6 @@ function ColorContent() {
               bCtx.drawImage(img2, 0, 0, w2, h2);
               cCtx.clearRect(0, 0, w2, h2);
               originalBaseRef.current = bCtx.getImageData(0, 0, w2, h2);
-              // Auto-close line art gaps for cleaner fills
-              autoCloseGaps(bCtx, w2, h2);
               setCanvasSize({ w: w2, h: h2 });
               const init = cCtx.getImageData(0, 0, w2, h2);
               historyRef.current = [init]; historyIndexRef.current = 0;

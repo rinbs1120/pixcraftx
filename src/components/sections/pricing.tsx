@@ -27,7 +27,6 @@ const PLAN_RANK: Record<string, number> = {
   business: 3,
 };
 
-// Unified feature list
 const allFeatures = [
   { key: 'pages', label: 'Credits per month' },
   { key: 'styles', label: 'All styles' },
@@ -42,9 +41,7 @@ const allFeatures = [
 
 type FeatureKey = typeof allFeatures[number]['key'];
 
-// Trial pricing: discounted until 2026-09-01
-const TRIAL_END = new Date('2026-09-01T00:00:00Z');
-const isLaunchPromo = new Date() < TRIAL_END;
+const isLaunchPromo = new Date() < new Date('2026-09-01T00:00:00Z');
 
 const plans = [
   {
@@ -63,8 +60,8 @@ const plans = [
   {
     name: 'Starter',
     key: 'starter',
-    price: isLaunchPromo ? 3.99 : 4.99,
-    originalPrice: isLaunchPromo ? 4.99 : null,
+    price: 4.99,
+    originalPrice: isLaunchPromo ? 6.99 : null,
     priceNote: '/mo',
     pageLabel: '100 credits',
     features: { pages: true, styles: true, reference: true, png: true, pdf: false, watermark: true, commercial: false, support: false, api: false } as Record<FeatureKey, boolean>,
@@ -76,8 +73,8 @@ const plans = [
   {
     name: 'Pro',
     key: 'pro',
-    price: isLaunchPromo ? 7.99 : 9.99,
-    originalPrice: isLaunchPromo ? 9.99 : null,
+    price: 9.99,
+    originalPrice: isLaunchPromo ? 12.99 : null,
     priceNote: '/mo',
     popular: true,
     pageLabel: '500 credits',
@@ -90,8 +87,8 @@ const plans = [
   {
     name: 'Business',
     key: 'business',
-    price: isLaunchPromo ? 15.99 : 19.99,
-    originalPrice: isLaunchPromo ? 19.99 : null,
+    price: 19.99,
+    originalPrice: isLaunchPromo ? 24.99 : null,
     priceNote: '/mo',
     pageLabel: '2000 credits',
     features: { pages: true, styles: true, reference: true, png: true, pdf: true, watermark: true, commercial: true, support: true, api: true } as Record<FeatureKey, boolean>,
@@ -129,7 +126,7 @@ export function Pricing() {
           {isLaunchPromo && (
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#FFF3CC] border border-[#FFB800]">
               <span className="text-sm font-semibold text-[#1A1A2E]">🎉 Launch Special</span>
-              <span className="text-sm text-[#8A8A9A]">20% off all plans until Sep 2026</span>
+              <span className="text-sm text-[#8A8A9A]">Special pricing ends Sep 2026</span>
             </div>
           )}
         </div>
@@ -180,12 +177,17 @@ export function Pricing() {
                 </h3>
 
                 <div className="mb-6">
-                  {plan.originalPrice ? (
+                  {plan.price === 0 ? (
+                    <>
+                      <span className="font-display text-[44px] text-foreground">Free</span>
+                      <span className="text-base text-[#8A8A9A] font-normal">{plan.priceNote}</span>
+                    </>
+                  ) : plan.originalPrice ? (
                     <div className="flex items-baseline gap-2">
                       <span className="font-display text-[28px] text-[#8A8A9A] line-through">
                         ${plan.originalPrice}
                       </span>
-                      <span className="font-display text-[44px] text-[#2ECC71]">
+                      <span className="font-display text-[44px] text-foreground">
                         ${plan.price}
                       </span>
                       <span className="text-base text-[#8A8A9A] font-normal">
@@ -194,12 +196,8 @@ export function Pricing() {
                     </div>
                   ) : (
                     <>
-                      <span className="font-display text-[44px] text-foreground">
-                        {plan.price === 0 ? 'Free' : `$${plan.price}`}
-                      </span>
-                      <span className="text-base text-[#8A8A9A] font-normal">
-                        {plan.priceNote}
-                      </span>
+                      <span className="font-display text-[44px] text-foreground">${plan.price}</span>
+                      <span className="text-base text-[#8A8A9A] font-normal">{plan.priceNote}</span>
                     </>
                   )}
                 </div>
@@ -294,10 +292,9 @@ export function Pricing() {
           })}
         </div>
 
-        {/* Credit usage note */}
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            💡 Text generation costs <strong>1 credit</strong>. Reference image generation costs <strong>
+            💡 Text generation: <strong>1 credit</strong> per page. Reference image generation: <strong>
             {isLaunchPromo ? (
               <>
                 <span className="line-through text-[#8A8A9A]">3</span>

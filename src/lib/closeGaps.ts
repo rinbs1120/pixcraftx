@@ -1,10 +1,6 @@
 /**
  * Auto-close gaps in line art using skeleton endpoint detection and connection.
- * Based on: skeletonize (Zhang-Suen) → find endpoints → pair & connect nearby endpoints.
- * 
- * The core insight: morphological closing (dilate+erode) only thickens lines uniformly,
- * it doesn't actually connect line endpoints. This algorithm finds where lines END
- * and draws new line segments to connect nearby endpoints that form gaps.
+ * v2: Added preprocessing dilation, larger gap tolerance, multi-pass closing.
  */
 
 /**
@@ -21,12 +17,37 @@ function binarize(data: Uint8ClampedArray, width: number, height: number, thresh
 }
 
 /**
+ * Light dilation - expand line regions by 1 pixel.
+ * Used as preprocessing to help skeleton bridge tiny gaps.
+ */
+function dilate(binary: Uint8Array, width: number, height: number): Uint8Array {
+  const result = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (binary[y * width + x] === 1) {
+        result[y * width + x] = 1;
+        // Mark all 8 neighbors
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx, ny = y + dy;
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+              result[ny * width + nx] = 1;
+            }
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
+
+/**
  * Zhang-Suen thinning algorithm
  * Reduces binary line art to 1-pixel-wide skeleton
  */
 function zhangSuenThinning(binary: Uint8Array, width: number, height: number): Uint8Array {
   const img = new Uint8Array(binary);
-  const p = new Uint8Array(8); // p2-p9 neighbors
+  const p = new Uint8Array(8);
   let changed = true;
   let iteration = 0;
   const MAX_ITERATIONS = 50;
@@ -43,21 +64,18 @@ function zhangSuenThinning(binary: Uint8Array, width: number, height: number): U
           const idx = y * width + x;
           if (img[idx] === 0) continue;
           
-          // Get 8 neighbors clockwise: p2(N), p3(NE), p4(E), p5(SE), p6(S), p7(SW), p8(W), p9(NW)
-          p[0] = img[(y-1) * width + x];     // p2
-          p[1] = img[(y-1) * width + (x+1)]; // p3
-          p[2] = img[y * width + (x+1)];     // p4
-          p[3] = img[(y+1) * width + (x+1)]; // p5
-          p[4] = img[(y+1) * width + x];     // p6
-          p[5] = img[(y+1) * width + (x-1)]; // p7
-          p[6] = img[y * width + (x-1)];     // p8
-          p[7] = img[(y-1) * width + (x-1)]; // p9
+          p[0] = img[(y-1) * width + x];     // p2 (N)
+          p[1] = img[(y-1) * width + (x+1)]; // p3 (NE)
+          p[2] = img[y * width + (x+1)];     // p4 (E)
+          p[3] = img[(y+1) * width + (x+1)]; // p5 (SE)
+          p[4] = img[(y+1) * width + x];     // p6 (S)
+          p[5] = img[(y+1) * width + (x-1)]; // p7 (SW)
+          p[6] = img[y * width + (x-1)];     // p8 (W)
+          p[7] = img[(y-1) * width + (x-1)]; // p9 (NW)
           
-          // B(p) = number of non-zero neighbors
           const B = p[0] + p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7];
           if (B < 2 || B > 6) continue;
           
-          // A(p) = number of 0→1 transitions in clockwise order
           let A = 0;
           for (let i = 0; i < 7; i++) {
             if (p[i] === 0 && p[i + 1] === 1) A++;
@@ -66,11 +84,9 @@ function zhangSuenThinning(binary: Uint8Array, width: number, height: number): U
           if (A !== 1) continue;
           
           if (sub === 0) {
-            // Sub-iteration 1: p2*p4*p6=0 AND p4*p6*p8=0
             if (p[0] * p[2] * p[4] !== 0) continue;
             if (p[2] * p[4] * p[6] !== 0) continue;
           } else {
-            // Sub-iteration 2: p2*p4*p8=0 AND p2*p6*p8=0
             if (p[0] * p[2] * p[6] !== 0) continue;
             if (p[0] * p[4] * p[6] !== 0) continue;
           }
@@ -80,9 +96,7 @@ function zhangSuenThinning(binary: Uint8Array, width: number, height: number): U
       }
       
       if (toRemove.length > 0) {
-        for (const ri of toRemove) {
-          img[ri] = 0;
-        }
+        for (const ri of toRemove) img[ri] = 0;
         changed = true;
       }
     }
@@ -101,7 +115,6 @@ interface Endpoint {
 /**
  * Find endpoints in skeleton image
  * Endpoint = line pixel with exactly 1 neighbor (8-connected)
- * Also computes direction (away from the single neighbor)
  */
 function findEndpoints(skeleton: Uint8Array, width: number, height: number): Endpoint[] {
   const endpoints: Endpoint[] = [];
@@ -123,7 +136,6 @@ function findEndpoints(skeleton: Uint8Array, width: number, height: number): End
       }
       
       if (count === 1) {
-        // Direction points away from the single neighbor
         endpoints.push({ x, y, dirX: -dirX, dirY: -dirY });
       }
     }
@@ -138,7 +150,7 @@ function findEndpoints(skeleton: Uint8Array, width: number, height: number): End
 function estimateLineWidth(binary: Uint8Array, width: number, height: number, px: number, py: number): number {
   let totalDist = 0;
   let directions = 0;
-  const maxR = 12;
+  const maxR = 15;
   
   const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
   for (const [ddx, ddy] of dirs) {
@@ -154,48 +166,42 @@ function estimateLineWidth(binary: Uint8Array, width: number, height: number, px
     }
   }
   
-  return directions > 0 ? Math.max(1, Math.round((totalDist / directions) * 2)) : 2;
+  return directions > 0 ? Math.max(2, Math.round((totalDist / directions) * 2)) : 3;
 }
 
 /**
- * Auto-close gaps in line art on a canvas.
- * 
- * Algorithm:
- * 1. Binarize the image
- * 2. Skeletonize (Zhang-Suen thinning) to get 1px-wide lines
- * 3. Find endpoints (pixels with exactly 1 neighbor)
- * 4. Pair nearby endpoints and connect them with lines
- * 
- * @returns Number of gaps closed
+ * Close gaps for one pass. Returns number of connections made.
  */
-export function autoCloseGaps(
-  ctx: CanvasRenderingContext2D, 
-  width: number, 
-  height: number, 
-  maxGapDistance: number = 15
+function closeGapsPass(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  maxGapDistance: number
 ): number {
   const imageData = ctx.getImageData(0, 0, width, height);
   const data = imageData.data;
   
-  // Step 1: Binarize (threshold 128 to capture anti-aliased edges)
-  const binary = binarize(data, width, height, 128);
+  // Binarize with threshold 200 to capture anti-aliased edge pixels
+  const binary = binarize(data, width, height, 200);
   
-  // Quick check: count line pixels, skip if very few
+  // Quick check
   let linePixelCount = 0;
   for (let i = 0; i < binary.length; i++) {
     if (binary[i] === 1) linePixelCount++;
   }
   if (linePixelCount < 10) return 0;
   
-  // Step 2: Skeletonize
-  const skeleton = zhangSuenThinning(binary, width, height);
+  // Preprocess: dilate then skeletonize
+  // Dilation helps the skeleton bridge tiny (1-2px) gaps
+  const dilated = dilate(binary, width, height);
+  const skeleton = zhangSuenThinning(dilated, width, height);
   
-  // Step 3: Find endpoints
+  // Find endpoints from the DILATED skeleton (which already bridges tiny gaps)
   const endpoints = findEndpoints(skeleton, width, height);
   
   if (endpoints.length < 2) return 0;
   
-  // Step 4: Find gap pairs (nearby endpoints with background between them)
+  // Find gap pairs
   const pairs: {i: number, j: number, dist: number}[] = [];
   
   for (let i = 0; i < endpoints.length; i++) {
@@ -204,34 +210,32 @@ export function autoCloseGaps(
       const dy = endpoints[i].y - endpoints[j].y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       
-      if (dist > maxGapDistance || dist < 1) continue;
+      if (dist > maxGapDistance || dist < 1.5) continue;
       
-      // Verify this is a real gap: the line between endpoints should be mostly background
+      // Verify gap: check that the path between endpoints goes through background
       const steps = Math.max(Math.ceil(dist), 1);
       let linePixels = 0;
-      let bgPixels = 0;
+      let totalPixels = 0;
       
-      for (let s = 1; s < steps; s++) { // Skip endpoints themselves
+      for (let s = 1; s < steps; s++) {
         const t = s / steps;
         const sx = Math.round(endpoints[i].x + (endpoints[j].x - endpoints[i].x) * t);
         const sy = Math.round(endpoints[i].y + (endpoints[j].y - endpoints[i].y) * t);
         if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
+          totalPixels++;
           if (binary[sy * width + sx] === 1) linePixels++;
-          else bgPixels++;
         }
       }
       
-      // Only connect if the path between them is mostly background (real gap)
-      if (bgPixels >= linePixels) {
+      // Allow up to 40% line pixels in between (handles anti-aliased edges)
+      if (totalPixels > 0 && linePixels / totalPixels <= 0.4) {
         pairs.push({ i, j, dist });
       }
     }
   }
   
-  // Sort by distance (closest gaps first)
   pairs.sort((a, b) => a.dist - b.dist);
   
-  // Step 5: Connect pairs
   const used = new Set<number>();
   let connectionsMade = 0;
   
@@ -241,10 +245,8 @@ export function autoCloseGaps(
     const ep1 = endpoints[pair.i];
     const ep2 = endpoints[pair.j];
     
-    // Estimate line width from the original binary image
     const lineWidth = estimateLineWidth(binary, width, height, ep1.x, ep1.y);
     
-    // Draw connecting line on the canvas
     ctx.beginPath();
     ctx.moveTo(ep1.x, ep1.y);
     ctx.lineTo(ep2.x, ep2.y);
@@ -259,4 +261,35 @@ export function autoCloseGaps(
   }
   
   return connectionsMade;
+}
+
+/**
+ * Auto-close gaps in line art on a canvas.
+ * Runs multiple passes to catch gaps that become visible after closing others.
+ */
+export function autoCloseGaps(
+  ctx: CanvasRenderingContext2D, 
+  width: number, 
+  height: number, 
+  maxGapDistance: number = 30
+): number {
+  let totalConnections = 0;
+  
+  // Pass 1: Close gaps up to maxGapDistance
+  const pass1 = closeGapsPass(ctx, width, height, maxGapDistance);
+  totalConnections += pass1;
+  
+  // Pass 2: After closing gaps, re-detect and close remaining (new endpoints may be reachable)
+  if (pass1 > 0) {
+    const pass2 = closeGapsPass(ctx, width, height, maxGapDistance);
+    totalConnections += pass2;
+    
+    // Pass 3: One more round
+    if (pass2 > 0) {
+      const pass3 = closeGapsPass(ctx, width, height, maxGapDistance);
+      totalConnections += pass3;
+    }
+  }
+  
+  return totalConnections;
 }

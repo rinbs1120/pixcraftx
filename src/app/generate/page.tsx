@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
@@ -9,81 +10,26 @@ import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, MessageCi
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 
-// Style preview SVGs
-const SimplePreviewSVG = () => (
-  <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
-    <rect width="120" height="120" fill="#FFFBF0"/>
-    <circle cx="60" cy="48" r="28" stroke="#1A1A2E" strokeWidth="3.5" fill="none"/>
-    <circle cx="50" cy="42" r="5" stroke="#1A1A2E" strokeWidth="2.5" fill="none"/>
-    <circle cx="70" cy="42" r="5" stroke="#1A1A2E" strokeWidth="2.5" fill="none"/>
-    <circle cx="50" cy="42" r="2" fill="#1A1A2E"/>
-    <circle cx="70" cy="42" r="2" fill="#1A1A2E"/>
-    <path d="M48 58 Q60 68 72 58" stroke="#1A1A2E" strokeWidth="3" fill="none"/>
-    <ellipse cx="60" cy="95" rx="30" ry="18" stroke="#1A1A2E" strokeWidth="3.5" fill="none"/>
-    <circle cx="48" cy="102" r="8" stroke="#1A1A2E" strokeWidth="2.5" fill="none"/>
-    <circle cx="72" cy="102" r="8" stroke="#1A1A2E" strokeWidth="2.5" fill="none"/>
-  </svg>
-);
 
-const MandalaPreviewSVG = () => (
-  <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
-    <rect width="120" height="120" fill="#FFFBF0"/>
-    <circle cx="60" cy="60" r="8" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <circle cx="60" cy="60" r="18" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <circle cx="60" cy="60" r="30" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <circle cx="60" cy="60" r="42" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <ellipse cx="60" cy="30" rx="6" ry="12" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <ellipse cx="60" cy="90" rx="6" ry="12" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <ellipse cx="30" cy="60" rx="12" ry="6" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <ellipse cx="90" cy="60" rx="12" ry="6" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <ellipse cx="38" cy="38" rx="6" ry="12" transform="rotate(45 38 38)" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <ellipse cx="82" cy="38" rx="6" ry="12" transform="rotate(-45 82 38)" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <ellipse cx="38" cy="82" rx="6" ry="12" transform="rotate(-45 38 82)" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <ellipse cx="82" cy="82" rx="6" ry="12" transform="rotate(45 82 82)" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-  </svg>
-);
-
-const IntricatePreviewSVG = () => (
-  <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
-    <rect width="120" height="120" fill="#FFFBF0"/>
-    <rect x="35" y="45" width="50" height="50" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <rect x="25" y="30" width="18" height="65" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <path d="M25 30 L34 15 L43 30" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <rect x="77" y="30" width="18" height="65" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <path d="M77 30 L86 15 L95 30" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <rect x="48" y="25" width="24" height="20" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <path d="M48 25 L60 10 L72 25" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <rect x="44" y="60" width="8" height="12" rx="4" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <rect x="68" y="60" width="8" height="12" rx="4" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <path d="M56 95 L56 88 A4 4 0 0 1 64 88 L64 95" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <path d="M10 95 L110 95" stroke="#1A1A2E" strokeWidth="1.5"/>
-    <path d="M15 15 C15 10 20 5 28 8 C32 2 40 2 42 8 C48 5 52 10 50 15" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <path d="M80 18 C80 13 85 8 92 11 C95 5 102 5 104 11 C108 8 112 13 110 18" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
-    <circle cx="20" cy="80" r="4" stroke="#1A1A2E" strokeWidth="1" fill="none"/>
-    <circle cx="30" cy="85" r="3" stroke="#1A1A2E" strokeWidth="1" fill="none"/>
-    <circle cx="95" cy="78" r="5" stroke="#1A1A2E" strokeWidth="1" fill="none"/>
-    <circle cx="105" cy="85" r="3" stroke="#1A1A2E" strokeWidth="1" fill="none"/>
-  </svg>
-);
 
 const styles = [
   {
     id: 'simple' as const,
     label: 'Simple',
     desc: 'Bold outlines, big areas \u2014 easy & fun',
-    preview: SimplePreviewSVG,
+    image: '/styles/simple.jpg',
   },
   {
     id: 'mandala' as const,
     label: 'Mandala',
     desc: 'Symmetrical patterns \u2014 relaxing',
-    preview: MandalaPreviewSVG,
+    image: '/styles/mandala.jpg',
   },
   {
     id: 'intricate' as const,
     label: 'Intricate',
     desc: 'Fine details, rich scenes \u2014 immersive',
-    preview: IntricatePreviewSVG,
+    image: '/styles/intricate.jpg',
   },
 ];
 
@@ -387,7 +333,6 @@ function GenerateContent() {
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {styles.map((style) => {
-                    const Preview = style.preview;
                     return (
                       <button
                         key={style.id}
@@ -400,7 +345,7 @@ function GenerateContent() {
                         )}
                       >
                         <div className="w-full aspect-square rounded-lg overflow-hidden bg-[#FFFBF0]">
-                          <Preview />
+                          <Image src={style.image} alt={style.label} width={120} height={120} className="w-full h-full object-cover" />
                         </div>
                         <span className={cn(
                           "text-sm font-semibold",

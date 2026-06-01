@@ -1,27 +1,123 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, Baby, Flower2, PenTool, AlertCircle, Palette } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, MessageCircle, Upload, X, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 
+// Style preview SVGs
+const SimplePreviewSVG = () => (
+  <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
+    <rect width="120" height="120" fill="#FFFBF0"/>
+    <circle cx="60" cy="48" r="28" stroke="#1A1A2E" strokeWidth="3.5" fill="none"/>
+    <circle cx="50" cy="42" r="5" stroke="#1A1A2E" strokeWidth="2.5" fill="none"/>
+    <circle cx="70" cy="42" r="5" stroke="#1A1A2E" strokeWidth="2.5" fill="none"/>
+    <circle cx="50" cy="42" r="2" fill="#1A1A2E"/>
+    <circle cx="70" cy="42" r="2" fill="#1A1A2E"/>
+    <path d="M48 58 Q60 68 72 58" stroke="#1A1A2E" strokeWidth="3" fill="none"/>
+    <ellipse cx="60" cy="95" rx="30" ry="18" stroke="#1A1A2E" strokeWidth="3.5" fill="none"/>
+    <circle cx="48" cy="102" r="8" stroke="#1A1A2E" strokeWidth="2.5" fill="none"/>
+    <circle cx="72" cy="102" r="8" stroke="#1A1A2E" strokeWidth="2.5" fill="none"/>
+  </svg>
+);
+
+const MandalaPreviewSVG = () => (
+  <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
+    <rect width="120" height="120" fill="#FFFBF0"/>
+    <circle cx="60" cy="60" r="8" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <circle cx="60" cy="60" r="18" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <circle cx="60" cy="60" r="30" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <circle cx="60" cy="60" r="42" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="60" cy="30" rx="6" ry="12" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="60" cy="90" rx="6" ry="12" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="30" cy="60" rx="12" ry="6" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="90" cy="60" rx="12" ry="6" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="38" cy="38" rx="6" ry="12" transform="rotate(45 38 38)" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="82" cy="38" rx="6" ry="12" transform="rotate(-45 82 38)" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="38" cy="82" rx="6" ry="12" transform="rotate(-45 38 82)" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <ellipse cx="82" cy="82" rx="6" ry="12" transform="rotate(45 82 82)" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+  </svg>
+);
+
+const IntricatePreviewSVG = () => (
+  <svg viewBox="0 0 120 120" fill="none" className="w-full h-full">
+    <rect width="120" height="120" fill="#FFFBF0"/>
+    <rect x="35" y="45" width="50" height="50" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <rect x="25" y="30" width="18" height="65" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <path d="M25 30 L34 15 L43 30" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <rect x="77" y="30" width="18" height="65" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <path d="M77 30 L86 15 L95 30" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <rect x="48" y="25" width="24" height="20" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <path d="M48 25 L60 10 L72 25" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <rect x="44" y="60" width="8" height="12" rx="4" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <rect x="68" y="60" width="8" height="12" rx="4" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <path d="M56 95 L56 88 A4 4 0 0 1 64 88 L64 95" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <path d="M10 95 L110 95" stroke="#1A1A2E" strokeWidth="1.5"/>
+    <path d="M15 15 C15 10 20 5 28 8 C32 2 40 2 42 8 C48 5 52 10 50 15" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <path d="M80 18 C80 13 85 8 92 11 C95 5 102 5 104 11 C108 8 112 13 110 18" stroke="#1A1A2E" strokeWidth="1.5" fill="none"/>
+    <circle cx="20" cy="80" r="4" stroke="#1A1A2E" strokeWidth="1" fill="none"/>
+    <circle cx="30" cy="85" r="3" stroke="#1A1A2E" strokeWidth="1" fill="none"/>
+    <circle cx="95" cy="78" r="5" stroke="#1A1A2E" strokeWidth="1" fill="none"/>
+    <circle cx="105" cy="85" r="3" stroke="#1A1A2E" strokeWidth="1" fill="none"/>
+  </svg>
+);
 
 const styles = [
-  { id: 'kids', label: 'Kids', icon: Baby, desc: 'Bold lines, simple shapes' },
-  { id: 'mandala', label: 'Mandala', icon: Flower2, desc: 'Symmetrical patterns' },
-  { id: 'detailed', label: 'Detailed', icon: PenTool, desc: 'Fine details for adults' },
-] as const;
+  {
+    id: 'simple' as const,
+    label: 'Simple',
+    desc: 'Bold outlines, big areas \u2014 easy & fun',
+    preview: SimplePreviewSVG,
+  },
+  {
+    id: 'mandala' as const,
+    label: 'Mandala',
+    desc: 'Symmetrical patterns \u2014 relaxing',
+    preview: MandalaPreviewSVG,
+  },
+  {
+    id: 'intricate' as const,
+    label: 'Intricate',
+    desc: 'Fine details, rich scenes \u2014 immersive',
+    preview: IntricatePreviewSVG,
+  },
+];
+
+const EXAMPLE_PROMPTS = [
+  { emoji: '\ud83d\udc31', text: 'Cute cat sitting on a mushroom' },
+  { emoji: '\ud83c\udff0', text: 'Princess castle in the clouds' },
+  { emoji: '\ud83e\udd8b', text: 'Butterfly garden' },
+  { emoji: '\ud83d\udc09', text: 'Friendly dragon' },
+  { emoji: '\ud83c\udf38', text: 'Cherry blossom mandala' },
+  { emoji: '\ud83e\udd81', text: 'Lion in the savanna' },
+  { emoji: '\ud83d\udc1f', text: 'Underwater coral reef' },
+  { emoji: '\ud83c\udf84', text: 'Cozy cabin in snowy forest' },
+];
+
+// Trial pricing info
+const TRIAL_END = new Date('2026-09-01T00:00:00Z');
+const REFERENCE_COST_NORMAL = 3;
+const REFERENCE_COST_TRIAL = 2;
+function getReferenceCostInfo() {
+  const isTrial = new Date() < TRIAL_END;
+  return {
+    current: isTrial ? REFERENCE_COST_TRIAL : REFERENCE_COST_NORMAL,
+    original: REFERENCE_COST_NORMAL,
+    isTrial,
+  };
+}
 
 function GenerateContent() {
   const { isSignedIn, isLoaded } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [selectedStyle, setSelectedStyle] = useState<'kids' | 'mandala' | 'detailed'>('kids');
+  const [selectedStyle, setSelectedStyle] = useState<'simple' | 'mandala' | 'intricate'>('simple');
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
@@ -31,17 +127,21 @@ function GenerateContent() {
   const [plan, setPlan] = useState('free');
   const [showSignIn, setShowSignIn] = useState(false);
 
-  // 从URL参数预填prompt和style
+  // Reference image state
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceFileName, setReferenceFileName] = useState<string>('');
+
+  // From URL params
   useEffect(() => {
     const p = searchParams.get('p');
     const s = searchParams.get('s');
     if (p) setPrompt(decodeURIComponent(p));
-    if (s && ['kids', 'mandala', 'detailed'].includes(s)) {
-      setSelectedStyle(s as 'kids' | 'mandala' | 'detailed');
+    if (s && ['simple', 'mandala', 'intricate'].includes(s)) {
+      setSelectedStyle(s as 'simple' | 'mandala' | 'intricate');
     }
   }, [searchParams]);
 
-  // 获取用户套餐和用量
+  // Fetch usage
   useEffect(() => {
     if (!isSignedIn) return;
     fetch('/api/usage')
@@ -53,6 +153,30 @@ function GenerateContent() {
       })
       .catch(() => {});
   }, [isSignedIn]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file (PNG, JPG, WEBP)');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be under 10MB');
+      return;
+    }
+    setReferenceFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => setReferenceImage(reader.result as string);
+    reader.readAsDataURL(file);
+    setError(null);
+  };
+
+  const removeReference = () => {
+    setReferenceImage(null);
+    setReferenceFileName('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -70,14 +194,22 @@ function GenerateContent() {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt.trim(), style: selectedStyle }),
+        body: JSON.stringify({ 
+          prompt: prompt.trim(), 
+          style: selectedStyle,
+          referenceImageUrl: referenceImage,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 429) {
-          setError(`Monthly limit reached (${data.used}/${data.limit}). Upgrade your plan for more pages!`);
+          if (data.needed) {
+            setError(`Not enough credits. This generation needs ${data.needed} credits, you have ${data.limit - data.used} remaining.`);
+          } else {
+            setError(`Monthly limit reached (${data.used}/${data.limit}). Upgrade your plan for more pages!`);
+          }
         } else {
           setError(data.error || 'Generation failed. Please try again.');
         }
@@ -97,7 +229,6 @@ function GenerateContent() {
 
   const handleDownload = async () => {
     if (!generatedImageUrl) return;
-    
     try {
       const response = await fetch(generatedImageUrl);
       const blob = await response.blob();
@@ -114,6 +245,8 @@ function GenerateContent() {
     }
   };
 
+  const pricingInfo = getReferenceCostInfo();
+
   return (
     <>
       <Navbar />
@@ -125,7 +258,7 @@ function GenerateContent() {
               Create Your Coloring Page
             </h1>
             <p className="text-muted-foreground text-lg">
-              Describe what you want to see, or upload an image to convert
+              Describe what you want, upload a reference, and pick a style
             </p>
           </div>
 
@@ -146,37 +279,113 @@ function GenerateContent() {
                 <p className="text-xs text-muted-foreground mt-2">
                   {prompt.length}/500 characters
                 </p>
+
+                {/* Example Prompts */}
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground mb-2">Need inspiration? Try these:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {EXAMPLE_PROMPTS.map((ex, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPrompt(ex.text)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-full border border-[#E5E0D5] bg-white hover:border-[#FFB800] hover:bg-[#FFB800]/5 transition-all text-muted-foreground hover:text-foreground"
+                      >
+                        <span>{ex.emoji}</span>
+                        <span>{ex.text}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Style Selection */}
+              {/* Reference Image Upload */}
+              <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-semibold text-foreground">
+                    Reference image <span className="text-muted-foreground font-normal">(optional)</span>
+                  </label>
+                  <span className="text-xs text-muted-foreground">
+                    Cost: {pricingInfo.isTrial ? (
+                      <>
+                        <span className="line-through text-red-400">{pricingInfo.original}</span>
+                        <span className="ml-1 font-semibold text-green-600">{pricingInfo.current} credits</span>
+                        <span className="ml-1 text-green-600">Launch deal!</span>
+                      </>
+                    ) : (
+                      <span>{pricingInfo.current} credits</span>
+                    )}
+                  </span>
+                </div>
+                
+                {referenceImage ? (
+                  <div className="relative group">
+                    <img
+                      src={referenceImage}
+                      alt="Reference"
+                      className="w-full max-h-48 object-contain rounded-xl border border-[#E5E0D5]"
+                    />
+                    <button
+                      onClick={removeReference}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    <p className="text-xs text-muted-foreground mt-2 truncate">{referenceFileName}</p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-8 border-2 border-dashed border-[#E5E0D5] rounded-xl hover:border-[#FFB800] hover:bg-[#FFB800]/5 transition-all flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground"
+                  >
+                    <Upload className="w-8 h-8" />
+                    <span className="text-sm font-medium">Click or drag to upload a reference image</span>
+                    <span className="text-xs">PNG, JPG, WEBP up to 10MB</span>
+                  </button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Upload a photo and we'll transform it into a coloring page while keeping the composition
+                </p>
+              </div>
+
+              {/* Style Selection - Visual Cards */}
               <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
                 <label className="block text-sm font-semibold mb-4 text-foreground">
                   Choose a style
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {styles.map((style) => {
-                    const Icon = style.icon;
+                    const Preview = style.preview;
                     return (
                       <button
                         key={style.id}
-                        onClick={() => setSelectedStyle(style.id as typeof selectedStyle)}
+                        onClick={() => setSelectedStyle(style.id)}
                         className={cn(
-                          'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
+                          'flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all',
                           selectedStyle === style.id
-                            ? 'border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]'
-                            : 'border-[#E5E0D5] bg-background hover:border-[#FFB800]/50 text-foreground'
+                            ? 'border-[#FFB800] bg-[#FFB800]/10 shadow-[0_2px_8px_rgba(255,184,0,0.2)]'
+                            : 'border-[#E5E0D5] bg-background hover:border-[#FFB800]/50'
                         )}
                       >
-                        <Icon className="w-6 h-6" />
-                        <span className="text-sm font-semibold">{style.label}</span>
-                        <span className="text-xs text-muted-foreground">{style.desc}</span>
+                        <div className="w-full aspect-square rounded-lg overflow-hidden bg-[#FFFBF0]">
+                          <Preview />
+                        </div>
+                        <span className={cn(
+                          "text-sm font-semibold",
+                          selectedStyle === style.id ? "text-[#FFB800]" : "text-foreground"
+                        )}>{style.label}</span>
+                        <span className="text-[10px] text-muted-foreground text-center leading-tight">{style.desc}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
-
-
 
               {/* Error Display */}
               {error && (
@@ -184,11 +393,11 @@ function GenerateContent() {
                   <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-red-700 font-medium">{error}</p>
-                    {error.includes('limit') && (
+                    {error.includes('credit') || error.includes('limit') ? (
                       <Link href="/pricing" className="text-red-600 underline text-sm hover:text-red-800">
                         View pricing plans →
                       </Link>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -247,12 +456,12 @@ function GenerateContent() {
                       />
                     </div>
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      {pagesUsed}/{pageLimit}
+                      {pagesUsed}/{pageLimit} credits
                     </span>
                   </div>
                   {pagesUsed >= pageLimit && (
                     <Link href="/pricing" className="block mt-2 text-center text-sm text-[#FFB800] font-semibold hover:underline">
-                      Upgrade for more pages →
+                      Upgrade for more credits →
                     </Link>
                   )}
                 </div>
@@ -266,7 +475,7 @@ function GenerateContent() {
                   >
                     Sign in
                   </button>
-                  {' '}for 5 free pages per month
+                  {' '}for 5 free credits per month
                 </p>
               )}
             </div>
@@ -277,16 +486,16 @@ function GenerateContent() {
                 <div className="flex-1 flex items-center justify-center">
                   {generatedImageUrl ? (
                     <img
-                        src={generatedImageUrl}
-                        alt="Generated coloring page"
-                        className="w-full h-auto max-h-[600px] object-contain rounded-xl"
-                      />
+                      src={generatedImageUrl}
+                      alt="Generated coloring page"
+                      className="w-full h-auto max-h-[600px] object-contain rounded-xl"
+                    />
                   ) : isGenerating ? (
                     <div className="text-center">
                       <Loader2 className="w-16 h-16 mx-auto mb-4 text-[#FFB800] animate-spin" />
                       <p className="text-lg font-medium text-foreground mb-2">Generating your coloring page...</p>
                       <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                        This usually takes 10-30 seconds
+                        {referenceImage ? 'Transforming your reference image...' : 'This usually takes 10-30 seconds'}
                       </p>
                     </div>
                   ) : (
@@ -330,6 +539,17 @@ function GenerateContent() {
                   Download PNG
                 </button>
               </div>
+
+              {/* Feedback */}
+              <div className="text-center">
+                <a
+                  href="mailto:jun.partner@coze.email?subject=ColorForge%20Feedback"
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#FFB800] transition-colors"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  Have feedback? We'd love to hear from you
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -346,6 +566,7 @@ function GenerateContent() {
             >
               ✕
             </button>
+            <h3 className="font-display text-xl mb-4 text-center text-foreground">Sign in to Generate</h3>
             <SignIn routing="hash" />
           </div>
         </div>

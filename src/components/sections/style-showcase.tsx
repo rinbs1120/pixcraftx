@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 const styles = [
   {
@@ -92,7 +92,7 @@ const IntricateSVG = () => (
   </svg>
 );
 
-const previews: Record<string, () => JSX.Element> = {
+const previews: Record<string, () => React.ReactElement> = {
   simple: SimpleSVG,
   mandala: MandalaSVG,
   intricate: IntricateSVG,

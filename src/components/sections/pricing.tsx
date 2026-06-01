@@ -27,18 +27,28 @@ const PLAN_RANK: Record<string, number> = {
   business: 3,
 };
 
+// Unified feature list - all cards show the same rows
+const allFeatures = [
+  { key: 'pages', label: 'Pages per month' },
+  { key: 'styles', label: 'All styles' },
+  { key: 'png', label: 'PNG download' },
+  { key: 'pdf', label: 'PDF export' },
+  { key: 'watermark', label: 'No watermark' },
+  { key: 'commercial', label: 'Commercial license' },
+  { key: 'support', label: 'Priority support' },
+  { key: 'api', label: 'API access' },
+] as const;
+
+type FeatureKey = typeof allFeatures[number]['key'];
+
 const plans = [
   {
     name: 'Free',
     key: 'free',
     price: 0,
     priceNote: '/mo',
-    features: [
-      { text: '5 pages per month', included: true },
-      { text: 'All styles', included: true },
-      { text: 'PNG download', included: true },
-      { text: 'No watermark', included: false },
-    ],
+    pageLabel: '5 pages',
+    features: { pages: true, styles: true, png: true, pdf: false, watermark: false, commercial: false, support: false, api: false } as Record<FeatureKey, boolean>,
     buttonText: 'Get Started',
     buttonStyle: 'outline' as const,
     href: '/generate',
@@ -49,14 +59,8 @@ const plans = [
     key: 'starter',
     price: 4.99,
     priceNote: '/mo',
-    features: [
-      { text: '100 pages per month', included: true },
-      { text: 'All styles', included: true },
-      { text: 'PNG download', included: true },
-      { text: 'No watermark', included: true },
-      { text: 'PDF export', included: false },
-      { text: 'Commercial use', included: false },
-    ],
+    pageLabel: '100 pages',
+    features: { pages: true, styles: true, png: true, pdf: false, watermark: true, commercial: false, support: false, api: false } as Record<FeatureKey, boolean>,
     buttonText: 'Subscribe',
     buttonStyle: 'filled' as const,
     href: null,
@@ -68,14 +72,8 @@ const plans = [
     price: 9.99,
     priceNote: '/mo',
     popular: true,
-    features: [
-      { text: '500 pages per month', included: true },
-      { text: 'All styles', included: true },
-      { text: 'PNG & PDF download', included: true },
-      { text: 'No watermark', included: true },
-      { text: 'Commercial license', included: true },
-      { text: 'Priority support', included: true },
-    ],
+    pageLabel: '500 pages',
+    features: { pages: true, styles: true, png: true, pdf: true, watermark: true, commercial: true, support: true, api: false } as Record<FeatureKey, boolean>,
     buttonText: 'Subscribe',
     buttonStyle: 'gradient' as const,
     href: null,
@@ -86,15 +84,8 @@ const plans = [
     key: 'business',
     price: 19.99,
     priceNote: '/mo',
-    features: [
-      { text: '2000 pages per month', included: true },
-      { text: 'All styles', included: true },
-      { text: 'PNG & PDF download', included: true },
-      { text: 'No watermark', included: true },
-      { text: 'Commercial license', included: true },
-      { text: 'Priority support', included: true },
-      { text: 'API access', included: true },
-    ],
+    pageLabel: '2000 pages',
+    features: { pages: true, styles: true, png: true, pdf: true, watermark: true, commercial: true, support: true, api: true } as Record<FeatureKey, boolean>,
     buttonText: 'Subscribe',
     buttonStyle: 'filled' as const,
     href: null,
@@ -126,7 +117,6 @@ export function Pricing() {
           Simple Pricing
         </h2>
 
-        {/* Pricing Grid - 4 columns, equal height */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-5">
           {plans.map((plan) => {
             const planRank = PLAN_RANK[plan.key] || 0;
@@ -153,7 +143,6 @@ export function Pricing() {
                   transform: plan.popular ? 'scale(1.02)' : undefined,
                 }}
               >
-                {/* Popular Badge */}
                 {plan.popular && !isCurrent && (
                   <div
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1 rounded-full text-xs font-bold text-[#1A1A2E]"
@@ -163,19 +152,16 @@ export function Pricing() {
                   </div>
                 )}
 
-                {/* Current Plan Badge */}
                 {isCurrent && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1 rounded-full text-xs font-bold text-white bg-[#2ECC71]">
                     Current Plan
                   </div>
                 )}
 
-                {/* Plan Name */}
                 <h3 className="font-display text-[22px] text-foreground mb-2">
                   {plan.name}
                 </h3>
 
-                {/* Price */}
                 <div className="mb-6">
                   <span className="font-display text-[44px] text-foreground">
                     ${plan.price}
@@ -185,23 +171,25 @@ export function Pricing() {
                   </span>
                 </div>
 
-                {/* Features */}
                 <ul className="space-y-3 mb-8 flex-grow">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2 text-[15px]">
-                      {feature.included ? (
-                        <Check className="w-4 h-4 text-[#2ECC71] flex-shrink-0" />
-                      ) : (
-                        <Minus className="w-4 h-4 text-[#8A8A9A] flex-shrink-0" />
-                      )}
-                      <span className={feature.included ? 'text-[#4A4A5E]' : 'text-[#8A8A9A]'}>
-                        {feature.text}
-                      </span>
-                    </li>
-                  ))}
+                  {allFeatures.map((feat) => {
+                    const included = plan.features[feat.key];
+                    const isPages = feat.key === 'pages';
+                    return (
+                      <li key={feat.key} className="flex items-center gap-2 text-[15px]">
+                        {included ? (
+                          <Check className="w-4 h-4 text-[#2ECC71] flex-shrink-0" />
+                        ) : (
+                          <Minus className="w-4 h-4 text-[#8A8A9A] flex-shrink-0" />
+                        )}
+                        <span className={included ? 'text-[#4A4A5E]' : 'text-[#8A8A9A]'}>
+                          {isPages ? plan.pageLabel : feat.label}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
 
-                {/* CTA Button - pushed to bottom with mt-auto */}
                 <div className="mt-auto">
                 {isCurrent ? (
                   <button

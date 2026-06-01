@@ -178,7 +178,6 @@ export async function POST(req: NextRequest) {
           prompt: fullPrompt,
           image_url: referenceImageUrl,
           strength: 0.75,
-          image_size: 'portrait_4_3',
           num_images: 1,
         },
       });

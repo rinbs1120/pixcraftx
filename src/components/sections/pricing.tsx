@@ -126,8 +126,8 @@ export function Pricing() {
           Simple Pricing
         </h2>
 
-        {/* Pricing Grid - 4 columns */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-5 items-start">
+        {/* Pricing Grid - 4 columns, equal height */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-5">
           {plans.map((plan) => {
             const planRank = PLAN_RANK[plan.key] || 0;
             const isCurrent = plan.key === currentPlan;
@@ -137,7 +137,7 @@ export function Pricing() {
             return (
               <div
                 key={plan.name}
-                className={`relative rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1 ${
+                className={`relative rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col ${
                   isCurrent
                     ? 'border-2 border-[#2ECC71] bg-[#E8FBF0]'
                     : plan.popular
@@ -186,7 +186,7 @@ export function Pricing() {
                 </div>
 
                 {/* Features */}
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-grow">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-center gap-2 text-[15px]">
                       {feature.included ? (
@@ -201,7 +201,8 @@ export function Pricing() {
                   ))}
                 </ul>
 
-                {/* CTA Button */}
+                {/* CTA Button - pushed to bottom with mt-auto */}
+                <div className="mt-auto">
                 {isCurrent ? (
                   <button
                     className="block w-full py-3.5 rounded-xl font-bold text-center bg-[#2ECC71] text-white cursor-default"
@@ -266,6 +267,7 @@ export function Pricing() {
                     {plan.buttonText}
                   </Link>
                 )}
+                </div>
               </div>
             );
           })}

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2 } from 'lucide-react';
+import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
 import { useAuth } from '@clerk/nextjs';
 
@@ -36,6 +36,8 @@ function toLocalUrl(url: string): string {
   return url;
 }
 
+const ZOOM_LEVELS = [25, 50, 75, 100, 125, 150, 200];
+
 function ColorContent() {
   const searchParams = useSearchParams();
   const { isSignedIn } = useAuth();
@@ -54,11 +56,28 @@ function ColorContent() {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState({ w: 800, h: 1000 });
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
+  const [zoom, setZoom] = useState(100);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const url = searchParams.get('src');
     if (url) setImageUrl(url);
   }, [searchParams]);
+
+  // Auto-fit zoom on image load
+  useEffect(() => {
+    if (!imageLoaded) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const containerW = container.clientWidth - 32; // padding
+    const containerH = container.clientHeight - 32;
+    const fitW = (containerW / canvasSize.w) * 100;
+    const fitH = (containerH / canvasSize.h) * 100;
+    const fitZoom = Math.min(fitW, fitH, 100);
+    // Find closest zoom level
+    const bestZoom = ZOOM_LEVELS.reduce((prev, curr) => Math.abs(curr - fitZoom) < Math.abs(prev - fitZoom) ? curr : prev);
+    setZoom(bestZoom);
+  }, [imageLoaded, canvasSize]);
 
   useEffect(() => {
     if (!imageUrl) return;
@@ -151,6 +170,34 @@ function ColorContent() {
     return rect.width > 0 ? colorCanvas.width / rect.width : 1;
   }, []);
 
+  const zoomIn = useCallback(() => {
+    setZoom(prev => {
+      const idx = ZOOM_LEVELS.findIndex(z => z >= prev);
+      if (idx < ZOOM_LEVELS.length - 1) return ZOOM_LEVELS[idx + 1];
+      return prev;
+    });
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoom(prev => {
+      const idx = ZOOM_LEVELS.findIndex(z => z >= prev);
+      if (idx > 0) return ZOOM_LEVELS[idx - 1];
+      return prev;
+    });
+  }, []);
+
+  const zoomFit = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const containerW = container.clientWidth - 32;
+    const containerH = container.clientHeight - 32;
+    const fitW = (containerW / canvasSize.w) * 100;
+    const fitH = (containerH / canvasSize.h) * 100;
+    const fitZoom = Math.min(fitW, fitH, 100);
+    const bestZoom = ZOOM_LEVELS.reduce((prev, curr) => Math.abs(curr - fitZoom) < Math.abs(prev - fitZoom) ? curr : prev);
+    setZoom(bestZoom);
+  }, [canvasSize]);
+
   const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (tool !== 'fill') return;
     const colorCanvas = colorCanvasRef.current; const baseCanvas = baseCanvasRef.current;
@@ -234,6 +281,15 @@ function ColorContent() {
     }
   }, [isDrawing, saveToHistory]);
 
+  // Mouse wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      if (e.deltaY < 0) zoomIn();
+      else zoomOut();
+    }
+  }, [zoomIn, zoomOut]);
+
   const getMergedCanvas = useCallback(() => {
     const baseCanvas = baseCanvasRef.current; const colorCanvas = colorCanvasRef.current;
     if (!baseCanvas || !colorCanvas) return null;
@@ -283,6 +339,9 @@ function ColorContent() {
     return <><Navbar /><main className="min-h-screen pt-20 pb-16 bg-background flex items-center justify-center"><p className="text-muted-foreground text-lg">No image selected. Generate a coloring page first.</p></main><Footer /></>;
   }
 
+  const displayW = canvasSize.w * (zoom / 100);
+  const displayH = canvasSize.h * (zoom / 100);
+
   return (
     <>
       <Navbar />
@@ -331,28 +390,48 @@ function ColorContent() {
               </div>
             </div>
             
-            <div className="bg-card rounded-3xl p-4 md:p-6 shadow-lg border border-border">
-              <div ref={containerRef} className="flex items-center justify-center min-h-[500px] relative" onClick={handleCanvasClick} onMouseDown={handleCanvasMouseDown} onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp} onMouseLeave={handleMouseLeave} style={{ cursor: tool === 'fill' ? 'crosshair' : 'none' }}>
-                {!imageLoaded && !loadError && (
-                  <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><Loader2 className="w-12 h-12 mx-auto mb-3 text-[#FFB800] animate-spin" /><p className="text-muted-foreground">Loading coloring page...</p></div></div>
-                )}
-                {loadError && (
-                  <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><p className="text-red-500 mb-2">{loadError}</p><button onClick={() => { setImageLoaded(false); setLoadError(null); window.location.reload(); }} className="px-4 py-2 bg-[#FFB800] rounded-xl text-sm font-medium">Retry</button></div></div>
-                )}
-                
-                <div className={"relative " + (imageLoaded && !loadError ? '' : 'opacity-0')} style={{ 
-                  width: 'auto',
-                  maxWidth: '100%', 
-                  height: 'auto',
-                  maxHeight: '70vh',
-                  aspectRatio: canvasSize.w + ' / ' + canvasSize.h
-                }}>
-                  <canvas ref={baseCanvasRef} className="w-full h-full rounded-xl shadow-md block" style={{ imageRendering: 'auto' }} />
-                  <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: 'auto', cursor: tool === 'fill' ? 'crosshair' : 'none' }} />
+            <div className="bg-card rounded-3xl shadow-lg border border-border flex flex-col">
+              {/* Zoom toolbar */}
+              <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-b border-border bg-card rounded-t-3xl">
+                <button onClick={zoomOut} disabled={zoom <= ZOOM_LEVELS[0]} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all disabled:opacity-30 disabled:cursor-not-allowed"><ZoomOut className="w-4 h-4" /></button>
+                <span className="text-sm font-medium text-foreground min-w-[48px] text-center">{zoom}%</span>
+                <button onClick={zoomIn} disabled={zoom >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1]} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all disabled:opacity-30 disabled:cursor-not-allowed"><ZoomIn className="w-4 h-4" /></button>
+                <div className="w-px h-5 bg-border mx-1" />
+                <button onClick={zoomFit} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all" title="Fit to view"><Maximize2 className="w-4 h-4" /></button>
+              </div>
+
+              {/* Canvas area with scroll */}
+              <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-auto p-4" 
+                style={{ minHeight: '500px', maxHeight: '75vh' }}
+                onWheel={handleWheel}
+              >
+                <div 
+                  ref={containerRef} 
+                  className="relative mx-auto" 
+                  style={{ width: displayW, height: displayH }}
+                  onClick={handleCanvasClick} 
+                  onMouseDown={handleCanvasMouseDown} 
+                  onMouseMove={handleCanvasMouseMove} 
+                  onMouseUp={handleCanvasMouseUp} 
+                  onMouseLeave={handleMouseLeave}
+                >
+                  {!imageLoaded && !loadError && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><Loader2 className="w-12 h-12 mx-auto mb-3 text-[#FFB800] animate-spin" /><p className="text-muted-foreground">Loading coloring page...</p></div></div>
+                  )}
+                  {loadError && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><p className="text-red-500 mb-2">{loadError}</p><button onClick={() => { setImageLoaded(false); setLoadError(null); window.location.reload(); }} className="px-4 py-2 bg-[#FFB800] rounded-xl text-sm font-medium">Retry</button></div></div>
+                  )}
+                  
+                  <div className={"relative w-full h-full " + (imageLoaded && !loadError ? '' : 'opacity-0')}>
+                    <canvas ref={baseCanvasRef} className="w-full h-full rounded-xl shadow-md block" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto' }} />
+                    <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: tool === 'fill' ? 'crosshair' : 'none' }} />
+                  </div>
+                  {cursorPos && tool !== 'fill' && imageLoaded && !loadError && (
+                    <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : 'transparent' }} />
+                  )}
                 </div>
-                {cursorPos && tool !== 'fill' && imageLoaded && !loadError && (
-                  <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : 'transparent' }} />
-                )}
               </div>
             </div>
           </div>

@@ -1,8 +1,9 @@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Hero } from '@/components/sections/hero';
-import { TryItNow } from '@/components/sections/try-it-now';
+import { StyleShowcase } from '@/components/sections/style-showcase';
 import { HowItWorks } from '@/components/sections/how-it-works';
+import { PerfectFor } from '@/components/sections/perfect-for';
 import { WhyColorForge } from '@/components/sections/why-colorforge';
 import { Pricing } from '@/components/sections/pricing';
 import { FAQ } from '@/components/sections/faq';
@@ -14,8 +15,9 @@ export default function HomePage() {
       <Navbar />
       <main>
         <Hero />
-        <TryItNow />
+        <StyleShowcase />
         <HowItWorks />
+        <PerfectFor />
         <WhyColorForge />
         <Pricing />
         <FAQ />

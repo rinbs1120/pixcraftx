@@ -1,13 +1,11 @@
 // Flood fill algorithm with boundary detection
-// gapTolerance: 0 = strict (brightness < 80 = line), 1 = close gaps mode (brightness < 200 = line)
 export function floodFill(
   ctx: CanvasRenderingContext2D,
   startX: number,
   startY: number,
   fillColor: [number, number, number],
   boundaryCtx?: CanvasRenderingContext2D | null,
-  tolerance: number = 32,
-  gapTolerance: number = 0
+  tolerance: number = 32
 ) {
   const canvas = ctx.canvas;
   const width = canvas.width;
@@ -24,7 +22,7 @@ export function floodFill(
   startY = Math.round(startY);
   if (startX < 0 || startX >= width || startY < 0 || startY >= height) return;
   
-  const LINE_THRESHOLD = gapTolerance > 0 ? 200 : 80;
+  const LINE_THRESHOLD = 80;
   
   const startIdx = (startY * width + startX) * 4;
   let startR: number, startG: number, startB: number, startA: number;

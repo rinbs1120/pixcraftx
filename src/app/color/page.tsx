@@ -280,7 +280,7 @@ function ColorContent() {
   const cursorRadius = tool === 'eraser' ? (brushSize * 3) / getScale() / 2 : brushSize / getScale() / 2;
 
   if (!imageUrl) {
-    return (<><Navbar /><main className="min-h-screen pt-20 pb-16 bg-background flex items-center justify-center"><p className="text-muted-foreground text-lg">No image selected. Generate a coloring page first.</p></main><Footer /></>);
+    return <><Navbar /><main className="min-h-screen pt-20 pb-16 bg-background flex items-center justify-center"><p className="text-muted-foreground text-lg">No image selected. Generate a coloring page first.</p></main><Footer /></>;
   }
 
   return (
@@ -292,6 +292,7 @@ function ColorContent() {
             <h1 className="font-display text-3xl md:text-4xl mb-2 text-foreground">Color Your Page</h1>
             <p className="text-muted-foreground">Pick a color and click to fill, or use the brush to draw</p>
           </div>
+          
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
             <div className="space-y-4">
               <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
@@ -329,6 +330,7 @@ function ColorContent() {
                 )}
               </div>
             </div>
+            
             <div className="bg-card rounded-3xl p-4 md:p-6 shadow-lg border border-border">
               <div ref={containerRef} className="flex items-center justify-center min-h-[500px] relative" onClick={handleCanvasClick} onMouseDown={handleCanvasMouseDown} onMouseMove={handleCanvasMouseMove} onMouseUp={handleCanvasMouseUp} onMouseLeave={handleMouseLeave} style={{ cursor: tool === 'fill' ? 'crosshair' : 'none' }}>
                 {!imageLoaded && !loadError && (
@@ -337,7 +339,14 @@ function ColorContent() {
                 {loadError && (
                   <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><p className="text-red-500 mb-2">{loadError}</p><button onClick={() => { setImageLoaded(false); setLoadError(null); window.location.reload(); }} className="px-4 py-2 bg-[#FFB800] rounded-xl text-sm font-medium">Retry</button></div></div>
                 )}
-                <div className={"relative " + (imageLoaded && !loadError ? '' : 'opacity-0')} style={{ width: '100%', maxWidth: canvasSize.w, aspectRatio: canvasSize.w + ' / ' + canvasSize.h, maxHeight: '70vh' }}>
+                
+                <div className={"relative " + (imageLoaded && !loadError ? '' : 'opacity-0')} style={{ 
+                  width: 'auto',
+                  maxWidth: '100%', 
+                  height: 'auto',
+                  maxHeight: '70vh',
+                  aspectRatio: canvasSize.w + ' / ' + canvasSize.h
+                }}>
                   <canvas ref={baseCanvasRef} className="w-full h-full rounded-xl shadow-md block" style={{ imageRendering: 'auto' }} />
                   <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: 'auto', cursor: tool === 'fill' ? 'crosshair' : 'none' }} />
                 </div>

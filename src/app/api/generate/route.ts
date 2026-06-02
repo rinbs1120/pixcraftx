@@ -179,13 +179,13 @@ export async function POST(req: NextRequest) {
 
     if (referenceImageUrl) {
       // Reference image: use flux/dev img2img for best quality
+      // Note: flux/dev img2img does NOT support image_size parameter
       // maxDuration is set to 60s which covers flux/dev's 15-30s generation time
       console.log('[Generate] Using flux/dev img2img with reference image');
       result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
         input: {
           prompt: fullPrompt,
           image_url: referenceImageUrl,
-          image_size: 'portrait_4_3',
           num_images: 1,
           strength: 0.85,
         },

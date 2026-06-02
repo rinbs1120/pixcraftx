@@ -288,6 +288,7 @@ export async function GET(req: NextRequest) {
     // 2=completed
     if (taskStatus === 2) {
       const imageUrl =
+        pollData.data?.result_urls?.[0] ||
         pollData.data?.image_url ||
         pollData.data?.url ||
         pollData.output?.image_url ||

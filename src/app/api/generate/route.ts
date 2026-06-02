@@ -338,13 +338,20 @@ export async function GET(req: NextRequest) {
     }
 
     // Check fal.ai queue status
+    // fal.queue.status returns: IN_QUEUE | IN_PROGRESS
+    // When done, we try fal.queue.result to get the output
     const status = await fal.queue.status('fal-ai/recraft/v3/image-to-image', {
       requestId,
       logs: false,
     });
 
-    if (status.status === 'COMPLETED') {
-      // Get the result
+    if (status.status === 'IN_QUEUE') {
+      return NextResponse.json({ status: 'processing' });
+    }
+
+    // IN_PROGRESS or completed - try to fetch result
+    // If still in progress, result will throw; if done, we get the image
+    try {
       const result = await fal.queue.result('fal-ai/recraft/v3/image-to-image', {
         requestId,
       });
@@ -399,19 +406,10 @@ export async function GET(req: NextRequest) {
         status: 'completed',
         imageUrl: permanentUrl,
       });
-    } else if (status.status === 'FAILED') {
-      // Update generation_history
-      await supabase
-        .from('generation_history')
-        .update({ status: 'failed' })
-        .eq('fal_request_id', requestId)
-        .eq('user_id', userId);
-
-      return NextResponse.json({ status: 'failed', error: 'Generation failed' });
+    } catch {
+      // Result not ready yet (still IN_PROGRESS)
+      return NextResponse.json({ status: 'processing' });
     }
-
-    // Still in progress
-    return NextResponse.json({ status: 'processing' });
   } catch (error) {
     console.error('Status check error:', error);
     return NextResponse.json({ error: 'Status check failed' }, { status: 500 });

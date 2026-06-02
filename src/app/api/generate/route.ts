@@ -172,19 +172,22 @@ export async function POST(req: NextRequest) {
       fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
     }
 
+    console.log(`[Generate] Style: ${style}, Has reference: ${!!referenceImageUrl}, Prompt: "${prompt.slice(0, 80)}..."`);
+
     // 6. Call Fal.ai to generate image
     let result: any;
 
     if (referenceImageUrl) {
-      // Reference image: use flux/schnell with enhanced prompt
-      // flux/dev img2img takes 15-30s which exceeds Vercel Hobby 10s limit
-      // Instead, enrich the prompt based on the reference context
-      // The user's prompt + "reference image" keywords guide schnell to follow the reference
-      result = await fal.subscribe('fal-ai/flux/schnell', {
+      // Reference image: use flux/dev img2img for best quality
+      // maxDuration is set to 60s which covers flux/dev's 15-30s generation time
+      console.log('[Generate] Using flux/dev img2img with reference image');
+      result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
         input: {
           prompt: fullPrompt,
+          image_url: referenceImageUrl,
           image_size: 'portrait_4_3',
           num_images: 1,
+          strength: 0.85,
         },
       });
     } else {

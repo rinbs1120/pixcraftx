@@ -24,6 +24,9 @@ const STYLE_PROMPTS = {
   }
 };
 
+// Extra emphasis for reference image mode to override color bleeding from source photo
+const REFERENCE_LINE_ART_SUFFIX = ", ABSOLUTELY NO COLORS WHATSOEVER, this must be a black and white line drawing only, pure black ink outlines on white paper, remove all color from the reference image, output must look like a printed coloring book page with zero color, no pigments, no hues, no saturation, monochrome line art only";
+
 const PLAN_LIMITS = {
   free: 5,
   starter: 100,
@@ -167,7 +170,8 @@ export async function POST(req: NextRequest) {
     let fullPrompt: string;
 
     if (referenceImageUrl) {
-      fullPrompt = `${styleConfig.prefix} transform this reference image into a coloring page, faithfully following the subject, composition and pose of the reference image, ${prompt} ${styleConfig.suffix}`;
+      // For reference images: use extra-strong line art emphasis to override source photo colors
+      fullPrompt = `${styleConfig.prefix} convert this reference photo into a coloring page, keep the same subject and composition but remove all colors and convert to pure line art outlines, ${prompt} ${styleConfig.suffix}${REFERENCE_LINE_ART_SUFFIX}`;
     } else {
       fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
     }
@@ -178,16 +182,17 @@ export async function POST(req: NextRequest) {
     let result: any;
 
     if (referenceImageUrl) {
-      // Reference image: use flux/dev img2img for best quality
+      // Reference image: use flux/dev img2img
+      // strength 0.7-0.8 recommended: gives prompt enough control to override colors
       // Note: flux/dev img2img does NOT support image_size parameter
-      // maxDuration is set to 60s which covers flux/dev's 15-30s generation time
-      console.log('[Generate] Using flux/dev img2img with reference image');
+      console.log('[Generate] Using flux/dev img2img with reference image, strength=0.75');
       result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
         input: {
           prompt: fullPrompt,
           image_url: referenceImageUrl,
           num_images: 1,
-          strength: 0.85,
+          strength: 0.75,
+          guidance_scale: 7.5,
         },
       });
     } else {

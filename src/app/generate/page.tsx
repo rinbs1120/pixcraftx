@@ -170,10 +170,43 @@ function GenerateContent() {
         return;
       }
 
-      setGeneratedImageUrl(data.imageUrl);
-      setPagesUsed(data.pagesUsed);
-      setPageLimit(data.limit);
-      setPlan(data.plan);
+      // If reference image mode, poll for result (async generation)
+      if (data.status === 'processing' && data.requestId) {
+        setPagesUsed(data.pagesUsed);
+        setPageLimit(data.limit);
+        setPlan(data.plan);
+
+        // Poll every 3 seconds, max 60 seconds
+        const maxAttempts = 20;
+        for (let i = 0; i < maxAttempts; i++) {
+          await new Promise(r => setTimeout(r, 3000));
+          try {
+            const statusRes = await fetch(`/api/generate/status?requestId=${data.requestId}`);
+            const statusData = await statusRes.json();
+
+            if (statusData.status === 'completed') {
+              setGeneratedImageUrl(statusData.imageUrl);
+              break;
+            } else if (statusData.status === 'failed') {
+              setError(statusData.error || 'Image generation failed. Please try again.');
+              break;
+            }
+            // Still processing, continue polling
+          } catch {
+            // Network error on poll, retry
+          }
+        }
+        // If we exhausted attempts
+        if (!generatedImageUrl && !error) {
+          setError('Generation is taking too long. Please try again.');
+        }
+      } else {
+        // Direct result (text-to-image, fast)
+        setGeneratedImageUrl(data.imageUrl);
+        setPagesUsed(data.pagesUsed);
+        setPageLimit(data.limit);
+        setPlan(data.plan);
+      }
     } catch (err) {
       setError('Network error. Please check your connection and try again.');
     } finally {

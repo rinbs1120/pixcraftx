@@ -180,11 +180,10 @@ export async function POST(req: NextRequest) {
 
     if (referenceImageUrl) {
       // Reference image: use Recraft v3 with native line_art style
-      // Recraft's vector_illustration/line_art is purpose-built for clean B&W line art,
-      // architecturally preventing color bleeding - no ControlNet hacks needed!
-      // Cost: $0.08/image (vector style = 2x raster $0.04)
-      console.log('[Generate] Using Recraft v3 line_art for reference image');
-      result = await fal.subscribe('fal-ai/recraft/v3/image-to-image', {
+      // Use ASYNC queue mode to avoid Vercel Hobby 10s timeout
+      // Frontend will poll /api/generate/status for the result
+      console.log('[Generate] Submitting Recraft v3 line_art job to fal queue');
+      const { request_id } = await fal.queue.submit('fal-ai/recraft/v3/image-to-image', {
         input: {
           prompt: fullPrompt,
           image_url: referenceImageUrl,
@@ -193,8 +192,37 @@ export async function POST(req: NextRequest) {
           negative_prompt: 'color, shading, shadow, gradient, gray fill, paint, realistic photograph',
         },
       });
+
+      // Store the pending job in generation_history for polling
+      const { data: historyEntry } = await supabase
+        .from('generation_history')
+        .insert({
+          user_id: userId,
+          prompt: prompt,
+          style,
+          image_url: '',
+          storage_path: null,
+          credit_cost: creditCost,
+          has_reference: true,
+          fal_request_id: request_id,
+          status: 'processing',
+        })
+        .select('id')
+        .single();
+
+      // Return immediately so Vercel doesn't timeout
+      return NextResponse.json({
+        status: 'processing',
+        requestId: request_id,
+        historyId: historyEntry?.id,
+        pagesUsed: pagesUsed + creditCost,
+        limit,
+        plan,
+        creditCost,
+        hasReference: true,
+      });
     } else {
-      // Text-to-image using flux/schnell (faster, cheaper)
+      // Text-to-image using flux/schnell (faster, under 10s)
       result = await fal.subscribe('fal-ai/flux/schnell', {
         input: {
           prompt: fullPrompt,
@@ -287,5 +315,105 @@ export async function POST(req: NextRequest) {
     console.error('Generation error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}
+
+// GET /api/generate/status - Poll fal.ai queue for reference image generation result
+export async function GET(req: NextRequest) {
+  try {
+    fal.config({ credentials: process.env.FAL_KEY! });
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const requestId = req.nextUrl.searchParams.get('requestId');
+    if (!requestId) {
+      return NextResponse.json({ error: 'Missing requestId' }, { status: 400 });
+    }
+
+    // Check fal.ai queue status
+    const status = await fal.queue.status('fal-ai/recraft/v3/image-to-image', {
+      requestId,
+      logs: false,
+    });
+
+    if (status.status === 'COMPLETED') {
+      // Get the result
+      const result = await fal.queue.result('fal-ai/recraft/v3/image-to-image', {
+        requestId,
+      });
+
+      const tempImageUrl = result.data?.images?.[0]?.url;
+      if (!tempImageUrl) {
+        return NextResponse.json({ status: 'failed', error: 'No image in result' });
+      }
+
+      // Download and upload to Supabase Storage
+      let permanentUrl = tempImageUrl;
+      let storagePath: string | null = null;
+
+      try {
+        const imageResponse = await fetch(tempImageUrl);
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const timestamp = Date.now();
+        const responseContentType = imageResponse.headers.get('content-type') || 'image/png';
+        const fileExt = responseContentType.includes('webp') ? 'webp' : 'png';
+        const filePath = `${userId}/ref-${timestamp}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('coloring-pages')
+          .upload(filePath, imageBuffer, {
+            contentType: responseContentType,
+            upsert: false,
+          });
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('coloring-pages')
+            .getPublicUrl(filePath);
+          permanentUrl = urlData.publicUrl;
+          storagePath = filePath;
+        }
+      } catch (storageErr) {
+        console.error('[Status] Storage upload failed:', storageErr);
+      }
+
+      // Update generation_history
+      await supabase
+        .from('generation_history')
+        .update({
+          image_url: permanentUrl,
+          storage_path: storagePath,
+          status: 'completed',
+        })
+        .eq('fal_request_id', requestId)
+        .eq('user_id', userId);
+
+      return NextResponse.json({
+        status: 'completed',
+        imageUrl: permanentUrl,
+      });
+    } else if (status.status === 'FAILED') {
+      // Update generation_history
+      await supabase
+        .from('generation_history')
+        .update({ status: 'failed' })
+        .eq('fal_request_id', requestId)
+        .eq('user_id', userId);
+
+      return NextResponse.json({ status: 'failed', error: 'Generation failed' });
+    }
+
+    // Still in progress
+    return NextResponse.json({ status: 'processing' });
+  } catch (error) {
+    console.error('Status check error:', error);
+    return NextResponse.json({ error: 'Status check failed' }, { status: 500 });
   }
 }

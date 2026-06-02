@@ -165,13 +165,10 @@ export async function POST(req: NextRequest) {
     // 5. Build coloring page specific prompt
     const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.simple;
     let fullPrompt: string;
-    let negativePrompt: string = '';
-
     if (referenceImageUrl) {
-      // Reference image mode: ControlNet lineart extracts structure from reference,
+      // Reference image mode: ControlNet Canny extracts edges from reference,
       // then generates pure B&W line art from scratch (no color bleeding from source)
       fullPrompt = `${styleConfig.prefix} ${prompt}, following the structure and composition of the reference image ${styleConfig.suffix}`;
-      negativePrompt = 'color, colors, colored, shading, grayscale, gradient, filled areas, shadows, photorealistic, painting, watercolor';
     } else {
       fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
     }
@@ -185,20 +182,19 @@ export async function POST(req: NextRequest) {
       // Reference image: use flux-general with ControlNet lineart
       // ControlNet extracts structural lines from reference image,
       // then generates pure B&W line art from scratch (no color bleeding!)
-      console.log('[Generate] Using flux-general with ControlNet lineart for reference image');
+      console.log('[Generate] Using flux-general with ControlNet Canny for reference image');
       result = await fal.subscribe('fal-ai/flux-general', {
         input: {
           prompt: fullPrompt,
           image_size: 'portrait_4_3',
           num_images: 1,
-          guidance_scale: 7.5,
+          guidance_scale: 3.5,
           num_inference_steps: 28,
           controlnets: [{
-            path: 'promeai/FLUX.1-controlnet-lineart-promeai',
+            path: 'InstantX/FLUX.1-dev-Controlnet-Canny',
             control_image_url: referenceImageUrl,
             conditioning_scale: 0.8,
           }],
-          negative_prompt: negativePrompt,
         },
       });
     } else {

@@ -176,8 +176,12 @@ function GenerateContent() {
         setPageLimit(data.limit);
         setPlan(data.plan);
 
-        // Poll every 3 seconds, max 60 seconds
-        const maxAttempts = 20;
+        // Poll every 3 seconds, max 90 seconds
+        // Use local vars to avoid React stale closure bug
+        const maxAttempts = 30;
+        let pollCompleted = false;
+        let pollFailed = false;
+
         for (let i = 0; i < maxAttempts; i++) {
           await new Promise(r => setTimeout(r, 3000));
           try {
@@ -186,9 +190,11 @@ function GenerateContent() {
 
             if (statusData.status === 'completed') {
               setGeneratedImageUrl(statusData.imageUrl);
+              pollCompleted = true;
               break;
             } else if (statusData.status === 'failed') {
               setError(statusData.error || 'Image generation failed. Please try again.');
+              pollFailed = true;
               break;
             }
             // Still processing, continue polling
@@ -196,8 +202,8 @@ function GenerateContent() {
             // Network error on poll, retry
           }
         }
-        // If we exhausted attempts
-        if (!generatedImageUrl && !error) {
+        // Only show timeout if polling ended without success or failure
+        if (!pollCompleted && !pollFailed) {
           setError('Generation is taking too long. Please try again.');
         }
       } else {

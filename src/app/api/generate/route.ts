@@ -166,9 +166,10 @@ export async function POST(req: NextRequest) {
     const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.simple;
     let fullPrompt: string;
     if (referenceImageUrl) {
-      // Reference image mode: Recraft v3 line_art style natively produces B&W line art
-      // The model's line_art style handles color removal at architecture level
-      fullPrompt = `${styleConfig.prefix} ${prompt}, following the structure and composition of the reference image ${styleConfig.suffix}`;
+      // Reference image mode: Recraft v3 line_art style
+      // Keep prompt CONCISE - Recraft's style handles the look, prompt describes the subject
+      // Long prompts with conflicting instructions confuse the model
+      fullPrompt = `${prompt}, black and white line art outline, clean lines, no shading, white background`;
     } else {
       fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
     }
@@ -187,9 +188,9 @@ export async function POST(req: NextRequest) {
         input: {
           prompt: fullPrompt,
           image_url: referenceImageUrl,
-          strength: 0.7,
+          strength: 0.45,
           style: 'vector_illustration/line_art',
-          negative_prompt: 'color, shading, shadow, gradient, gray fill, paint, realistic photograph',
+          negative_prompt: 'color, shading, realistic photograph',
         },
       });
 

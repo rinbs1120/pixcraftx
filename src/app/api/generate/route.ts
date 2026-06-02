@@ -1,4 +1,4 @@
-// Extend API route timeout for image generation (especially img2img)
+// Extend API route timeout for image generation (especially with ControlNet)
 export const maxDuration = 60; // 60 seconds max
 export const dynamic = "force-dynamic";
 
@@ -23,9 +23,6 @@ const STYLE_PROMPTS = {
     suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders including all background elements like trees mountains clouds, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   }
 };
-
-// Extra emphasis for reference image mode to override color bleeding from source photo
-const REFERENCE_LINE_ART_SUFFIX = ", ABSOLUTELY NO COLORS WHATSOEVER, this must be a black and white line drawing only, pure black ink outlines on white paper, remove all color from the reference image, output must look like a printed coloring book page with zero color, no pigments, no hues, no saturation, monochrome line art only";
 
 const PLAN_LIMITS = {
   free: 5,
@@ -168,10 +165,13 @@ export async function POST(req: NextRequest) {
     // 5. Build coloring page specific prompt
     const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.simple;
     let fullPrompt: string;
+    let negativePrompt: string = '';
 
     if (referenceImageUrl) {
-      // For reference images: use extra-strong line art emphasis to override source photo colors
-      fullPrompt = `${styleConfig.prefix} convert this reference photo into a coloring page, keep the same subject and composition but remove all colors and convert to pure line art outlines, ${prompt} ${styleConfig.suffix}${REFERENCE_LINE_ART_SUFFIX}`;
+      // Reference image mode: ControlNet lineart extracts structure from reference,
+      // then generates pure B&W line art from scratch (no color bleeding from source)
+      fullPrompt = `${styleConfig.prefix} ${prompt}, following the structure and composition of the reference image ${styleConfig.suffix}`;
+      negativePrompt = 'color, colors, colored, shading, grayscale, gradient, filled areas, shadows, photorealistic, painting, watercolor';
     } else {
       fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
     }
@@ -182,17 +182,23 @@ export async function POST(req: NextRequest) {
     let result: any;
 
     if (referenceImageUrl) {
-      // Reference image: use flux/dev img2img
-      // strength 0.7-0.8 recommended: gives prompt enough control to override colors
-      // Note: flux/dev img2img does NOT support image_size parameter
-      console.log('[Generate] Using flux/dev img2img with reference image, strength=0.75');
-      result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
+      // Reference image: use flux-general with ControlNet lineart
+      // ControlNet extracts structural lines from reference image,
+      // then generates pure B&W line art from scratch (no color bleeding!)
+      console.log('[Generate] Using flux-general with ControlNet lineart for reference image');
+      result = await fal.subscribe('fal-ai/flux-general', {
         input: {
           prompt: fullPrompt,
-          image_url: referenceImageUrl,
+          image_size: 'portrait_4_3',
           num_images: 1,
-          strength: 0.75,
           guidance_scale: 7.5,
+          num_inference_steps: 28,
+          controlnets: [{
+            path: 'promeai/FLUX.1-controlnet-lineart-promeai',
+            control_image_url: referenceImageUrl,
+            conditioning_scale: 0.8,
+          }],
+          negative_prompt: negativePrompt,
         },
       });
     } else {

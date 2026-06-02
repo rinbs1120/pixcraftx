@@ -166,8 +166,8 @@ export async function POST(req: NextRequest) {
     const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.simple;
     let fullPrompt: string;
     if (referenceImageUrl) {
-      // Reference image mode: ControlNet Canny extracts edges from reference,
-      // then generates pure B&W line art from scratch (no color bleeding from source)
+      // Reference image mode: Recraft v3 line_art style natively produces B&W line art
+      // The model's line_art style handles color removal at architecture level
       fullPrompt = `${styleConfig.prefix} ${prompt}, following the structure and composition of the reference image ${styleConfig.suffix}`;
     } else {
       fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
@@ -179,22 +179,18 @@ export async function POST(req: NextRequest) {
     let result: any;
 
     if (referenceImageUrl) {
-      // Reference image: use flux-general with ControlNet lineart
-      // ControlNet extracts structural lines from reference image,
-      // then generates pure B&W line art from scratch (no color bleeding!)
-      console.log('[Generate] Using flux-general with ControlNet Canny for reference image');
-      result = await fal.subscribe('fal-ai/flux-general', {
+      // Reference image: use Recraft v3 with native line_art style
+      // Recraft's vector_illustration/line_art is purpose-built for clean B&W line art,
+      // architecturally preventing color bleeding - no ControlNet hacks needed!
+      // Cost: $0.08/image (vector style = 2x raster $0.04)
+      console.log('[Generate] Using Recraft v3 line_art for reference image');
+      result = await fal.subscribe('fal-ai/recraft/v3/image-to-image', {
         input: {
           prompt: fullPrompt,
-          image_size: 'portrait_4_3',
-          num_images: 1,
-          guidance_scale: 3.5,
-          num_inference_steps: 28,
-          controlnets: [{
-            path: 'InstantX/FLUX.1-dev-Controlnet-Canny',
-            control_image_url: referenceImageUrl,
-            conditioning_scale: 0.8,
-          }],
+          image_url: referenceImageUrl,
+          strength: 0.7,
+          style: 'vector_illustration/line_art',
+          negative_prompt: 'color, shading, shadow, gradient, gray fill, paint, realistic photograph',
         },
       });
     } else {
@@ -223,12 +219,14 @@ export async function POST(req: NextRequest) {
       const imageBuffer = await imageResponse.arrayBuffer();
 
       const timestamp = Date.now();
-      const filePath = `${userId}/${style}-${timestamp}.png`;
+      const responseContentType = imageResponse.headers.get('content-type') || 'image/png';
+      const fileExt = responseContentType.includes('webp') ? 'webp' : 'png';
+      const filePath = `${userId}/${style}-${timestamp}.${fileExt}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('coloring-pages')
         .upload(filePath, imageBuffer, {
-          contentType: 'image/png',
+          contentType: responseContentType,
           upsert: false,
         });
 

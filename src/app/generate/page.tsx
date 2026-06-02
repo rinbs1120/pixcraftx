@@ -185,7 +185,7 @@ function GenerateContent() {
         for (let i = 0; i < maxAttempts; i++) {
           await new Promise(r => setTimeout(r, 3000));
           try {
-            const statusRes = await fetch(`/api/generate/status?requestId=${data.requestId}`);
+            const statusRes = await fetch(`/api/generate?requestId=${data.requestId}`);
             const statusData = await statusRes.json();
 
             if (statusData.status === 'completed') {

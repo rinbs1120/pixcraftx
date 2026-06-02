@@ -38,7 +38,7 @@ const EXAMPLE_PROMPTS = [
   { emoji: '\ud83c\udff0', text: 'Princess castle in the clouds' },
   { emoji: '\ud83e\udd8b', text: 'Butterfly garden' },
   { emoji: '\ud83d\udc09', text: 'Friendly dragon' },
-  { emoji: '\ud83c\udf38', text: 'Cherry blossom mandala' },
+  { emoji: '\ud83c\udf38', text: 'Cherry blossom flower garden' },
   { emoji: '\ud83e\udd81', text: 'Lion in the savanna' },
   { emoji: '\ud83d\udc1f', text: 'Underwater coral reef' },
   { emoji: '\ud83c\udf84', text: 'Cozy cabin in snowy forest' },

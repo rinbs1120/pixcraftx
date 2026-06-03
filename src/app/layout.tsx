@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'ColorForge — Create Any Coloring Page in Seconds',
     description:
-      'AI-powered coloring page generator. Type what you imagine, get print-ready line art.',
+      'AI-powered coloring page generator. Describe your idea or upload a photo, get print-ready coloring pages.',
     url: 'https://pixcraftx.com',
     siteName: 'ColorForge',
     locale: 'en_US',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'ColorForge — Create Any Coloring Page in Seconds',
     description:
-      'AI-powered coloring page generator. Type what you imagine, get print-ready line art.',
+      'AI-powered coloring page generator. Describe your idea or upload a photo, get print-ready coloring pages.',
   },
   robots: {
     index: true,

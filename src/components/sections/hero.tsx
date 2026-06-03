@@ -86,7 +86,7 @@ export function Hero() {
               Create Any Coloring Page in Seconds
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-              Type what you imagine. Get print-ready line art. For kids, teachers, and creators.
+              Describe your idea or upload a photo — get print-ready coloring pages in seconds.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">

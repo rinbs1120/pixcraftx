@@ -44,7 +44,7 @@ export default function TermsPage() {
             </h2>
             <p className="leading-relaxed mb-6">
               ColorForge is an AI-powered coloring page generator that allows users to create custom
-              coloring pages from text descriptions. The Service uses AI models powered by Fal.ai (including the Flux model family) to
+              coloring pages from text descriptions. The Service uses AI models powered by Fal.ai (including the Flux model family) and AILabTools to
               transform your text prompts into printable coloring page images. The Service is provided
               through our website at pixcraftx.com and may include features such as image generation,
               image storage, and image downloading in various formats.

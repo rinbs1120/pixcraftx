@@ -121,7 +121,7 @@ export function TryItNow() {
               </div>
             </div>
           )}
-          <p className="text-center text-sm text-muted-foreground"><span className="inline-flex items-center gap-1"><Sparkles className="w-4 h-4 text-[#FFB800]" />Powered by AI •</span>{' '}Get high-quality line art ready for printing</p>
+          <p className="text-center text-sm text-muted-foreground"><span className="inline-flex items-center gap-1"><Sparkles className="w-4 h-4 text-[#FFB800]" />Powered by Fal.ai & AILabTools •</span>{' '}Get high-quality line art ready for printing</p>
         </div>
       </div>
       {showSignIn && (

@@ -43,7 +43,7 @@ const faqs = [
   {
     question: 'What AI technology powers ColorForge?',
     answer:
-      'ColorForge uses advanced AI image generation models powered by Fal.ai, including the Flux model family. Our AI transforms your text descriptions and reference images into clean, printable coloring pages. All generated content is AI-created and should be reviewed before use.',
+      'ColorForge uses advanced AI image generation models powered by Fal.ai (including the Flux model family) and AILabTools. Our AI transforms your text descriptions and reference images into clean, printable coloring pages. All generated content is AI-created and should be reviewed before use.',
   },
 ];
 

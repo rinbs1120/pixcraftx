@@ -84,9 +84,9 @@ export default function PrivacyPage() {
               3.1 How AI Generation Works
             </h3>
             <p className="leading-relaxed mb-6">
-              ColorForge uses artificial intelligence models powered by Fal.ai to generate coloring page
+              ColorForge uses artificial intelligence models powered by Fal.ai and AILabTools to generate coloring page
               images based on text prompts you provide. Your prompts are sent to our AI processing partner
-              (Fal.ai) for image generation. The AI models produce original images and are not designed to
+              (Fal.ai and AILabTools) for image generation. The AI models produce original images and are not designed to
               reproduce copyrighted material.
             </p>
 
@@ -133,6 +133,7 @@ export default function PrivacyPage() {
                   <li><strong>Clerk</strong> — Authentication and user identity management</li>
                   <li><strong>Creem</strong> — Payment processing and subscription billing</li>
                   <li><strong>Fal.ai</strong> — AI image generation processing</li>
+                  <li><strong>AILabTools</strong> — Photo to coloring page conversion</li>
                   <li><strong>Supabase</strong> — Database storage and application infrastructure</li>
                 </ul>
               </li>

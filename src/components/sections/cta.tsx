@@ -9,7 +9,7 @@ export function CTA() {
           Ready to Create Something Amazing?
         </h2>
         <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-          Join thousands of parents, teachers, and creators who are already making beautiful coloring pages with AI.
+          Create beautiful AI-powered coloring pages in seconds — no design skills needed.
         </p>
         <Link
           href="/generate"

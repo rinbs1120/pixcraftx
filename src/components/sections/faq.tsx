@@ -18,7 +18,7 @@ const faqs = [
   {
     question: 'Can I upload a reference image?',
     answer:
-      'Yes! Upload any photo and our AI will transform it into a coloring page while preserving the composition and subject. This costs 2 credits per generation (normally 3, but we\'re running a launch special).',
+      'Yes! Upload any photo and our AI will transform it into a coloring page while preserving the composition and subject. This costs 5 credits per generation.',
   },
   {
     question: 'Can I color the pages online?',
@@ -33,7 +33,7 @@ const faqs = [
   {
     question: 'How many pages can I generate for free?',
     answer:
-      'Free accounts get 5 credits per month. Each text-generated page costs 1 credit, and reference image generation costs 2 credits. No credit card required to start.',
+      'Free accounts get 5 credits per month. Each text-generated page costs 1 credit, and reference image generation costs 5 credits. No credit card required to start.',
   },
   {
     question: 'What image formats are available for download?',

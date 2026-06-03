@@ -296,17 +296,7 @@ export function Pricing() {
 
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            💡 Text generation: <strong>1 credit</strong> per page. Reference image generation: <strong>
-            {isLaunchPromo ? (
-              <>
-                <span className="line-through text-[#8A8A9A]">3</span>
-                <span className="text-green-600 font-semibold"> 2 credits</span>
-                <span className="text-green-600"> (Launch deal!)</span>
-              </>
-            ) : (
-              <span>3 credits</span>
-            )}
-            </strong> per page.
+            💡 Text generation: <strong>1 credit</strong> per page. Reference image generation: <strong>5 credits</strong> per page.
           </p>
         </div>
       </div>

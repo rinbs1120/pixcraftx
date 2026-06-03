@@ -30,11 +30,10 @@ const PLAN_LIMITS = {
   business: 2000,
 };
 
-const TRIAL_END = new Date('2026-09-01T00:00:00Z');
-const REFERENCE_COST_NORMAL = 3;
-const REFERENCE_COST_TRIAL = 2;
+// Reference image: 5 credits flat
+const REFERENCE_COST = 5;
 function getReferenceCost(): number {
-  return new Date() < TRIAL_END ? REFERENCE_COST_TRIAL : REFERENCE_COST_NORMAL;
+  return REFERENCE_COST;
 }
 
 async function moderatePrompt(prompt: string, externalId?: string): Promise<'allow' | 'flag' | 'deny'> {

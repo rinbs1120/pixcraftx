@@ -48,16 +48,10 @@ const EXAMPLE_PROMPTS = [
 const REFERENCE_PROMPT = { emoji: '📸', text: 'Transform this photo into a coloring page' };
 
 // Trial pricing info
-const TRIAL_END = new Date('2026-09-01T00:00:00Z');
-const REFERENCE_COST_NORMAL = 3;
-const REFERENCE_COST_TRIAL = 2;
+// Reference image: 5 credits flat
+const REFERENCE_COST = 5;
 function getReferenceCostInfo() {
-  const isTrial = new Date() < TRIAL_END;
-  return {
-    current: isTrial ? REFERENCE_COST_TRIAL : REFERENCE_COST_NORMAL,
-    original: REFERENCE_COST_NORMAL,
-    isTrial,
-  };
+  return { current: REFERENCE_COST, original: REFERENCE_COST, isTrial: false };
 }
 
 function GenerateContent() {

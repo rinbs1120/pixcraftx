@@ -3,7 +3,7 @@ import { Footer } from '@/components/footer';
 
 export const metadata = {
   title: 'Help Center',
-  description: 'ColorForge help center and contact information.',
+  description: 'PixCraftX help center and contact information.',
 };
 
 export default function HelpPage() {
@@ -18,7 +18,7 @@ export default function HelpPage() {
 
           <div className="prose prose-lg max-w-none text-muted-foreground">
             <p className="leading-relaxed mb-6">
-              Need help with ColorForge? You&apos;re in the right place. Below you&apos;ll find answers to common questions and ways to reach us.
+              Need help with PixCraftX? You&apos;re in the right place. Below you&apos;ll find answers to common questions and ways to reach us.
             </p>
 
             <h2 className="font-display text-2xl mt-8 mb-4 text-foreground">

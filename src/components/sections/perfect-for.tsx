@@ -51,7 +51,7 @@ export function PerfectFor() {
             Perfect For
           </h2>
           <p className="text-muted-foreground text-lg">
-            Whether you're a parent, teacher, or creator — ColorForge fits your needs
+            Whether you're a parent, teacher, or creator — PixCraftX fits your needs
           </p>
         </div>
 

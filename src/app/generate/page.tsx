@@ -222,7 +222,7 @@ function GenerateContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `colorforge-${selectedStyle}-${Date.now()}.png`;
+      a.download = `pixcraftx-${selectedStyle}-${Date.now()}.png`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -547,7 +547,7 @@ function GenerateContent() {
               {/* Feedback */}
               <div className="text-center">
                 <a
-                  href="mailto:support@pixcraftx.com?subject=ColorForge%20Feedback"
+                  href="mailto:support@pixcraftx.com?subject=PixCraftX%20Feedback"
                   className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#FFB800] transition-colors"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />

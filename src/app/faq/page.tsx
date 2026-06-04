@@ -3,14 +3,14 @@ import { Footer } from '@/components/footer';
 
 export const metadata = {
   title: 'Frequently Asked Questions',
-  description: 'ColorForge frequently asked questions and answers.',
+  description: 'PixCraftX frequently asked questions and answers.',
 };
 
 const faqs = [
   {
-    question: 'What is ColorForge?',
+    question: 'What is PixCraftX?',
     answer:
-      'ColorForge is an AI-powered coloring page generator. Simply enter a text description of what you want, and ColorForge will create a printable coloring page based on your prompt. It is designed for kids, parents, teachers, and anyone who loves coloring.',
+      'PixCraftX is an AI-powered coloring page generator. Simply enter a text description of what you want, and PixCraftX will create a printable coloring page based on your prompt. It is designed for kids, parents, teachers, and anyone who loves coloring.',
   },
   {
     question: 'How does it work?',
@@ -20,12 +20,12 @@ const faqs = [
   {
     question: 'Is it free?',
     answer:
-      'Yes! ColorForge offers a free plan that includes 5 coloring pages per month. If you need more, our Pro and Premium plans provide additional monthly generation quotas and exclusive features. Visit our pricing page for details.',
+      'Yes! PixCraftX offers a free plan that includes 5 coloring pages per month. If you need more, our Pro and Premium plans provide additional monthly generation quotas and exclusive features. Visit our pricing page for details.',
   },
   {
     question: 'What styles are available?',
     answer:
-      'ColorForge supports three main styles: Kids — bold, simple lines perfect for young children; Mandala — symmetrical, intricate patterns for a relaxing experience; and Detailed — fine, complex line art designed for adult colorists. You can select your preferred style when generating a page.',
+      'PixCraftX supports three main styles: Kids — bold, simple lines perfect for young children; Mandala — symmetrical, intricate patterns for a relaxing experience; and Detailed — fine, complex line art designed for adult colorists. You can select your preferred style when generating a page.',
   },
   {
     question: 'Can I use generated images commercially?',
@@ -55,7 +55,7 @@ const faqs = [
   {
     question: 'Who made this?',
     answer:
-      'ColorForge is built by the ColorForge team — a small group of designers and engineers passionate about making creativity accessible to everyone through AI. Visit pixcraftx.com to learn more.',
+      'PixCraftX is built by the PixCraftX team — a small group of designers and engineers passionate about making creativity accessible to everyone through AI. Visit pixcraftx.com to learn more.',
   },
 ];
 

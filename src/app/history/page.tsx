@@ -62,7 +62,7 @@ function HistoryContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `colorforge-${prompt.slice(0, 30).replace(/\s+/g, '-')}.png`;
+      a.download = `pixcraftx-${prompt.slice(0, 30).replace(/\s+/g, '-')}.png`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

@@ -306,7 +306,7 @@ function ColorContent() {
   const handleDownload = useCallback(() => {
     const merged = getMergedCanvas(); if (!merged) return;
     const link = document.createElement('a');
-    link.download = 'colorforge-colored-' + Date.now() + '.png';
+    link.download = 'pixcraftx-colored-' + Date.now() + '.png';
     link.href = merged.toDataURL('image/png'); link.click();
   }, [getMergedCanvas]);
 
@@ -315,7 +315,7 @@ function ColorContent() {
     const dataUrl = merged.toDataURL('image/png');
     const printWindow = window.open('', '_blank');
     if (!printWindow) { alert('Please allow popups to print'); return; }
-    printWindow.document.write('<!DOCTYPE html><html><head><title>ColorForge - Print</title><style>@media print{@page{margin:0;size:A4;}body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}img{max-width:100%;max-height:100vh;object-fit:contain;}}body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:white;}img{max-width:90vw;max-height:90vh;}</style></head><body><img src="' + dataUrl + '" onload="setTimeout(function(){window.print();},300);" /></body></html>');
+    printWindow.document.write('<!DOCTYPE html><html><head><title>PixCraftX - Print</title><style>@media print{@page{margin:0;size:A4;}body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}img{max-width:100%;max-height:100vh;object-fit:contain;}}body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:white;}img{max-width:90vw;max-height:90vh;}</style></head><body><img src="' + dataUrl + '" onload="setTimeout(function(){window.print();},300);" /></body></html>');
     printWindow.document.close();
   }, [getMergedCanvas]);
 

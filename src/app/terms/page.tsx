@@ -3,7 +3,7 @@ import { Footer } from '@/components/footer';
 
 export const metadata = {
   title: 'Terms of Service',
-  description: 'ColorForge terms of service.',
+  description: 'PixCraftX terms of service.',
 };
 
 export default function TermsPage() {
@@ -22,8 +22,8 @@ export default function TermsPage() {
             </p>
 
             <p className="leading-relaxed mb-6">
-              Welcome to ColorForge. These Terms of Service (&quot;Terms&quot;) govern your access to and use
-              of the ColorForge AI coloring page generator service, available at pixcraftx.com
+              Welcome to PixCraftX. These Terms of Service (&quot;Terms&quot;) govern your access to and use
+              of the PixCraftX AI coloring page generator service, available at pixcraftx.com
               (&quot;Service&quot;). By accessing or using our Service, you agree to be bound by these
               Terms. If you do not agree to these Terms, please do not use the Service.
             </p>
@@ -32,7 +32,7 @@ export default function TermsPage() {
               1. Acceptance of Terms
             </h2>
             <p className="leading-relaxed mb-6">
-              By creating an account, accessing, or using ColorForge, you acknowledge that you have read,
+              By creating an account, accessing, or using PixCraftX, you acknowledge that you have read,
               understood, and agree to be bound by these Terms of Service and our Privacy Policy. If you
               are using the Service on behalf of an organization, you represent and warrant that you have
               the authority to bind that organization to these Terms. You must be at least 13 years of age
@@ -43,7 +43,7 @@ export default function TermsPage() {
               2. Description of Service
             </h2>
             <p className="leading-relaxed mb-6">
-              ColorForge is an AI-powered coloring page generator that allows users to create custom
+              PixCraftX is an AI-powered coloring page generator that allows users to create custom
               coloring pages from text descriptions. The Service uses AI models powered by Fal.ai (including the Flux model family) and AILabTools to
               transform your text prompts into printable coloring page images. The Service is provided
               through our website at pixcraftx.com and may include features such as image generation,
@@ -69,7 +69,7 @@ export default function TermsPage() {
               3.2 Account Types
             </h3>
             <p className="leading-relaxed mb-6">
-              ColorForge offers the following account tiers:
+              PixCraftX offers the following account tiers:
             </p>
             <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
               <li><strong>Free:</strong> Limited number of image generations per month for personal, non-commercial use.</li>
@@ -172,7 +172,7 @@ export default function TermsPage() {
             <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
               <li>Use the Service for any unlawful purpose or in violation of any applicable laws or regulations</li>
               <li>Attempt to gain unauthorized access to any part of the Service or its related systems</li>
-              <li>Use the Service to compete directly with ColorForge or to build a similar product or service</li>
+              <li>Use the Service to compete directly with PixCraftX or to build a similar product or service</li>
               <li>Reverse engineer, decompile, or disassemble any part of the Service</li>
               <li>Use automated tools or bots to access the Service in a manner that exceeds normal usage</li>
               <li>Share your account credentials with others or allow others to use your account</li>
@@ -197,7 +197,7 @@ export default function TermsPage() {
             </h3>
             <p className="leading-relaxed mb-6">
               As described in Section 4.1, your rights to generated content depend on your subscription
-              tier. ColorForge retains no ownership rights in the generated images you create. However,
+              tier. PixCraftX retains no ownership rights in the generated images you create. However,
               you acknowledge that AI-generated content may not be eligible for copyright protection in
               certain jurisdictions, and you should consult legal counsel regarding the copyright status
               of AI-generated works in your jurisdiction.
@@ -239,7 +239,7 @@ export default function TermsPage() {
               9. Limitation of Liability
             </h2>
             <p className="leading-relaxed mb-6">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, COLORFORGE AND ITS OFFICERS, DIRECTORS, EMPLOYEES,
+              TO THE MAXIMUM EXTENT PERMITTED BY LAW, PIXCRAFTX AND ITS OFFICERS, DIRECTORS, EMPLOYEES,
               AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
               PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, USE, OR GOODWILL,
               ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF THE SERVICE. IN NO EVENT SHALL OUR TOTAL

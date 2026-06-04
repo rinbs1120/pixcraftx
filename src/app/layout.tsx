@@ -4,8 +4,8 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'ColorForge — Create Any Coloring Page in Seconds',
-    template: '%s | ColorForge',
+    default: 'PixCraftX — Create Any Coloring Page in Seconds',
+    template: '%s | PixCraftX',
   },
   description:
     'AI-powered coloring page generator that creates printable coloring pages in seconds. For parents, teachers, and KDP sellers.',
@@ -18,20 +18,20 @@ export const metadata: Metadata = {
     'KDP coloring books',
     'coloring page generator',
   ],
-  authors: [{ name: 'ColorForge Team', url: 'https://pixcraftx.com' }],
-  generator: 'ColorForge',
+  authors: [{ name: 'PixCraftX Team', url: 'https://pixcraftx.com' }],
+  generator: 'PixCraftX',
   openGraph: {
-    title: 'ColorForge — Create Any Coloring Page in Seconds',
+    title: 'PixCraftX — Create Any Coloring Page in Seconds',
     description:
       'AI-powered coloring page generator. Describe your idea or upload a photo, get print-ready coloring pages.',
     url: 'https://pixcraftx.com',
-    siteName: 'ColorForge',
+    siteName: 'PixCraftX',
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ColorForge — Create Any Coloring Page in Seconds',
+    title: 'PixCraftX — Create Any Coloring Page in Seconds',
     description:
       'AI-powered coloring page generator. Describe your idea or upload a photo, get print-ready coloring pages.',
   },

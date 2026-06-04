@@ -3,7 +3,7 @@ import { Footer } from '@/components/footer';
 
 export const metadata = {
   title: 'Refund Policy',
-  description: 'ColorForge refund policy for subscription services.',
+  description: 'PixCraftX refund policy for subscription services.',
 };
 
 export default function RefundPage() {
@@ -25,10 +25,10 @@ export default function RefundPage() {
               1. Overview
             </h2>
             <p className="leading-relaxed mb-6">
-              ColorForge (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) offers subscription-based AI coloring page
+              PixCraftX (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) offers subscription-based AI coloring page
               generation services processed through our payment provider, Creem. This Refund Policy
               outlines the conditions under which you may request a refund for your subscription
-              purchase. By making a purchase on ColorForge, you agree to the terms described below.
+              purchase. By making a purchase on PixCraftX, you agree to the terms described below.
             </p>
 
             <h2 className="font-display text-2xl mt-8 mb-4 text-foreground">
@@ -68,7 +68,7 @@ export default function RefundPage() {
               with the following information:
             </p>
             <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
-              <li>Your ColorForge account email address.</li>
+              <li>Your PixCraftX account email address.</li>
               <li>The order number from your Creem payment confirmation.</li>
               <li>A brief reason for the refund request.</li>
             </ul>

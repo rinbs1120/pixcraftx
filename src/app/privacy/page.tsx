@@ -3,7 +3,7 @@ import { Footer } from '@/components/footer';
 
 export const metadata = {
   title: 'Privacy Policy',
-  description: 'ColorForge privacy policy.',
+  description: 'PixCraftX privacy policy.',
 };
 
 export default function PrivacyPage() {
@@ -22,10 +22,10 @@ export default function PrivacyPage() {
             </p>
 
             <p className="leading-relaxed mb-6">
-              ColorForge (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the website
-              pixcraftx.com and the ColorForge AI coloring page generator service. This Privacy Policy
+              PixCraftX (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates the website
+              pixcraftx.com and the PixCraftX AI coloring page generator service. This Privacy Policy
               explains how we collect, use, disclose, and safeguard your information when you use our
-              service. Please read this policy carefully. By using ColorForge, you consent to the data
+              service. Please read this policy carefully. By using PixCraftX, you consent to the data
               practices described herein.
             </p>
 
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
               3.1 How AI Generation Works
             </h3>
             <p className="leading-relaxed mb-6">
-              ColorForge uses artificial intelligence models powered by Fal.ai and AILabTools to generate coloring page
+              PixCraftX uses artificial intelligence models powered by Fal.ai and AILabTools to generate coloring page
               images based on text prompts you provide. Your prompts are sent to our AI processing partner
               (Fal.ai and AILabTools) for image generation. The AI models produce original images and are not designed to
               reproduce copyrighted material.
@@ -192,7 +192,7 @@ export default function PrivacyPage() {
               7. Children&apos;s Privacy
             </h2>
             <p className="leading-relaxed mb-6">
-              ColorForge is not directed at children under the age of 13. We do not knowingly collect
+              PixCraftX is not directed at children under the age of 13. We do not knowingly collect
               personal information from children under 13. If you are a parent or guardian and become
               aware that your child has provided us with personal information, please contact us at{' '}
               <a href="mailto:support@pixcraftx.com" className="text-primary hover:underline">
@@ -206,7 +206,7 @@ export default function PrivacyPage() {
               8. Cookies and Tracking
             </h2>
             <p className="leading-relaxed mb-6">
-              We use cookies and similar tracking technologies to enhance your experience on ColorForge.
+              We use cookies and similar tracking technologies to enhance your experience on PixCraftX.
               These include essential cookies required for authentication and security, analytics cookies
               that help us understand how our service is used, and functional cookies that remember your
               preferences. You can manage your cookie preferences through your browser settings. Please
@@ -217,7 +217,7 @@ export default function PrivacyPage() {
               9. International Data Transfers
             </h2>
             <p className="leading-relaxed mb-6">
-              ColorForge operates globally, and your information may be transferred to and processed in
+              PixCraftX operates globally, and your information may be transferred to and processed in
               countries other than your country of residence. These countries may have different data
               protection laws. When we transfer your data internationally, we ensure appropriate
               safeguards are in place, including Standard Contractual Clauses (SCCs) approved by the
@@ -231,7 +231,7 @@ export default function PrivacyPage() {
               We may update this Privacy Policy from time to time to reflect changes in our practices,
               technologies, legal requirements, or other factors. We will notify you of material changes
               by posting the updated policy on our website and updating the &quot;Last updated&quot; date.
-              Your continued use of ColorForge after any changes constitutes your acceptance of the
+              Your continued use of PixCraftX after any changes constitutes your acceptance of the
               updated Privacy Policy.
             </p>
 
@@ -265,7 +265,7 @@ export default function PrivacyPage() {
               13. Regulatory Compliance
             </h2>
             <p className="leading-relaxed mb-6">
-              ColorForge is committed to complying with applicable data protection regulations, including:
+              PixCraftX is committed to complying with applicable data protection regulations, including:
             </p>
             <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
               <li><strong>General Data Protection Regulation (GDPR):</strong> For users in the European Economic Area, we process personal data in accordance with GDPR requirements, including lawful basis for processing, data subject rights, and cross-border transfer safeguards.</li>

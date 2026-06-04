@@ -5,7 +5,7 @@ import { CTA } from '@/components/sections/cta';
 
 export const metadata = {
   title: 'Pricing',
-  description: 'Simple, transparent pricing for ColorForge coloring page generator.',
+  description: 'Simple, transparent pricing for PixCraftX coloring page generator.',
 };
 
 export default function PricingPage() {

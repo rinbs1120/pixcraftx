@@ -51,7 +51,7 @@ export function Navbar() {
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between max-w-7xl">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="ColorForge logo">
+            <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="PixCraftX logo">
               <circle cx="16" cy="16" r="14" fill="#FFB800" opacity="0.15" />
               <circle cx="11" cy="13" r="3.5" fill="#FF6B6D" />
               <circle cx="21" cy="13" r="3.5" fill="#2ECC71" />
@@ -59,8 +59,8 @@ export function Navbar() {
               <circle cx="16" cy="13" r="2" fill="#1A1A2E" />
             </svg>
             <span className="font-display text-xl md:text-2xl">
-              <span className="text-primary">Color</span>
-              <span className="text-foreground">Forge</span>
+              <span className="text-primary">Pix</span>
+              <span className="text-foreground">CraftX</span>
             </span>
           </Link>
 

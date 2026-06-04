@@ -48,15 +48,9 @@ export default function RootLayout({
 }>) {
 
   return (
-    <ClerkProvider
-      afterSignUpUrl="/generate"
-      afterSignInUrl="/generate"
-      signInForceRedirectUrl="/generate"
-      signUpForceRedirectUrl="/generate"
-    >
+    <ClerkProvider>
       <html lang="en">
         <body className="antialiased">
-          
           {children}
         </body>
       </html>

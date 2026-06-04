@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { useScrolled } from '@/hooks/use-scrolled';
 import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
-import { Menu, X, Crown } from 'lucide-react';
+import { Menu, X, Crown, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export function Navbar() {
   const scrolled = useScrolled();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [plan, setPlan] = useState<string | null>(null);
 
@@ -81,7 +81,12 @@ export function Navbar() {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            {isSignedIn ? (
+            {!isLoaded ? (
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading...</span>
+              </div>
+            ) : isSignedIn ? (
               <div className="flex items-center gap-2">
                 {planLabel && (
                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${planBadgeClass}`}>
@@ -145,7 +150,12 @@ export function Navbar() {
             >
               Pricing
             </Link>
-            {isSignedIn ? (
+            {!isLoaded ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Loading...</span>
+              </div>
+            ) : isSignedIn ? (
               <div className="flex items-center gap-3">
                 {planLabel && (
                   <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold border ${planBadgeClass}`}>

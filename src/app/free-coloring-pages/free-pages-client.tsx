@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { themes } from '@/data/coloring-themes';
+import { DownloadAuthButton } from '@/components/download-auth-button';
 import { useState } from 'react';
 
 const categories = ['All', ...Array.from(new Set(themes.map(t => t.category)))];
@@ -59,18 +60,7 @@ export function FreePagesClient() {
               <div className="p-2.5">
                 <p className="text-xs font-semibold text-foreground truncate mb-2">{theme.h1}</p>
                 <div className="flex gap-1.5">
-                  <a
-                    href={theme.samples[0]}
-                    download
-                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-full font-semibold text-[10px] transition-all text-[#1A1A2E] border border-[#FFB800] bg-white hover:bg-[#FFF8E1]"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Download
-                  </a>
+                  <DownloadAuthButton href={theme.samples[0]} compact />
                   <a
                     href={"/color?src=" + encodeURIComponent("https://pixcraftx.com" + theme.samples[0])}
                     className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-full font-semibold text-[10px] transition-all text-[#1A1A2E]"

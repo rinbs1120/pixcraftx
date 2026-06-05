@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2 } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 
@@ -232,30 +232,30 @@ function GenerateContent() {
                 rows={3}
                 className="w-full px-4 py-3 text-sm bg-white border-2 border-[#E5E0D5] rounded-xl focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20 outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground pr-12"
               />
-              {/* Bottom-left: upload icon inside textarea */}
-              <div className="absolute left-2 bottom-2 flex items-center gap-1">
+              {/* Bottom-left: upload button inside textarea - larger and visible */}
+              <div className="absolute left-3 bottom-2.5 flex items-center gap-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className={cn(
-                    "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+                    "w-9 h-9 rounded-lg flex items-center justify-center transition-all border-2",
                     referenceImage 
-                      ? "bg-[#FFB800]/15 text-[#FFB800]" 
-                      : "text-muted-foreground/50 hover:text-[#FFB800] hover:bg-[#FFB800]/10"
+                      ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]" 
+                      : "border-dashed border-[#C8C0B4] text-muted-foreground/60 hover:border-[#FFB800] hover:text-[#FFB800] hover:bg-[#FFB800]/5"
                   )}
                   title="Upload reference image (5 credits)"
                 >
-                  <ImageIcon className="w-4 h-4" />
+                  <Plus className="w-5 h-5" />
                 </button>
                 {referenceImage && (
                   <div className="relative">
                     <img
                       src={referenceImage}
                       alt="Ref"
-                      className="w-7 h-7 object-cover rounded-md border border-[#FFB800]/50"
+                      className="w-9 h-9 object-cover rounded-lg border-2 border-[#FFB800]"
                     />
                     <button
                       onClick={removeReference}
-                      className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[8px] hover:bg-red-600"
+                      className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[8px] hover:bg-red-600 shadow-sm"
                     >
                       ×
                     </button>

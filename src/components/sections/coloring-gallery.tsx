@@ -28,7 +28,7 @@ function ColoringCard({ theme }: { theme: (typeof themes)[0] }) {
         <div className="relative w-full aspect-[3/2] bg-[#FFFBF0]">
           <Image
             src={theme.image}
-            alt={`${theme.name} coloring page`}
+            alt={theme.name + ' coloring page'}
             fill
             className="object-contain p-2"
             sizes="200px"
@@ -47,15 +47,16 @@ function MarqueeRow({ items, direction }: { items: typeof themes; direction: 'le
       <div
         className="flex gap-4 md:gap-6"
         style={{
-          animation: `${animationName} 35s linear infinite`,
+          animation: animationName + ' 35s linear infinite',
           width: 'max-content',
+          willChange: 'transform',
         }}
       >
         {items.map((theme) => (
-          <ColoringCard key={`a-${theme.name}`} theme={theme} />
+          <ColoringCard key={'a-' + theme.name} theme={theme} />
         ))}
         {items.map((theme) => (
-          <ColoringCard key={`b-${theme.name}`} theme={theme} />
+          <ColoringCard key={'b-' + theme.name} theme={theme} />
         ))}
       </div>
     </div>
@@ -78,17 +79,6 @@ export function ColoringGallery() {
         <MarqueeRow items={row1} direction="left" />
         <MarqueeRow items={row2} direction="right" />
       </div>
-
-      <style jsx global>{`
-        @keyframes marquee-left {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        @keyframes marquee-right {
-          0% { transform: translateX(-50%); }
-          100% { transform: translateX(0); }
-        }
-      `}</style>
     </section>
   );
 }

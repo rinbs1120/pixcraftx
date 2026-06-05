@@ -198,3 +198,13 @@ body {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Marquee animations - must be in global CSS to avoid hydration delay */
+@keyframes marquee-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes marquee-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}

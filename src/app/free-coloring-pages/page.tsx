@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { themes, ColoringTheme } from '@/data/coloring-themes';
+import { themes } from '@/data/coloring-themes';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { useState } from 'react';
@@ -20,36 +20,32 @@ export default function FreeColoringPages() {
     <>
       <Navbar />
       <main className="min-h-screen bg-background">
-        {/* Hero + CTA */}
-        <section className="container mx-auto px-4 md:px-6 max-w-6xl pt-24 pb-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <h1 className="font-display text-3xl md:text-4xl lg:text-5xl text-foreground mb-4">
-                Free Coloring Pages
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-xl">
-                Browse hundreds of free printable coloring pages. Download or color online instantly!
-              </p>
-            </div>
-            <Link
-              href="/generate"
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold text-base transition-all hover:translate-y-0.5 text-[#1A1A2E] flex-shrink-0"
-              style={{
-                background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
-                boxShadow: '0 2px 8px rgba(255,184,0,0.3)',
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-              Generate Your Own
-            </Link>
-          </div>
+        {/* Hero - centered */}
+        <section className="container mx-auto px-4 md:px-6 max-w-6xl pt-24 pb-4 text-center">
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl text-foreground mb-4">
+            Browse Free Coloring Pages
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+            Explore hundreds of free printable coloring pages across popular themes — from dinosaurs to mandalas.
+          </p>
+          <Link
+            href="/generate"
+            className="inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold text-base transition-all hover:translate-y-0.5 text-[#1A1A2E]"
+            style={{
+              background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+              boxShadow: '0 2px 8px rgba(255,184,0,0.3)',
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            Generate Your Own with AI
+          </Link>
         </section>
 
         {/* Category Filter */}
-        <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-6">
-          <div className="flex flex-wrap gap-2">
+        <section className="container mx-auto px-4 md:px-6 max-w-6xl py-4">
+          <div className="flex flex-wrap gap-2 justify-center">
             {categories.map(cat => (
               <button
                 key={cat}
@@ -79,7 +75,6 @@ export default function FreeColoringPages() {
                 className="group bg-white rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#FFB800] hover:shadow-xl hover:scale-[1.03] transition-all duration-300"
                 style={{ boxShadow: '0 4px 12px rgba(26,26,46,0.08)' }}
               >
-                {/* Image */}
                 <div className="relative w-full aspect-[3/2] bg-[#FFFBF0]">
                   <Image
                     src={theme.samples[0]}
@@ -89,7 +84,6 @@ export default function FreeColoringPages() {
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                   />
                 </div>
-                {/* Title + Buttons */}
                 <div className="p-2.5">
                   <p className="text-xs font-semibold text-foreground truncate mb-2">{theme.h1}</p>
                   <div className="flex gap-1.5">

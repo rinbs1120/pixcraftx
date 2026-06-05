@@ -470,8 +470,7 @@ function ColorContent() {
     return <><Navbar /><main className="min-h-screen pt-20 pb-16 bg-background flex items-center justify-center"><p className="text-muted-foreground text-lg">No image selected. Generate a coloring page first.</p></main><Footer /></>;
   }
 
-  const displayW = canvasSize.w * (zoom / 100);
-  const displayH = canvasSize.h * (zoom / 100);
+  const scale = zoom / 100;
 
   // Cursor style for canvas
   const canvasCursor = tool === 'fill' ? 'crosshair' : tool === 'eyedropper' ? 'crosshair' : tool === 'eraser' ? 'cell' : 'crosshair';
@@ -636,10 +635,11 @@ function ColorContent() {
                 style={{ minHeight: '500px', maxHeight: '75vh' }}
                 onWheel={handleWheel}
               >
+                <div style={{ width: canvasSize.w * scale, height: canvasSize.h * scale, margin: "0 auto", position: "relative" }}>
                 <div 
                   ref={containerRef} 
-                  className="relative mx-auto" 
-                  style={{ width: displayW, height: displayH }}
+                  className="relative" 
+                  style={{ width: canvasSize.w, height: canvasSize.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}
                   onClick={handleCanvasClick} 
                   onMouseDown={handleCanvasMouseDown} 
                   onMouseMove={handleCanvasMouseMove} 
@@ -657,6 +657,7 @@ function ColorContent() {
                     <canvas ref={baseCanvasRef} className="w-full h-full rounded-xl shadow-md block" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto' }} />
                     <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: canvasCursor }} />
                   </div>
+                </div>
                 </div>
               </div>
             </div>

@@ -217,67 +217,63 @@ function GenerateContent() {
 
           {/* ====== TOP: Compact Input Area ====== */}
           <div className="rounded-2xl p-4 md:p-5 shadow-sm border border-border mb-6" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
-            {/* Input row: Upload + Textarea */}
-            <div className="flex items-start gap-2">
-              {/* Upload button */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  "flex-shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all mt-1",
-                  referenceImage 
-                    ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]" 
-                    : "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800] hover:text-[#FFB800]"
-                )}
-                title="Upload reference image (5 credits)"
-              >
-                <ImageIcon className="w-5 h-5" />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleFileSelect}
-                className="hidden"
+            {/* Input row: Textarea only */}
+            <div className="relative">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleGenerate();
+                  }
+                }}
+                placeholder="Describe your coloring page..."
+                rows={3}
+                className="w-full px-4 py-3 text-sm bg-white border-2 border-[#E5E0D5] rounded-xl focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20 outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground pr-12"
               />
-
-              {/* Text input - double height */}
-              <div className="flex-1 relative">
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleGenerate();
-                    }
-                  }}
-                  placeholder="Describe your coloring page..."
-                  rows={3}
-                  className="w-full px-4 py-3 text-sm bg-white border-2 border-[#E5E0D5] rounded-xl focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20 outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground pr-12"
-                />
-                <span className="absolute right-3 bottom-2 text-[10px] text-muted-foreground/50">
-                  {prompt.length > 0 ? `${prompt.length}/500` : ''}
-                </span>
-              </div>
-            </div>
-
-            {/* Reference image thumbnail */}
-            {referenceImage && (
-              <div className="relative inline-block mt-3">
-                <img
-                  src={referenceImage}
-                  alt="Reference"
-                  className="w-14 h-14 object-cover rounded-lg border border-[#E5E0D5]"
-                />
+              {/* Bottom-left: upload icon inside textarea */}
+              <div className="absolute left-2 bottom-2 flex items-center gap-1">
                 <button
-                  onClick={removeReference}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs hover:bg-red-600"
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+                    referenceImage 
+                      ? "bg-[#FFB800]/15 text-[#FFB800]" 
+                      : "text-muted-foreground/50 hover:text-[#FFB800] hover:bg-[#FFB800]/10"
+                  )}
+                  title="Upload reference image (5 credits)"
                 >
-                  ×
+                  <ImageIcon className="w-4 h-4" />
                 </button>
-                <span className="text-[10px] text-muted-foreground block mt-1">5 credits</span>
+                {referenceImage && (
+                  <div className="relative">
+                    <img
+                      src={referenceImage}
+                      alt="Ref"
+                      className="w-7 h-7 object-cover rounded-md border border-[#FFB800]/50"
+                    />
+                    <button
+                      onClick={removeReference}
+                      className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[8px] hover:bg-red-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
+              {/* Bottom-right: char count */}
+              <span className="absolute right-3 bottom-2 text-[10px] text-muted-foreground/50">
+                {prompt.length > 0 ? `${prompt.length}/500` : ''}
+              </span>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
 
             {/* Example Prompts */}
             {!generatedImageUrl && !isGenerating && (

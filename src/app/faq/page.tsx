@@ -20,7 +20,7 @@ const faqs = [
   {
     question: 'Is it free?',
     answer:
-      'Yes! PixCraftX offers a free plan that includes 5 coloring pages per month. If you need more, our Pro and Premium plans provide additional monthly generation quotas and exclusive features. Visit our pricing page for details.',
+      'Yes! PixCraftX offers a free plan that includes 2 coloring pages per month, plus your first reference image generation is free. If you need more, our Starter, Pro and Business plans provide additional monthly generation quotas and exclusive features. Visit our pricing page for details.',
   },
   {
     question: 'What styles are available?',

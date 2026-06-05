@@ -43,7 +43,6 @@ function ColorContent() {
   const searchParams = useSearchParams();
   const { isSignedIn } = useAuth();
   const { openSignIn } = useClerk();
-  const [showSignIn, setShowSignIn] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);
   const colorCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -359,7 +358,7 @@ function ColorContent() {
   }, []);
 
   const handleDownload = useCallback(() => {
-    if (!isSignedIn) { setShowSignIn(true); return; }
+    if (!isSignedIn) { openSignIn(); return; }
     const merged = getMergedCanvas(); if (!merged) return;
     const link = document.createElement('a');
     link.download = 'pixcraftx-colored-' + Date.now() + '.png';
@@ -367,7 +366,7 @@ function ColorContent() {
   }, [isSignedIn, getMergedCanvas]);
 
   const handlePrint = useCallback(() => {
-    if (!isSignedIn) { setShowSignIn(true); return; }
+    if (!isSignedIn) { openSignIn(); return; }
     const merged = getMergedCanvas(); if (!merged) return;
     const dataUrl = merged.toDataURL('image/png');
     const printWindow = window.open('', '_blank');
@@ -377,7 +376,7 @@ function ColorContent() {
   }, [isSignedIn, getMergedCanvas]);
 
   const handleSaveToHistory = useCallback(async () => {
-    if (!isSignedIn) { setShowSignIn(true); return; }
+    if (!isSignedIn) { openSignIn(); return; }
     const merged = getMergedCanvas(); if (!merged) return;
     setSaveStatus('saving');
     try {
@@ -499,21 +498,7 @@ function ColorContent() {
       </main>
       <Footer />
 
-      {/* Sign In Modal */}
-      {showSignIn && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 relative">
-            <button
-              onClick={() => setShowSignIn(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-            >
-              ✕
-            </button>
-            <h3 className="font-display text-xl mb-4 text-center text-foreground">Sign in to Continue</h3>
-            <SignIn routing="hash" />
-          </div>
-        </div>
-      )}
+
     </>
   );
 }

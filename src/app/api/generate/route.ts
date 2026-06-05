@@ -24,10 +24,10 @@ const STYLE_PROMPTS = {
 };
 
 const PLAN_LIMITS = {
-  free: 5,
-  starter: 100,
-  pro: 500,
-  business: 2000,
+  free: 2,
+  starter: 60,
+  pro: 300,
+  business: 1000,
 };
 
 // Reference image: 5 credits flat
@@ -105,10 +105,22 @@ export async function POST(req: NextRequest) {
     const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: usageData } = await supabase.from('user_usage').select('pages_used').eq('user_id', userId).eq('month', currentMonth).single();
     const pagesUsed = usageData?.pages_used || 0;
-    const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 5;
-    const creditCost = referenceImageUrl ? getReferenceCost() : 1;
+    const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 2;
+    let creditCost = referenceImageUrl ? getReferenceCost() : 1;
 
-    if (pagesUsed + creditCost > limit) {
+    // Reference image free trial: first reference image is free
+    let refTrialUsed = false;
+    let refTrialApplied = false;
+    if (referenceImageUrl) {
+      const { data: trialData } = await supabase.from('user_usage').select('ref_trial_used').eq('user_id', userId).eq('month', currentMonth).single();
+      refTrialUsed = trialData?.ref_trial_used || false;
+      if (!refTrialUsed) {
+        refTrialApplied = true;
+        creditCost = 0; // Free trial!
+      }
+    }
+
+    if (creditCost > 0 && pagesUsed + creditCost > limit) {
       return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: creditCost, plan }, { status: 429 });
     }
 
@@ -175,20 +187,30 @@ export async function POST(req: NextRequest) {
         .select('id')
         .single();
 
-      // Deduct credits immediately
-      if (usageData) {
-        await supabase.from('user_usage').update({ pages_used: pagesUsed + creditCost, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
+      // Deduct credits (or mark trial used)
+      if (refTrialApplied) {
+        // Mark free trial as used, no credit deduction
+        if (usageData) {
+          await supabase.from('user_usage').update({ ref_trial_used: true, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
+        } else {
+          await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: 0, plan, ref_trial_used: true });
+        }
       } else {
-        await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: creditCost, plan });
+        if (usageData) {
+          await supabase.from('user_usage').update({ pages_used: pagesUsed + creditCost, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
+        } else {
+          await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: creditCost, plan });
+        }
       }
 
       return NextResponse.json({
         status: 'processing',
         requestId: taskId,
         historyId: historyEntry?.id,
-        pagesUsed: pagesUsed + creditCost,
+        pagesUsed: refTrialApplied ? pagesUsed : pagesUsed + creditCost,
         limit, plan, creditCost,
         hasReference: true,
+        refTrialApplied,
       });
     }
 
@@ -223,7 +245,7 @@ export async function POST(req: NextRequest) {
       }
     } catch (storageErr) { console.error('[Storage] Upload exception:', storageErr); storageFailed = true; }
 
-    // Deduct credits
+    // Deduct credits (text-to-image always costs 1)
     if (usageData) {
       await supabase.from('user_usage').update({ pages_used: pagesUsed + creditCost, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
     } else {

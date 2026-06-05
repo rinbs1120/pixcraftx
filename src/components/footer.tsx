@@ -8,6 +8,10 @@ const productLinks = [
 
 const resourceLinks = [
   { label: 'Help', href: '/help' },
+  { label: 'Dinosaur Coloring Pages', href: '/dinosaur-coloring-pages' },
+  { label: 'Unicorn Coloring Pages', href: '/unicorn-coloring-pages' },
+  { label: 'Mandala Coloring Pages', href: '/mandala-coloring-pages' },
+  { label: 'More Free Coloring Pages', href: '/dinosaur-coloring-pages' },
 ];
 
 const legalLinks = [

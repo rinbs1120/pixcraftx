@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
+import { CursorTrail } from '@/components/cursor-trail';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function RootLayout({
       <html lang="en">
         <body className="antialiased">
           {children}
+          <CursorTrail />
         </body>
       </html>
     </ClerkProvider>

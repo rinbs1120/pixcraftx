@@ -1,26 +1,21 @@
-import { Metadata } from 'next';
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import { themes } from '@/data/coloring-themes';
+import { themes, ColoringTheme } from '@/data/coloring-themes';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
+import { useState } from 'react';
 
-export const metadata: Metadata = {
-  title: 'Free Coloring Pages',
-  description: 'Browse and download free printable coloring pages for kids and adults. Dinosaurs, unicorns, mandalas, and more!',
-  openGraph: {
-    title: 'Free Coloring Pages - PixCraftX',
-    description: 'Browse and download free printable coloring pages for kids and adults.',
-    url: 'https://pixcraftx.com/free-coloring-pages',
-    siteName: 'PixCraftX',
-    type: 'website',
-  },
-  alternates: {
-    canonical: 'https://pixcraftx.com/free-coloring-pages',
-  },
-};
+const categories = ['All', ...Array.from(new Set(themes.map(t => t.category)))];
 
 export default function FreeColoringPages() {
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  const filteredThemes = activeCategory === 'All'
+    ? themes
+    : themes.filter(t => t.category === activeCategory);
+
   return (
     <>
       <Navbar />
@@ -52,10 +47,33 @@ export default function FreeColoringPages() {
           </div>
         </section>
 
+        {/* Category Filter */}
+        <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-6">
+          <div className="flex flex-wrap gap-2">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeCategory === cat
+                    ? 'text-[#1A1A2E] shadow-sm'
+                    : 'text-muted-foreground bg-white/60 hover:bg-white hover:text-foreground'
+                }`}
+                style={activeCategory === cat ? {
+                  background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+                  boxShadow: '0 2px 8px rgba(255,184,0,0.25)',
+                } : {}}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* Compact Grid */}
         <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-20">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {themes.map((theme) => (
+            {filteredThemes.map((theme) => (
               <div
                 key={theme.slug}
                 className="group bg-white rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#FFB800] hover:shadow-xl hover:scale-[1.03] transition-all duration-300"

@@ -414,8 +414,10 @@ function ColorContent() {
           const baseData = baseCtx.getImageData(0, 0, w, h);
           const colorData = colorCtx.getImageData(0, 0, w, h);
           for (let i = 0; i < baseData.data.length; i += 4) {
-            // If base canvas has an opaque pixel (black line), clear color pixel
-            if (baseData.data[i + 3] > 128) {
+            // Only clear color pixel if base pixel is a dark line (not white background)
+            const r = baseData.data[i], g = baseData.data[i + 1], b = baseData.data[i + 2], a = baseData.data[i + 3];
+            const luminance = (r + g + b) / 3;
+            if (a > 128 && luminance < 200) {
               colorData.data[i] = 0;
               colorData.data[i + 1] = 0;
               colorData.data[i + 2] = 0;
@@ -452,7 +454,9 @@ function ColorContent() {
             const baseData = baseCtx.getImageData(0, 0, w, h);
             const colorData = colorCtx.getImageData(0, 0, w, h);
             for (let i = 0; i < baseData.data.length; i += 4) {
-              if (baseData.data[i + 3] > 128) {
+              const r = baseData.data[i], g = baseData.data[i + 1], b = baseData.data[i + 2], a = baseData.data[i + 3];
+              const luminance = (r + g + b) / 3;
+              if (a > 128 && luminance < 200) {
                 colorData.data[i] = 0;
                 colorData.data[i + 1] = 0;
                 colorData.data[i + 2] = 0;
@@ -712,9 +716,9 @@ function ColorContent() {
                     <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><p className="text-red-500 mb-2">{loadError}</p><button onClick={() => { setImageLoaded(false); setLoadError(null); window.location.reload(); }} className="px-4 py-2 bg-[#FFB800] rounded-xl text-sm font-medium">Retry</button></div></div>
                   )}
                   
-                  <div className={"relative w-full h-full " + (imageLoaded && !loadError ? '' : 'opacity-0')}>
-                    <canvas ref={baseCanvasRef} className="w-full h-full rounded-xl shadow-md block" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto' }} />
-                    <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: canvasCursor }} />
+                  <div className={"relative " + (imageLoaded && !loadError ? '' : 'opacity-0')} style={{ width: displayW, height: displayH }}>
+                    <canvas ref={baseCanvasRef} className="rounded-xl shadow-md block" style={{ width: displayW, height: displayH, imageRendering: zoom > 100 ? 'pixelated' : 'auto' }} />
+                    <canvas ref={colorCanvasRef} className="absolute top-0 left-0 rounded-xl" style={{ width: displayW, height: displayH, imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: canvasCursor }} />
                   </div>
                   {cursorPos && (tool === 'brush' || tool === 'pencil' || tool === 'eraser') && imageLoaded && !loadError && (
                     <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : 'transparent' }} />

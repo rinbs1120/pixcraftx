@@ -3,10 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
 
 const PLAN_LIMITS = {
-  free: 5,
-  starter: 100,
-  pro: 500,
-  business: 2000,
+  free: 2,
+  starter: 60,
+  pro: 300,
+  business: 1000,
 };
 
 export async function GET() {
@@ -43,7 +43,7 @@ export async function GET() {
       .single();
 
     const pagesUsed = usageData?.pages_used || 0;
-    const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 5;
+    const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 2;
 
     return NextResponse.json({
       plan,

@@ -92,6 +92,7 @@ function ColorContent() {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState({ w: 800, h: 1000 });
   const [zoom, setZoom] = useState(100);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const gradientBarRef = useRef<HTMLDivElement>(null);
 
@@ -375,16 +376,22 @@ function ColorContent() {
   }, [tool, selectedColor, brushSize]);
 
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    // Track cursor position for brush size circle
+    const container = containerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    }
     if (!isDrawing) return;
     const targetCanvas = tool === 'pencil' ? baseCanvasRef.current : colorCanvasRef.current;
     if (!targetCanvas) return;
     const ctx = targetCanvas.getContext('2d');
     if (!ctx) return;
-    const rect = targetCanvas.getBoundingClientRect();
-    const scaleX = targetCanvas.width / rect.width;
-    const scaleY = targetCanvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    const canvasRect = targetCanvas.getBoundingClientRect();
+    const scaleX = targetCanvas.width / canvasRect.width;
+    const scaleY = targetCanvas.height / canvasRect.height;
+    const x = (e.clientX - canvasRect.left) * scaleX;
+    const y = (e.clientY - canvasRect.top) * scaleY;
     ctx.lineTo(x, y); ctx.stroke();
   }, [isDrawing, tool]);
 
@@ -393,6 +400,32 @@ function ColorContent() {
     setIsDrawing(false);
     if (tool === 'pencil') {
       saveToBaseHistory();
+    } else if (tool === 'brush') {
+      // Clean up: remove color pixels that overlap with black lines on baseCanvas
+      const colorCanvas = colorCanvasRef.current;
+      const baseCanvas = baseCanvasRef.current;
+      if (colorCanvas && baseCanvas) {
+        const colorCtx = colorCanvas.getContext('2d');
+        const baseCtx = baseCanvas.getContext('2d');
+        if (colorCtx && baseCtx) {
+          colorCtx.globalCompositeOperation = 'source-over';
+          const w = colorCanvas.width;
+          const h = colorCanvas.height;
+          const baseData = baseCtx.getImageData(0, 0, w, h);
+          const colorData = colorCtx.getImageData(0, 0, w, h);
+          for (let i = 0; i < baseData.data.length; i += 4) {
+            // If base canvas has an opaque pixel (black line), clear color pixel
+            if (baseData.data[i + 3] > 128) {
+              colorData.data[i] = 0;
+              colorData.data[i + 1] = 0;
+              colorData.data[i + 2] = 0;
+              colorData.data[i + 3] = 0;
+            }
+          }
+          colorCtx.putImageData(colorData, 0, 0);
+        }
+      }
+      saveToHistory();
     } else {
       const colorCanvas = colorCanvasRef.current;
       if (colorCanvas) { const ctx = colorCanvas.getContext('2d'); if (ctx) ctx.globalCompositeOperation = 'source-over'; }
@@ -401,10 +434,35 @@ function ColorContent() {
   }, [isDrawing, tool, saveToHistory, saveToBaseHistory]);
 
   const handleMouseLeave = useCallback(() => {
+    setCursorPos(null);
     if (isDrawing) {
       setIsDrawing(false);
       if (tool === 'pencil') {
         saveToBaseHistory();
+      } else if (tool === 'brush') {
+        const colorCanvas = colorCanvasRef.current;
+        const baseCanvas = baseCanvasRef.current;
+        if (colorCanvas && baseCanvas) {
+          const colorCtx = colorCanvas.getContext('2d');
+          const baseCtx = baseCanvas.getContext('2d');
+          if (colorCtx && baseCtx) {
+            colorCtx.globalCompositeOperation = 'source-over';
+            const w = colorCanvas.width;
+            const h = colorCanvas.height;
+            const baseData = baseCtx.getImageData(0, 0, w, h);
+            const colorData = colorCtx.getImageData(0, 0, w, h);
+            for (let i = 0; i < baseData.data.length; i += 4) {
+              if (baseData.data[i + 3] > 128) {
+                colorData.data[i] = 0;
+                colorData.data[i + 1] = 0;
+                colorData.data[i + 2] = 0;
+                colorData.data[i + 3] = 0;
+              }
+            }
+            colorCtx.putImageData(colorData, 0, 0);
+          }
+        }
+        saveToHistory();
       } else {
         const colorCanvas = colorCanvasRef.current;
         if (colorCanvas) { const ctx = colorCanvas.getContext('2d'); if (ctx) ctx.globalCompositeOperation = 'source-over'; }
@@ -470,10 +528,12 @@ function ColorContent() {
     return <><Navbar /><main className="min-h-screen pt-20 pb-16 bg-background flex items-center justify-center"><p className="text-muted-foreground text-lg">No image selected. Generate a coloring page first.</p></main><Footer /></>;
   }
 
-  const scale = zoom / 100;
+  const displayW = canvasSize.w * (zoom / 100);
+  const displayH = canvasSize.h * (zoom / 100);
 
   // Cursor style for canvas
-  const canvasCursor = tool === 'fill' ? 'crosshair' : tool === 'eyedropper' ? 'crosshair' : tool === 'eraser' ? 'cell' : 'crosshair';
+  const canvasCursor = tool === 'fill' ? 'crosshair' : tool === 'eyedropper' ? 'crosshair' : 'none';
+  const cursorRadius = tool === 'eraser' ? (brushSize * 3) / getScale() / 2 : brushSize / getScale() / 2;
 
   return (
     <>
@@ -635,11 +695,10 @@ function ColorContent() {
                 style={{ minHeight: '500px', maxHeight: '75vh' }}
                 onWheel={handleWheel}
               >
-                <div style={{ width: canvasSize.w * scale, height: canvasSize.h * scale, margin: "0 auto", position: "relative" }}>
                 <div 
                   ref={containerRef} 
-                  className="relative" 
-                  style={{ width: canvasSize.w, height: canvasSize.h, transform: `scale(${scale})`, transformOrigin: 'top left' }}
+                  className="relative mx-auto" 
+                  style={{ width: displayW, height: displayH }}
                   onClick={handleCanvasClick} 
                   onMouseDown={handleCanvasMouseDown} 
                   onMouseMove={handleCanvasMouseMove} 
@@ -657,7 +716,9 @@ function ColorContent() {
                     <canvas ref={baseCanvasRef} className="w-full h-full rounded-xl shadow-md block" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto' }} />
                     <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: canvasCursor }} />
                   </div>
-                </div>
+                  {cursorPos && (tool === 'brush' || tool === 'pencil' || tool === 'eraser') && imageLoaded && !loadError && (
+                    <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : 'transparent' }} />
+                  )}
                 </div>
               </div>
             </div>

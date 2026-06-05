@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Check, Minus } from 'lucide-react';
 import { CreemCheckout } from '@creem_io/nextjs';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useClerk } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 
 const isTestMode = process.env.NEXT_PUBLIC_CREEM_TEST_MODE === 'true';
@@ -101,6 +101,7 @@ const plans = [
 
 export function Pricing() {
   const { isSignedIn, userId } = useAuth();
+  const { openSignIn } = useClerk();
   const [currentPlan, setCurrentPlan] = useState<string>('free');
 
   useEffect(() => {
@@ -261,8 +262,8 @@ export function Pricing() {
                     </button>
                   </CreemCheckout>
                 ) : plan.productId ? (
-                  <Link
-                    href="/generate"
+                  <button
+                    onClick={() => openSignIn()}
                     className={`block w-full py-3.5 rounded-xl font-bold text-center transition-all ${
                       plan.buttonStyle === 'filled'
                         ? 'bg-[#1A1A2E] text-white hover:bg-[#1A1A2E]/90'
@@ -275,7 +276,7 @@ export function Pricing() {
                     }
                   >
                     Sign Up to Subscribe
-                  </Link>
+                  </button>
                 ) : (
                   <Link
                     href={plan.href!}

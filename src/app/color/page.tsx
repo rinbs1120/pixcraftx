@@ -6,7 +6,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, SignIn } from '@clerk/nextjs';
 
 const COLOR_PALETTE = [
   '#FF6B6B', '#E74C3C', '#C0392B', '#FF4757',
@@ -42,6 +42,7 @@ const ZOOM_LEVELS = [25, 50, 75, 100, 125, 150, 200];
 function ColorContent() {
   const searchParams = useSearchParams();
   const { isSignedIn } = useAuth();
+  const [showSignIn, setShowSignIn] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);
   const colorCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -266,7 +267,6 @@ function ColorContent() {
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (tool === 'fill') return;
     setIsDrawing(true);
-    // Pencil draws on base canvas; brush/eraser on color canvas
     const targetCanvas = tool === 'pencil' ? baseCanvasRef.current : colorCanvasRef.current;
     if (!targetCanvas) return;
     const ctx = targetCanvas.getContext('2d');
@@ -358,23 +358,25 @@ function ColorContent() {
   }, []);
 
   const handleDownload = useCallback(() => {
+    if (!isSignedIn) { setShowSignIn(true); return; }
     const merged = getMergedCanvas(); if (!merged) return;
     const link = document.createElement('a');
     link.download = 'pixcraftx-colored-' + Date.now() + '.png';
     link.href = merged.toDataURL('image/png'); link.click();
-  }, [getMergedCanvas]);
+  }, [isSignedIn, getMergedCanvas]);
 
   const handlePrint = useCallback(() => {
+    if (!isSignedIn) { setShowSignIn(true); return; }
     const merged = getMergedCanvas(); if (!merged) return;
     const dataUrl = merged.toDataURL('image/png');
     const printWindow = window.open('', '_blank');
     if (!printWindow) { alert('Please allow popups to print'); return; }
     printWindow.document.write('<!DOCTYPE html><html><head><title>PixCraftX - Print</title><style>@media print{@page{margin:0;size:A4;}body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}img{max-width:100%;max-height:100vh;object-fit:contain;}}body{display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:white;}img{max-width:90vw;max-height:90vh;}</style></head><body><img src="' + dataUrl + '" onload="setTimeout(function(){window.print();},300);" /></body></html>');
     printWindow.document.close();
-  }, [getMergedCanvas]);
+  }, [isSignedIn, getMergedCanvas]);
 
   const handleSaveToHistory = useCallback(async () => {
-    if (!isSignedIn) return;
+    if (!isSignedIn) { setShowSignIn(true); return; }
     const merged = getMergedCanvas(); if (!merged) return;
     setSaveStatus('saving');
     try {
@@ -440,14 +442,12 @@ function ColorContent() {
               </div>
               <div className="bg-card rounded-2xl p-5 shadow-sm border border-border space-y-2">
                 <button onClick={undo} className="w-full py-2.5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all text-sm font-medium"><Undo2 className="w-4 h-4" /> Undo</button>
-                <button onClick={handleDownload} className="w-full py-2.5 rounded-xl bg-[#1A1A2E] text-white flex items-center justify-center gap-2 hover:bg-[#1A1A2E]/90 transition-all text-sm font-medium"><Download className="w-4 h-4" /> Download PNG</button>
-                <button onClick={handlePrint} className="w-full py-2.5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all text-sm font-medium"><Printer className="w-4 h-4" /> Print A4</button>
-                {isSignedIn && (
-                  <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="w-full py-2.5 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-2 transition-all text-sm font-medium disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}>
-                    {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Failed' : 'Save to My Pages'}
-                  </button>
-                )}
+                <button onClick={handleDownload} className="w-full py-2.5 rounded-xl bg-[#1A1A2E] text-white flex items-center justify-center gap-2 hover:bg-[#1A1A2E]/90 transition-all text-sm font-medium"><Download className="w-4 h-4" /> {!isSignedIn ? 'Sign in to Download' : 'Download PNG'}</button>
+                <button onClick={handlePrint} className="w-full py-2.5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all text-sm font-medium"><Printer className="w-4 h-4" /> {!isSignedIn ? 'Sign in to Print' : 'Print A4'}</button>
+                <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="w-full py-2.5 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-2 transition-all text-sm font-medium disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}>
+                  {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Failed' : !isSignedIn ? 'Sign in to Save' : 'Save to My Pages'}
+                </button>
               </div>
             </div>
             
@@ -497,6 +497,22 @@ function ColorContent() {
         </div>
       </main>
       <Footer />
+
+      {/* Sign In Modal */}
+      {showSignIn && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => setShowSignIn(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+            <h3 className="font-display text-xl mb-4 text-center text-foreground">Sign in to Continue</h3>
+            <SignIn routing="hash" />
+          </div>
+        </div>
+      )}
     </>
   );
 }

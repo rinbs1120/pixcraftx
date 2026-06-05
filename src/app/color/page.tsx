@@ -685,7 +685,7 @@ function ColorContent() {
             </div>
             
             {/* Canvas area */}
-            <div className="bg-card rounded-3xl shadow-lg border border-border flex flex-col">
+            <div className="bg-card rounded-3xl shadow-lg border border-border flex flex-col min-w-0 overflow-hidden">
               <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-b border-border bg-card rounded-t-3xl">
                 <button onClick={zoomOut} disabled={zoom <= ZOOM_LEVELS[0]} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all disabled:opacity-30 disabled:cursor-not-allowed"><ZoomOut className="w-4 h-4" /></button>
                 <span className="text-sm font-medium text-foreground min-w-[48px] text-center">{zoom}%</span>
@@ -697,7 +697,7 @@ function ColorContent() {
               <div 
                 ref={scrollContainerRef}
                 className="overflow-auto p-4" 
-                style={{ maxHeight: '75vh', minHeight: '300px' }}
+                style={{ height: '75vh' }}
                 onWheel={handleWheel}
               >
                 {/* Spacer creates scrollable area at visual (zoomed) size */}

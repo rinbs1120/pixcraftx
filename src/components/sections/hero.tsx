@@ -100,7 +100,7 @@ export function Hero() {
                   href={`/generate?style=${style.id}`}
                   className="block relative rounded-2xl overflow-hidden bg-white transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
                   style={{
-                    width: style.id === 'mandala' ? '220px' : '170px',
+                    width: '190px',
                     boxShadow: '0 8px 24px rgba(26,26,46,0.1)',
                   }}
                 >

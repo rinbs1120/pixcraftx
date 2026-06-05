@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { themes, getThemeBySlug, getRelatedThemes } from '@/data/coloring-themes';
+import { DownloadAuthButton } from '@/components/download-auth-button';
 
 export const dynamicParams = false;
 
@@ -191,7 +192,7 @@ export default async function ThemePage({
           </div>
         </section>
 
-        {/* Sample Images Grid - simplified: only Download Free per card */}
+        {/* Sample Images Grid - Download requires auth */}
         <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-12">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {theme.samples.map((sample, index) => (
@@ -209,22 +210,7 @@ export default async function ThemePage({
                   />
                 </div>
                 <div className="p-4">
-                  <a
-                    href={sample}
-                    download
-                    className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-full font-semibold text-sm transition-all hover:translate-y-0.5 text-[#1A1A2E]"
-                    style={{
-                      background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
-                      boxShadow: '0 2px 8px rgba(255,184,0,0.3)',
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Download Free
-                  </a>
+                  <DownloadAuthButton href={sample} />
                 </div>
               </div>
             ))}

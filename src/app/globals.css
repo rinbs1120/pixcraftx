@@ -208,3 +208,58 @@ body {
   0% { transform: translateX(-50%); }
   100% { transform: translateX(0); }
 }
+
+/* Hero card slide-in animation */
+@keyframes heroCardSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(40px) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+/* Coloring brush reveal animation - simulates brush painting over line art */
+@keyframes brushReveal {
+  0%, 15% {
+    clip-path: inset(0 100% 0 0);
+  }
+  50% {
+    clip-path: inset(0 0% 0 0);
+  }
+  75% {
+    clip-path: inset(0 0% 0 0);
+  }
+  90%, 100% {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+.coloring-brush-reveal {
+  animation: brushReveal 6s ease-in-out infinite;
+}
+
+/* Brush stroke edge glow */
+@keyframes brushEdgeGlow {
+  0%, 15% {
+    opacity: 0;
+    left: 0%;
+  }
+  40% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0;
+    left: 97%;
+  }
+  75%, 100% {
+    opacity: 0;
+    left: 97%;
+  }
+}
+
+.brush-stroke-edge {
+  animation: brushEdgeGlow 6s ease-in-out infinite;
+}

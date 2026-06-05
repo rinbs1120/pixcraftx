@@ -377,10 +377,12 @@ function ColorContent() {
 
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     // Track cursor position for brush size circle
+    // With CSS transform, need to convert from visual (transformed) coords to pre-transform coords
     const container = containerRef.current;
     if (container) {
       const rect = container.getBoundingClientRect();
-      setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      const visualScale = container.offsetWidth > 0 ? rect.width / container.offsetWidth : 1;
+      setCursorPos({ x: (e.clientX - rect.left) / visualScale, y: (e.clientY - rect.top) / visualScale });
     }
     if (!isDrawing) return;
     const targetCanvas = tool === 'pencil' ? baseCanvasRef.current : colorCanvasRef.current;
@@ -532,12 +534,11 @@ function ColorContent() {
     return <><Navbar /><main className="min-h-screen pt-20 pb-16 bg-background flex items-center justify-center"><p className="text-muted-foreground text-lg">No image selected. Generate a coloring page first.</p></main><Footer /></>;
   }
 
-  const displayW = canvasSize.w * (zoom / 100);
-  const displayH = canvasSize.h * (zoom / 100);
-
   // Cursor style for canvas
   const canvasCursor = tool === 'fill' ? 'crosshair' : tool === 'eyedropper' ? 'crosshair' : 'none';
-  const cursorRadius = tool === 'eraser' ? (brushSize * 3) / getScale() / 2 : brushSize / getScale() / 2;
+  // With CSS transform zoom, cursor is inside the transformed container so it scales automatically.
+  // cursorRadius should be in the container's pre-transform coordinate space.
+  const cursorRadius = tool === 'eraser' ? (brushSize * 3) / 2 : brushSize / 2;
 
   return (
     <>
@@ -695,39 +696,43 @@ function ColorContent() {
 
               <div 
                 ref={scrollContainerRef}
-                className="flex-1 overflow-auto p-4" 
-                style={{ minHeight: '500px', maxHeight: '75vh' }}
+                className="overflow-auto p-4" 
+                style={{ height: '75vh', minHeight: '500px' }}
                 onWheel={handleWheel}
               >
-                <div 
-                  ref={containerRef} 
-                  className="relative mx-auto" 
-                  style={{ width: displayW, height: displayH }}
-                  onClick={handleCanvasClick} 
-                  onMouseDown={handleCanvasMouseDown} 
-                  onMouseMove={handleCanvasMouseMove} 
-                  onMouseUp={handleCanvasMouseUp} 
-                  onMouseLeave={handleMouseLeave}
-                >
-                  {!imageLoaded && !loadError && (
-                    <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><Loader2 className="w-12 h-12 mx-auto mb-3 text-[#FFB800] animate-spin" /><p className="text-muted-foreground">Loading coloring page...</p></div></div>
-                  )}
-                  {loadError && (
-                    <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><p className="text-red-500 mb-2">{loadError}</p><button onClick={() => { setImageLoaded(false); setLoadError(null); window.location.reload(); }} className="px-4 py-2 bg-[#FFB800] rounded-xl text-sm font-medium">Retry</button></div></div>
-                  )}
-                  
-                  <div className={"relative " + (imageLoaded && !loadError ? '' : 'opacity-0')} style={{ width: displayW, height: displayH }}>
-                    <canvas ref={baseCanvasRef} className="rounded-xl shadow-md block" style={{ width: displayW, height: displayH, imageRendering: zoom > 100 ? 'pixelated' : 'auto' }} />
-                    <canvas ref={colorCanvasRef} className="absolute top-0 left-0 rounded-xl" style={{ width: displayW, height: displayH, imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: canvasCursor }} />
+                {/* Spacer creates scrollable area at visual (zoomed) size */}
+                <div style={{ width: canvasSize.w * (zoom / 100), height: canvasSize.h * (zoom / 100), margin: '0 auto', position: 'relative' }}>
+                  {/* Canvas container with CSS transform — stays at natural size, visually scaled */}
+                  <div 
+                    ref={containerRef} 
+                    className="relative" 
+                    style={{ width: canvasSize.w, height: canvasSize.h, transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                    onClick={handleCanvasClick} 
+                    onMouseDown={handleCanvasMouseDown} 
+                    onMouseMove={handleCanvasMouseMove} 
+                    onMouseUp={handleCanvasMouseUp} 
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    {!imageLoaded && !loadError && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><Loader2 className="w-12 h-12 mx-auto mb-3 text-[#FFB800] animate-spin" /><p className="text-muted-foreground">Loading coloring page...</p></div></div>
+                    )}
+                    {loadError && (
+                      <div className="absolute inset-0 flex items-center justify-center z-10"><div className="text-center"><p className="text-red-500 mb-2">{loadError}</p><button onClick={() => { setImageLoaded(false); setLoadError(null); window.location.reload(); }} className="px-4 py-2 bg-[#FFB800] rounded-xl text-sm font-medium">Retry</button></div></div>
+                    )}
+                    
+                    <div className={"relative " + (imageLoaded && !loadError ? '' : 'opacity-0')}>
+                      <canvas ref={baseCanvasRef} className="rounded-xl shadow-md block" />
+                      <canvas ref={colorCanvasRef} className="absolute top-0 left-0 rounded-xl" style={{ cursor: canvasCursor }} />
+                    </div>
+                    {cursorPos && (tool === 'brush' || tool === 'pencil' || tool === 'eraser') && imageLoaded && !loadError && (
+                      <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : 'transparent' }} />
+                    )}
                   </div>
-                  {cursorPos && (tool === 'brush' || tool === 'pencil' || tool === 'eraser') && imageLoaded && !loadError && (
-                    <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : 'transparent' }} />
-                  )}
                 </div>
               </div>
-            </div>
           </div>
         </div>
+      </div>
       </main>
       <Footer />
     </>

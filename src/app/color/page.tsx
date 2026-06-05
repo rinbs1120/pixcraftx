@@ -6,7 +6,7 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
-import { useAuth, SignIn } from '@clerk/nextjs';
+import { useAuth, useClerk } from '@clerk/nextjs';
 
 const COLOR_PALETTE = [
   '#FF6B6B', '#E74C3C', '#C0392B', '#FF4757',
@@ -42,6 +42,7 @@ const ZOOM_LEVELS = [25, 50, 75, 100, 125, 150, 200];
 function ColorContent() {
   const searchParams = useSearchParams();
   const { isSignedIn } = useAuth();
+  const { openSignIn } = useClerk();
   const [showSignIn, setShowSignIn] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const baseCanvasRef = useRef<HTMLCanvasElement>(null);

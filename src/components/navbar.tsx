@@ -64,6 +64,9 @@ export function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
+            <Link href="/free-coloring-pages" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+              Free Pages
+            </Link>
             <Link href="/generate" className="text-muted-foreground hover:text-primary transition-colors font-medium">
               Generate
             </Link>
@@ -122,6 +125,9 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl md:hidden pt-16">
           <div className="flex flex-col items-center justify-center gap-8 h-full">
+            <Link href="/free-coloring-pages" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
+              Free Pages
+            </Link>
             <Link href="/generate" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Generate
             </Link>

@@ -8,6 +8,7 @@ const productLinks = [
 
 const resourceLinks = [
   { label: 'Help', href: '/help' },
+  { label: 'Free Coloring Pages', href: '/free-coloring-pages' },
 ];
 
 const legalLinks = [

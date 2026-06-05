@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 const CRAYON_COLORS = ['#FFB800', '#FF6B6B', '#2ECC71', '#9B59B6', '#FFB800'];
 const MAX_PARTICLES = 50;
@@ -16,12 +17,16 @@ interface Particle {
 }
 
 export function CursorTrail() {
+  const pathname = usePathname();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
   const colorIndexRef = useRef(0);
   const rafRef = useRef<number>(0);
   const isTouchRef = useRef(false);
+
+  // Disable cursor trail on coloring canvas page
+  if (pathname.startsWith('/color')) return null;
 
   useEffect(() => {
     // Skip on touch devices

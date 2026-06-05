@@ -4,30 +4,50 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil } from 'lucide-react';
+import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil, Pipette } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
 import { useAuth, useClerk } from '@clerk/nextjs';
 
-const COLOR_PALETTE = [
-  '#FF6B6B', '#E74C3C', '#C0392B', '#FF4757',
-  '#FF9F43', '#E67E22', '#F39C12', '#FFA502',
-  '#FFD93D', '#F1C40F', '#FFB800', '#ECCC68',
-  '#2ECC71', '#27AE60', '#1ABC9C', '#00B894',
-  '#3498DB', '#2980B9', '#0984E3', '#6C5CE7',
-  '#9B59B6', '#8E44AD', '#A29BFE', '#6C5CE7',
-  '#FD79A8', '#E84393', '#FF6B81', '#F8A5C2',
-  '#D35400', '#A0522D', '#8B4513', '#CD853F',
-  '#FFFFFF', '#D5D5D5', '#95A5A6', '#7F8C8D',
-  '#34495E', '#2C3E50', '#1A1A2E', '#000000',
-];
-
-const SUPABASE_STORAGE_PREFIX = 'https://eurbsafbkffdnfmvcddy.supabase.co/storage/';
-
+// --- Color Utilities ---
 function hexToRgb(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return [0, 0, 0];
   return [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)];
 }
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function hexToHsl(hex: string): [number, number, number] {
+  const [r, g, b] = hexToRgb(hex);
+  return rgbToHsl(r, g, b);
+}
+
+const SUPABASE_STORAGE_PREFIX = 'https://eurbsafbkffdnfmvcddy.supabase.co/storage/';
 
 function toLocalUrl(url: string): string {
   if (url.includes('supabase.co/storage/')) {
@@ -38,6 +58,16 @@ function toLocalUrl(url: string): string {
 
 const ZOOM_LEVELS = [25, 50, 75, 100, 125, 150, 200];
 
+const QUICK_PRESETS = [
+  '#FF0000', '#FF6B00', '#FFB800', '#FFD700',
+  '#00CC00', '#2ECC71', '#00B894', '#00CED1',
+  '#0066FF', '#3498DB', '#6C5CE7', '#9B59B6',
+  '#FF69B4', '#E84393', '#8B4513', '#000000',
+  '#FFFFFF', '#808080',
+];
+
+// Gradient bar: generates a smooth transition through hues
+const HUE_GRADIENT = Array.from({ length: 13 }, (_, i) => hslToHex(i * 30, 100, 50)).join(', ');
 
 function ColorContent() {
   const searchParams = useSearchParams();
@@ -54,23 +84,30 @@ function ColorContent() {
   const opLogRef = useRef<Array<'color' | 'base'>>([]);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState('#FF6B6B');
-  const [tool, setTool] = useState<'fill' | 'pencil' | 'brush' | 'eraser'>('fill');
+  const [tool, setTool] = useState<'fill' | 'pencil' | 'brush' | 'eraser' | 'eyedropper'>('fill');
   const [brushSize, setBrushSize] = useState(8);
-
-  // Adjust brush size when switching tools
-  useEffect(() => {
-    if (tool === 'pencil' && brushSize > 8) setBrushSize(3);
-    else if (tool === 'pencil') setBrushSize(3);
-    else if ((tool === 'brush' || tool === 'eraser') && brushSize < 2) setBrushSize(8);
-  }, [tool]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [canvasSize, setCanvasSize] = useState({ w: 800, h: 1000 });
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(100);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const gradientBarRef = useRef<HTMLDivElement>(null);
+
+  // HSL state derived from selectedColor
+  const [hsl, setHsl] = useState<[number, number, number]>(() => hexToHsl('#FF6B6B'));
+
+  // Update HSL when color changes externally
+  useEffect(() => {
+    setHsl(hexToHsl(selectedColor));
+  }, [selectedColor]);
+
+  // Adjust brush size when switching tools
+  useEffect(() => {
+    if (tool === 'pencil') setBrushSize(3);
+    else if ((tool === 'brush' || tool === 'eraser') && brushSize < 2) setBrushSize(8);
+  }, [tool]);
 
   useEffect(() => {
     const url = searchParams.get('src');
@@ -135,7 +172,7 @@ function ColorContent() {
               baseHistoryRef.current = [bCtx.getImageData(0, 0, w2, h2)]; baseHistoryIndexRef.current = 0;
               opLogRef.current = [];
               setImageLoaded(true); setLoadError(null);
-                    URL.revokeObjectURL(blobUrl);
+              URL.revokeObjectURL(blobUrl);
             };
             img2.onerror = () => { setLoadError('Image load failed'); setImageLoaded(true); URL.revokeObjectURL(blobUrl); };
             img2.src = blobUrl;
@@ -229,7 +266,6 @@ function ColorContent() {
     setZoom(bestZoom);
   }, [canvasSize]);
 
-
   useEffect(() => {
     if (!imageLoaded) return;
     const container = scrollContainerRef.current;
@@ -243,7 +279,52 @@ function ColorContent() {
     setZoom(bestZoom);
   }, [imageLoaded, canvasSize]);
 
+  // Handle HSL slider change
+  const handleHslChange = useCallback((newHsl: [number, number, number]) => {
+    setHsl(newHsl);
+    setSelectedColor(hslToHex(newHsl[0], newHsl[1], newHsl[2]));
+  }, []);
+
+  // Handle gradient bar click - pick color from gradient
+  const handleGradientClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const bar = gradientBarRef.current;
+    if (!bar) return;
+    const rect = bar.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const hue = Math.round(x * 360);
+    handleHslChange([hue, hsl[1], hsl[2]]);
+  }, [hsl, handleHslChange]);
+
+  // Eyedropper: pick color from canvas
+  const handleEyedropperClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const colorCanvas = colorCanvasRef.current;
+    const baseCanvas = baseCanvasRef.current;
+    if (!colorCanvas || !baseCanvas) return;
+    const rect = colorCanvas.getBoundingClientRect();
+    const scaleX = colorCanvas.width / rect.width;
+    const scaleY = colorCanvas.height / rect.height;
+    const x = Math.round((e.clientX - rect.left) * scaleX);
+    const y = Math.round((e.clientY - rect.top) * scaleY);
+    // Merge canvases to get the actual visible color
+    const mergedCanvas = document.createElement('canvas');
+    mergedCanvas.width = baseCanvas.width;
+    mergedCanvas.height = baseCanvas.height;
+    const mergedCtx = mergedCanvas.getContext('2d');
+    if (!mergedCtx) return;
+    mergedCtx.drawImage(baseCanvas, 0, 0);
+    mergedCtx.drawImage(colorCanvas, 0, 0);
+    const pixel = mergedCtx.getImageData(x, y, 1, 1).data;
+    const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(v => v.toString(16).padStart(2, '0')).join('');
+    setSelectedColor(hex);
+    setHsl(rgbToHsl(pixel[0], pixel[1], pixel[2]));
+    setTool('fill'); // Switch back to fill after picking
+  }, []);
+
   const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (tool === 'eyedropper') {
+      handleEyedropperClick(e);
+      return;
+    }
     if (tool !== 'fill') return;
     const colorCanvas = colorCanvasRef.current; const baseCanvas = baseCanvasRef.current;
     if (!colorCanvas || !baseCanvas) return;
@@ -262,10 +343,10 @@ function ColorContent() {
     mergedCtx.drawImage(colorCanvas, 0, 0);
     floodFill(ctx, x, y, hexToRgb(selectedColor), mergedCtx, 32);
     saveToHistory();
-  }, [tool, selectedColor, saveToHistory]);
+  }, [tool, selectedColor, saveToHistory, handleEyedropperClick]);
 
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (tool === 'fill') return;
+    if (tool === 'fill' || tool === 'eyedropper') return;
     setIsDrawing(true);
     const targetCanvas = tool === 'pencil' ? baseCanvasRef.current : colorCanvasRef.current;
     if (!targetCanvas) return;
@@ -294,11 +375,6 @@ function ColorContent() {
   }, [tool, selectedColor, brushSize]);
 
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const container = containerRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    }
     if (!isDrawing) return;
     const targetCanvas = tool === 'pencil' ? baseCanvasRef.current : colorCanvasRef.current;
     if (!targetCanvas) return;
@@ -325,7 +401,6 @@ function ColorContent() {
   }, [isDrawing, tool, saveToHistory, saveToBaseHistory]);
 
   const handleMouseLeave = useCallback(() => {
-    setCursorPos(null);
     if (isDrawing) {
       setIsDrawing(false);
       if (tool === 'pencil') {
@@ -391,14 +466,15 @@ function ColorContent() {
     } catch { setSaveStatus('error'); setTimeout(() => setSaveStatus(null), 2000); }
   }, [isSignedIn, getMergedCanvas]);
 
-  const cursorRadius = tool === 'eraser' ? (brushSize * 3) / getScale() / 2 : tool === 'pencil' ? Math.max(brushSize / getScale() / 2, 2) : brushSize / getScale() / 2;
-
   if (!imageUrl) {
     return <><Navbar /><main className="min-h-screen pt-20 pb-16 bg-background flex items-center justify-center"><p className="text-muted-foreground text-lg">No image selected. Generate a coloring page first.</p></main><Footer /></>;
   }
 
   const displayW = canvasSize.w * (zoom / 100);
   const displayH = canvasSize.h * (zoom / 100);
+
+  // Cursor style for canvas
+  const canvasCursor = tool === 'fill' ? 'crosshair' : tool === 'eyedropper' ? 'crosshair' : tool === 'eraser' ? 'cell' : 'crosshair';
 
   return (
     <>
@@ -412,17 +488,20 @@ function ColorContent() {
           
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
             <div className="space-y-4">
+              {/* Tools */}
               <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
                 <h3 className="text-sm font-semibold mb-3 text-foreground">Tools</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button onClick={() => setTool('fill')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'fill' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Paintbrush className="w-5 h-5" /><span className="text-xs font-medium">Fill</span></button>
                   <button onClick={() => setTool('pencil')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'pencil' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Pencil className="w-5 h-5" /><span className="text-xs font-medium">Pencil</span></button>
                   <button onClick={() => setTool('brush')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'brush' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Palette className="w-5 h-5" /><span className="text-xs font-medium">Brush</span></button>
                   <button onClick={() => setTool('eraser')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'eraser' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Eraser className="w-5 h-5" /><span className="text-xs font-medium">Eraser</span></button>
+                  <button onClick={() => setTool('eyedropper')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all col-span-2 " + (tool === 'eyedropper' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Pipette className="w-5 h-5" /><span className="text-xs font-medium">Eyedropper (Pick color from canvas)</span></button>
                 </div>
               </div>
               
-              {tool !== 'fill' && (
+              {/* Size slider */}
+              {tool !== 'fill' && tool !== 'eyedropper' && (
                 <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
                   <h3 className="text-sm font-semibold mb-3 text-foreground">{tool === 'pencil' ? 'Pencil Size' : 'Size'}</h3>
                   <input type="range" min={tool === 'pencil' ? 1 : 2} max={tool === 'pencil' ? 8 : 30} value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full accent-[#FFB800]" />
@@ -432,14 +511,104 @@ function ColorContent() {
                   )}
                 </div>
               )}
+
+              {/* Color Picker */}
               <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
                 <h3 className="text-sm font-semibold mb-3 text-foreground">Colors</h3>
-                <div className="grid grid-cols-8 gap-2">
-                  {COLOR_PALETTE.map((color) => (
-                    <button key={color} onClick={() => setSelectedColor(color)} className={"w-8 h-8 rounded-full border-2 transition-all hover:scale-110 " + (selectedColor === color ? 'border-[#1A1A2E] scale-110 ring-2 ring-[#FFB800]' : 'border-gray-200')} style={{ backgroundColor: color }} />
-                  ))}
+                
+                {/* Current color preview */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl border-2 border-gray-200 shadow-inner" style={{ backgroundColor: selectedColor }} />
+                  <div>
+                    <p className="text-sm font-mono font-bold text-foreground">{selectedColor.toUpperCase()}</p>
+                    <p className="text-[11px] text-muted-foreground">H:{hsl[0]}° S:{hsl[1]}% L:{hsl[2]}%</p>
+                  </div>
+                </div>
+
+                {/* Hue slider */}
+                <div className="mb-3">
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Hue</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    value={hsl[0]}
+                    onChange={(e) => handleHslChange([Number(e.target.value), hsl[1], hsl[2]])}
+                    className="w-full h-3 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, ${HUE_GRADIENT})`,
+                    }}
+                  />
+                </div>
+
+                {/* Saturation slider */}
+                <div className="mb-3">
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Saturation</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={hsl[1]}
+                    onChange={(e) => handleHslChange([hsl[0], Number(e.target.value), hsl[2]])}
+                    className="w-full h-3 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, ${hslToHex(hsl[0], 0, hsl[2])}, ${hslToHex(hsl[0], 100, hsl[2])})`,
+                    }}
+                  />
+                </div>
+
+                {/* Lightness slider */}
+                <div className="mb-4">
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Lightness</label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={hsl[2]}
+                    onChange={(e) => handleHslChange([hsl[0], hsl[1], Number(e.target.value)])}
+                    className="w-full h-3 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, #000000, ${hslToHex(hsl[0], hsl[1], 50)}, #ffffff)`,
+                    }}
+                  />
+                </div>
+
+                {/* Gradient bar - click to pick hue smoothly */}
+                <div className="mb-4">
+                  <label className="text-[11px] text-muted-foreground mb-1 block">Gradient</label>
+                  <div
+                    ref={gradientBarRef}
+                    onClick={handleGradientClick}
+                    className="w-full h-6 rounded-full cursor-pointer relative overflow-hidden border border-gray-200"
+                    style={{
+                      background: `linear-gradient(to right, ${HUE_GRADIENT})`,
+                    }}
+                  >
+                    {/* Indicator */}
+                    <div
+                      className="absolute top-0 w-1 h-full bg-white shadow-md rounded-full"
+                      style={{ left: `${(hsl[0] / 360) * 100}%`, transform: 'translateX(-50%)' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Quick presets */}
+                <div>
+                  <label className="text-[11px] text-muted-foreground mb-1.5 block">Quick Presets</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {QUICK_PRESETS.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => { setSelectedColor(color); setHsl(hexToHsl(color)); }}
+                        className={"w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 " + (selectedColor === color ? 'border-[#1A1A2E] scale-110 ring-1 ring-[#FFB800]' : 'border-gray-200')}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
+
+              {/* Action buttons */}
               <div className="bg-card rounded-2xl p-5 shadow-sm border border-border space-y-2">
                 <button onClick={undo} className="w-full py-2.5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all text-sm font-medium"><Undo2 className="w-4 h-4" /> Undo</button>
                 <button onClick={handleDownload} className="w-full py-2.5 rounded-xl bg-[#1A1A2E] text-white flex items-center justify-center gap-2 hover:bg-[#1A1A2E]/90 transition-all text-sm font-medium"><Download className="w-4 h-4" /> {!isSignedIn ? 'Sign in to Download' : 'Download PNG'}</button>
@@ -451,6 +620,7 @@ function ColorContent() {
               </div>
             </div>
             
+            {/* Canvas area */}
             <div className="bg-card rounded-3xl shadow-lg border border-border flex flex-col">
               <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-b border-border bg-card rounded-t-3xl">
                 <button onClick={zoomOut} disabled={zoom <= ZOOM_LEVELS[0]} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all disabled:opacity-30 disabled:cursor-not-allowed"><ZoomOut className="w-4 h-4" /></button>
@@ -485,11 +655,8 @@ function ColorContent() {
                   
                   <div className={"relative w-full h-full " + (imageLoaded && !loadError ? '' : 'opacity-0')}>
                     <canvas ref={baseCanvasRef} className="w-full h-full rounded-xl shadow-md block" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto' }} />
-                    <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: tool === 'fill' ? 'crosshair' : 'none' }} />
+                    <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: canvasCursor }} />
                   </div>
-                  {cursorPos && tool !== 'fill' && imageLoaded && !loadError && (
-                    <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : tool === 'pencil' ? '#000000' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : tool === 'pencil' ? 'rgba(0,0,0,0.3)' : 'transparent' }} />
-                  )}
                 </div>
               </div>
             </div>
@@ -497,8 +664,6 @@ function ColorContent() {
         </div>
       </main>
       <Footer />
-
-
     </>
   );
 }

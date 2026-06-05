@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
 import { useAuth } from '@clerk/nextjs';
 
@@ -48,10 +48,20 @@ function ColorContent() {
   const originalBaseRef = useRef<ImageData | null>(null);
   const historyRef = useRef<ImageData[]>([]);
   const historyIndexRef = useRef(-1);
+  const baseHistoryRef = useRef<ImageData[]>([]);
+  const baseHistoryIndexRef = useRef(-1);
+  const opLogRef = useRef<Array<'color' | 'base'>>([]);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState('#FF6B6B');
-  const [tool, setTool] = useState<'fill' | 'brush' | 'eraser'>('fill');
+  const [tool, setTool] = useState<'fill' | 'pencil' | 'brush' | 'eraser'>('fill');
   const [brushSize, setBrushSize] = useState(8);
+
+  // Adjust brush size when switching tools
+  useEffect(() => {
+    if (tool === 'pencil' && brushSize > 8) setBrushSize(3);
+    else if (tool === 'pencil') setBrushSize(3);
+    else if ((tool === 'brush' || tool === 'eraser') && brushSize < 2) setBrushSize(8);
+  }, [tool]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -93,6 +103,9 @@ function ColorContent() {
         const initialData = colorCtx.getImageData(0, 0, w, h);
         historyRef.current = [initialData];
         historyIndexRef.current = 0;
+        baseHistoryRef.current = [baseCtx.getImageData(0, 0, w, h)];
+        baseHistoryIndexRef.current = 0;
+        opLogRef.current = [];
         setImageLoaded(true); setLoadError(null);
       };
       img.onerror = () => {
@@ -118,6 +131,8 @@ function ColorContent() {
               setCanvasSize({ w: w2, h: h2 });
               const init = cCtx.getImageData(0, 0, w2, h2);
               historyRef.current = [init]; historyIndexRef.current = 0;
+              baseHistoryRef.current = [bCtx.getImageData(0, 0, w2, h2)]; baseHistoryIndexRef.current = 0;
+              opLogRef.current = [];
               setImageLoaded(true); setLoadError(null);
                     URL.revokeObjectURL(blobUrl);
             };
@@ -140,16 +155,42 @@ function ColorContent() {
     historyRef.current.push(imageData);
     historyIndexRef.current = historyRef.current.length - 1;
     if (historyRef.current.length > 30) { historyRef.current.shift(); historyIndexRef.current--; }
+    opLogRef.current.push('color');
+  }, []);
+
+  const saveToBaseHistory = useCallback(() => {
+    const baseCanvas = baseCanvasRef.current;
+    if (!baseCanvas) return;
+    const ctx = baseCanvas.getContext('2d');
+    if (!ctx) return;
+    const imageData = ctx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
+    baseHistoryRef.current = baseHistoryRef.current.slice(0, baseHistoryIndexRef.current + 1);
+    baseHistoryRef.current.push(imageData);
+    baseHistoryIndexRef.current = baseHistoryRef.current.length - 1;
+    if (baseHistoryRef.current.length > 30) { baseHistoryRef.current.shift(); baseHistoryIndexRef.current--; }
+    opLogRef.current.push('base');
   }, []);
 
   const undo = useCallback(() => {
-    if (historyIndexRef.current <= 0) return;
-    historyIndexRef.current--;
-    const colorCanvas = colorCanvasRef.current;
-    if (!colorCanvas) return;
-    const ctx = colorCanvas.getContext('2d');
-    if (!ctx) return;
-    ctx.putImageData(historyRef.current[historyIndexRef.current], 0, 0);
+    if (opLogRef.current.length === 0) return;
+    const lastOp = opLogRef.current.pop();
+    if (lastOp === 'base') {
+      if (baseHistoryIndexRef.current <= 0) return;
+      baseHistoryIndexRef.current--;
+      const baseCanvas = baseCanvasRef.current;
+      if (!baseCanvas) return;
+      const ctx = baseCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.putImageData(baseHistoryRef.current[baseHistoryIndexRef.current], 0, 0);
+    } else {
+      if (historyIndexRef.current <= 0) return;
+      historyIndexRef.current--;
+      const colorCanvas = colorCanvasRef.current;
+      if (!colorCanvas) return;
+      const ctx = colorCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.putImageData(historyRef.current[historyIndexRef.current], 0, 0);
+    }
   }, []);
 
   const getScale = useCallback(() => {
@@ -225,18 +266,23 @@ function ColorContent() {
   const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (tool === 'fill') return;
     setIsDrawing(true);
-    const colorCanvas = colorCanvasRef.current;
-    if (!colorCanvas) return;
-    const ctx = colorCanvas.getContext('2d');
+    // Pencil draws on base canvas; brush/eraser on color canvas
+    const targetCanvas = tool === 'pencil' ? baseCanvasRef.current : colorCanvasRef.current;
+    if (!targetCanvas) return;
+    const ctx = targetCanvas.getContext('2d');
     if (!ctx) return;
-    const rect = colorCanvas.getBoundingClientRect();
-    const scaleX = colorCanvas.width / rect.width;
-    const scaleY = colorCanvas.height / rect.height;
+    const rect = targetCanvas.getBoundingClientRect();
+    const scaleX = targetCanvas.width / rect.width;
+    const scaleY = targetCanvas.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
     ctx.beginPath(); ctx.moveTo(x, y);
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    if (tool === 'eraser') {
+    if (tool === 'pencil') {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = brushSize;
+    } else if (tool === 'eraser') {
       ctx.globalCompositeOperation = 'destination-out';
       ctx.strokeStyle = 'rgba(0,0,0,1)';
       ctx.lineWidth = brushSize * 3;
@@ -254,35 +300,43 @@ function ColorContent() {
       setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     }
     if (!isDrawing) return;
-    const colorCanvas = colorCanvasRef.current;
-    if (!colorCanvas) return;
-    const ctx = colorCanvas.getContext('2d');
+    const targetCanvas = tool === 'pencil' ? baseCanvasRef.current : colorCanvasRef.current;
+    if (!targetCanvas) return;
+    const ctx = targetCanvas.getContext('2d');
     if (!ctx) return;
-    const rect = colorCanvas.getBoundingClientRect();
-    const scaleX = colorCanvas.width / rect.width;
-    const scaleY = colorCanvas.height / rect.height;
+    const rect = targetCanvas.getBoundingClientRect();
+    const scaleX = targetCanvas.width / rect.width;
+    const scaleY = targetCanvas.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
     ctx.lineTo(x, y); ctx.stroke();
-  }, [isDrawing]);
+  }, [isDrawing, tool]);
 
   const handleCanvasMouseUp = useCallback(() => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    const colorCanvas = colorCanvasRef.current;
-    if (colorCanvas) { const ctx = colorCanvas.getContext('2d'); if (ctx) ctx.globalCompositeOperation = 'source-over'; }
-    saveToHistory();
-  }, [isDrawing, saveToHistory]);
+    if (tool === 'pencil') {
+      saveToBaseHistory();
+    } else {
+      const colorCanvas = colorCanvasRef.current;
+      if (colorCanvas) { const ctx = colorCanvas.getContext('2d'); if (ctx) ctx.globalCompositeOperation = 'source-over'; }
+      saveToHistory();
+    }
+  }, [isDrawing, tool, saveToHistory, saveToBaseHistory]);
 
   const handleMouseLeave = useCallback(() => {
     setCursorPos(null);
     if (isDrawing) {
       setIsDrawing(false);
-      const colorCanvas = colorCanvasRef.current;
-      if (colorCanvas) { const ctx = colorCanvas.getContext('2d'); if (ctx) ctx.globalCompositeOperation = 'source-over'; }
-      saveToHistory();
+      if (tool === 'pencil') {
+        saveToBaseHistory();
+      } else {
+        const colorCanvas = colorCanvasRef.current;
+        if (colorCanvas) { const ctx = colorCanvas.getContext('2d'); if (ctx) ctx.globalCompositeOperation = 'source-over'; }
+        saveToHistory();
+      }
     }
-  }, [isDrawing, saveToHistory]);
+  }, [isDrawing, tool, saveToHistory, saveToBaseHistory]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (e.ctrlKey || e.metaKey) {
@@ -335,7 +389,7 @@ function ColorContent() {
     } catch { setSaveStatus('error'); setTimeout(() => setSaveStatus(null), 2000); }
   }, [isSignedIn, getMergedCanvas]);
 
-  const cursorRadius = tool === 'eraser' ? (brushSize * 3) / getScale() / 2 : brushSize / getScale() / 2;
+  const cursorRadius = tool === 'eraser' ? (brushSize * 3) / getScale() / 2 : tool === 'pencil' ? Math.max(brushSize / getScale() / 2, 2) : brushSize / getScale() / 2;
 
   if (!imageUrl) {
     return <><Navbar /><main className="min-h-screen pt-20 pb-16 bg-background flex items-center justify-center"><p className="text-muted-foreground text-lg">No image selected. Generate a coloring page first.</p></main><Footer /></>;
@@ -351,15 +405,16 @@ function ColorContent() {
         <div className="container mx-auto px-4 md:px-6 max-w-6xl">
           <div className="text-center mb-6">
             <h1 className="font-display text-3xl md:text-4xl mb-2 text-foreground">Color Your Page</h1>
-            <p className="text-muted-foreground">Pick a color and click to fill, or use the brush to draw</p>
+            <p className="text-muted-foreground">Pick a color and click to fill · Use Pencil to close gaps before coloring</p>
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
             <div className="space-y-4">
               <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
                 <h3 className="text-sm font-semibold mb-3 text-foreground">Tools</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => setTool('fill')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'fill' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Paintbrush className="w-5 h-5" /><span className="text-xs font-medium">Fill</span></button>
+                  <button onClick={() => setTool('pencil')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'pencil' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Pencil className="w-5 h-5" /><span className="text-xs font-medium">Pencil</span></button>
                   <button onClick={() => setTool('brush')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'brush' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Palette className="w-5 h-5" /><span className="text-xs font-medium">Brush</span></button>
                   <button onClick={() => setTool('eraser')} className={"flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all " + (tool === 'eraser' ? 'border-[#FFB800] bg-[#FFB800]/10' : 'border-[#E5E0D5] hover:border-[#FFB800]/50')}><Eraser className="w-5 h-5" /><span className="text-xs font-medium">Eraser</span></button>
                 </div>
@@ -367,9 +422,12 @@ function ColorContent() {
               
               {tool !== 'fill' && (
                 <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
-                  <h3 className="text-sm font-semibold mb-3 text-foreground">Size</h3>
-                  <input type="range" min="2" max="30" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full accent-[#FFB800]" />
+                  <h3 className="text-sm font-semibold mb-3 text-foreground">{tool === 'pencil' ? 'Pencil Size' : 'Size'}</h3>
+                  <input type="range" min={tool === 'pencil' ? 1 : 2} max={tool === 'pencil' ? 8 : 30} value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-full accent-[#FFB800]" />
                   <div className="text-center text-sm text-muted-foreground mt-1">{brushSize}px</div>
+                  {tool === 'pencil' && (
+                    <p className="text-[11px] text-muted-foreground mt-2 leading-tight">Draw black lines to close gaps, then use Fill to color.</p>
+                  )}
                 </div>
               )}
               <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">
@@ -430,7 +488,7 @@ function ColorContent() {
                     <canvas ref={colorCanvasRef} className="absolute top-0 left-0 w-full h-full rounded-xl" style={{ imageRendering: zoom > 100 ? 'pixelated' : 'auto', cursor: tool === 'fill' ? 'crosshair' : 'none' }} />
                   </div>
                   {cursorPos && tool !== 'fill' && imageLoaded && !loadError && (
-                    <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : 'transparent' }} />
+                    <div className="absolute pointer-events-none z-20 rounded-full border-2" style={{ left: cursorPos.x - cursorRadius, top: cursorPos.y - cursorRadius, width: cursorRadius * 2, height: cursorRadius * 2, borderColor: tool === 'eraser' ? '#666666' : tool === 'pencil' ? '#000000' : selectedColor, backgroundColor: tool === 'eraser' ? 'rgba(255,255,255,0.3)' : tool === 'pencil' ? 'rgba(0,0,0,0.3)' : 'transparent' }} />
                   )}
                 </div>
               </div>

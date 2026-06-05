@@ -61,6 +61,7 @@ function GenerateContent() {
   const [showSignIn, setShowSignIn] = useState(false);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [referenceFileName, setReferenceFileName] = useState<string>('');
+  const [refTrialUsed, setRefTrialUsed] = useState(false);
 
   useEffect(() => {
     const p = searchParams.get('p');
@@ -79,6 +80,7 @@ function GenerateContent() {
         if (data.plan) setPlan(data.plan);
         if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
         if (data.limit) setPageLimit(data.limit);
+        if (data.refTrialUsed !== undefined) setRefTrialUsed(data.refTrialUsed);
       })
       .catch(() => {});
   }, [isSignedIn]);
@@ -149,6 +151,7 @@ function GenerateContent() {
         setPagesUsed(data.pagesUsed);
         setPageLimit(data.limit);
         setPlan(data.plan);
+        if (data.refTrialApplied) setRefTrialUsed(true);
         const maxAttempts = 30;
         let pollCompleted = false;
         let pollFailed = false;
@@ -242,7 +245,7 @@ function GenerateContent() {
                       ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]" 
                       : "border-dashed border-[#C8C0B4] text-muted-foreground/60 hover:border-[#FFB800] hover:text-[#FFB800] hover:bg-[#FFB800]/5"
                   )}
-                  title="Upload reference image (5 credits)"
+                  title={refTrialUsed ? "Upload reference image (5 credits)" : "Upload reference image (Free trial!)"}
                 >
                   <Plus className="w-5 h-5" />
                 </button>
@@ -332,7 +335,9 @@ function GenerateContent() {
             {/* Hint line */}
             <div className="flex items-center justify-between mt-2 px-0.5">
               <p className="text-[10px] text-muted-foreground">
-                {referenceImage ? '📎 Reference mode' : `${styles.find(s => s.id === selectedStyle)?.emoji} ${styles.find(s => s.id === selectedStyle)?.label} style`}
+                {referenceImage 
+                  ? (refTrialUsed ? '📎 Reference mode (5 credits)' : '🎁 Reference mode (Free trial!)')
+                  : `${styles.find(s => s.id === selectedStyle)?.emoji} ${styles.find(s => s.id === selectedStyle)?.label} style`}
                 {!isSignedIn && isLoaded && (
                   <>
                     {' · '}
@@ -340,7 +345,7 @@ function GenerateContent() {
                       onClick={() => setShowSignIn(true)}
                       className="text-[#FFB800] hover:underline font-semibold"
                     >
-                      Sign in for 5 free credits
+                      Sign in for 2 free credits
                     </button>
                   </>
                 )}

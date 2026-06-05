@@ -1,0 +1,143 @@
+export interface ColoringTheme {
+  slug: string;
+  title: string;
+  metaDescription: string;
+  h1: string;
+  description: string;
+  samples: string[];
+  sampleAlts: string[];
+  relatedThemes: string[];
+  keywords: string[];
+  category: string;
+}
+
+export const themes: ColoringTheme[] = [
+  {
+    slug: 'dinosaur-coloring-pages',
+    title: 'Free Dinosaur Coloring Pages',
+    metaDescription: 'Download free dinosaur coloring pages! T-Rex, Triceratops, and more. Print-ready or generate your own custom dinosaur coloring pages with AI.',
+    h1: 'Free Dinosaur Coloring Pages',
+    description: 'Dinosaur coloring pages are a favorite among kids who love these prehistoric creatures. From the mighty T-Rex to the gentle Triceratops, our free printable dinosaur coloring pages feature bold outlines perfect for little hands. Great for rainy days, classroom activities, or dinosaur-themed birthday parties. These pages help develop fine motor skills while sparking creativity and curiosity about the ancient world. Want something unique? Use our AI generator to create custom dinosaur coloring pages — just describe your idea!',
+    samples: ['/seo-samples/dinosaur-1.png', '/seo-samples/dinosaur-2.png', '/seo-samples/dinosaur-3.png'],
+    sampleAlts: ['free T-Rex dinosaur coloring page for kids', 'free Triceratops dinosaur coloring page', 'free baby dinosaur hatching from egg coloring page printable'],
+    relatedThemes: ['farm-animals-coloring-pages', 'ocean-coloring-pages', 'space-coloring-pages', 'alphabet-coloring-pages'],
+    keywords: ['dinosaur coloring pages', 't-rex coloring pages', 'dinosaur coloring sheets', 'printable dinosaur coloring pages', 'free dinosaur coloring pages'],
+    category: 'Kids Animals',
+  },
+  {
+    slug: 'unicorn-coloring-pages',
+    title: 'Free Unicorn Coloring Pages',
+    metaDescription: 'Download free unicorn coloring pages! Magical unicorns with flowing manes, rainbows, and stars. Print or generate your own custom unicorn pages with AI.',
+    h1: 'Free Unicorn Coloring Pages',
+    description: 'Unicorn coloring pages bring magic and wonder to every coloring session. Our free printable unicorn coloring pages feature adorable unicorns with flowing manes, sparkling horns, and dreamy rainbows — all with bold, clean outlines that are easy for kids to color. Perfect for birthday parties, quiet afternoons, or classroom crafts. These enchanting designs encourage creativity and imaginative play. Want a unicorn doing something special? Our AI generator can create any unicorn coloring page you can imagine — just type your idea!',
+    samples: ['/seo-samples/unicorn-1.png', '/seo-samples/unicorn-2.png', '/seo-samples/unicorn-3.png'],
+    sampleAlts: ['free unicorn with flowing mane coloring page', 'free unicorn jumping over rainbow coloring page', 'free baby unicorn with stars coloring page printable'],
+    relatedThemes: ['princess-coloring-pages', 'christmas-coloring-pages', 'alphabet-coloring-pages', 'dinosaur-coloring-pages'],
+    keywords: ['unicorn coloring pages', 'unicorn coloring sheets', 'free unicorn coloring pages', 'printable unicorn coloring pages', 'cute unicorn coloring pages'],
+    category: 'Kids Fantasy',
+  },
+  {
+    slug: 'mandala-coloring-pages',
+    title: 'Free Mandala Coloring Pages',
+    metaDescription: 'Download free mandala coloring pages for adults! Intricate geometric patterns with flowers, leaves, and stars. Print or generate custom mandala designs with AI.',
+    h1: 'Free Mandala Coloring Pages',
+    description: 'Mandala coloring pages offer a calming, meditative experience for adults and teens. Our free printable mandala coloring pages feature intricate geometric patterns with flowing petals, delicate leaves, and mesmerizing symmetrical designs. Coloring mandalas is proven to reduce stress, improve focus, and promote mindfulness. Whether you prefer simple patterns or elaborate designs, our collection has something for every skill level. Looking for a personalized design? Use our AI generator to create custom mandala coloring pages tailored to your style!',
+    samples: ['/seo-samples/mandala-1.png', '/seo-samples/mandala-2.png', '/seo-samples/mandala-3.png'],
+    sampleAlts: ['free mandala with flowers coloring page for adults', 'free circular mandala with leaves coloring page', 'free mandala with star and petal pattern coloring page'],
+    relatedThemes: ['alphabet-coloring-pages', 'ocean-coloring-pages', 'christmas-coloring-pages', 'halloween-coloring-pages'],
+    keywords: ['mandala coloring pages', 'adult mandala coloring pages', 'free mandala coloring pages', 'printable mandala coloring pages', 'mandala coloring sheets'],
+    category: 'Adult Relaxation',
+  },
+  {
+    slug: 'alphabet-coloring-pages',
+    title: 'Free Alphabet Coloring Pages',
+    metaDescription: 'Download free alphabet coloring pages! Each letter paired with fun animals and objects. Perfect for preschool learning. Print or generate custom ABC pages with AI.',
+    h1: 'Free Alphabet Coloring Pages',
+    description: 'Alphabet coloring pages make learning ABCs fun and engaging for preschoolers and kindergartners. Each free printable page features a bold letter paired with a recognizable object — like A for Apple, B for Butterfly, and C for Cat — helping children connect letters with sounds and words. These educational coloring pages are perfect for homeschooling, classroom centers, and early literacy practice. The thick outlines and simple shapes are designed for little hands still developing pencil grip. Want custom letter pages? Our AI generator can create alphabet coloring pages with any theme!',
+    samples: ['/seo-samples/alphabet-1.png', '/seo-samples/alphabet-2.png', '/seo-samples/alphabet-3.png'],
+    sampleAlts: ['free letter A with apple coloring page for preschool', 'free letter B with butterfly coloring page', 'free letter C with cat coloring page printable'],
+    relatedThemes: ['dinosaur-coloring-pages', 'farm-animals-coloring-pages', 'ocean-coloring-pages', 'space-coloring-pages'],
+    keywords: ['alphabet coloring pages', 'ABC coloring pages', 'letter coloring pages', 'free alphabet coloring pages', 'preschool alphabet coloring sheets'],
+    category: 'Education',
+  },
+  {
+    slug: 'ocean-coloring-pages',
+    title: 'Free Ocean & Sea Animals Coloring Pages',
+    metaDescription: 'Download free ocean coloring pages! Dolphins, sea turtles, fish, and coral reefs. Print-ready or generate your own custom sea creature pages with AI.',
+    h1: 'Free Ocean & Sea Animals Coloring Pages',
+    description: 'Ocean coloring pages dive deep into the wonders of marine life. Our free printable sea animal coloring pages feature playful dolphins, graceful sea turtles, colorful fish, and vibrant coral reefs — all with bold, clean outlines that kids will love. These pages are perfect for ocean-themed units, summer activities, or any child fascinated by life under the sea. Coloring sea creatures helps children learn about ocean ecosystems while developing creativity and fine motor skills. Want a specific sea creature? Our AI generator can create any ocean coloring page you dream up!',
+    samples: ['/seo-samples/ocean-1.png', '/seo-samples/ocean-2.png', '/seo-samples/ocean-3.png'],
+    sampleAlts: ['free dolphin jumping out of water coloring page', 'free sea turtle swimming coloring page', 'free fish and coral reef coloring page printable'],
+    relatedThemes: ['dinosaur-coloring-pages', 'farm-animals-coloring-pages', 'space-coloring-pages', 'alphabet-coloring-pages'],
+    keywords: ['ocean coloring pages', 'sea animal coloring pages', 'dolphin coloring pages', 'free ocean coloring pages', 'printable sea creature coloring pages'],
+    category: 'Kids Animals',
+  },
+  {
+    slug: 'princess-coloring-pages',
+    title: 'Free Princess Coloring Pages',
+    metaDescription: 'Download free princess coloring pages! Beautiful princesses in ball gowns, castles, and magic wands. Print or generate your own custom princess pages with AI.',
+    h1: 'Free Princess Coloring Pages',
+    description: 'Princess coloring pages let every child feel like royalty. Our free printable princess coloring pages feature elegant ball gowns, towering castles, sparkling tiaras, and magic wands — all drawn with bold, clean outlines perfect for coloring. Whether your little one dreams of being a fairy-tale princess or a magical queen, these pages offer hours of creative fun. Great for princess-themed birthday parties, quiet time activities, or classroom art projects. Want a princess in a unique setting? Our AI generator can create any princess coloring page you can imagine!',
+    samples: ['/seo-samples/princess-1.png', '/seo-samples/princess-2.png', '/seo-samples/princess-3.png'],
+    sampleAlts: ['free princess in ball gown with tiara coloring page', 'free princess in castle tower coloring page', 'free princess with magic wand coloring page printable'],
+    relatedThemes: ['unicorn-coloring-pages', 'christmas-coloring-pages', 'halloween-coloring-pages', 'alphabet-coloring-pages'],
+    keywords: ['princess coloring pages', 'free princess coloring pages', 'printable princess coloring pages', 'princess coloring sheets', 'disney princess coloring pages'],
+    category: 'Kids Fantasy',
+  },
+  {
+    slug: 'space-coloring-pages',
+    title: 'Free Space & Solar System Coloring Pages',
+    metaDescription: 'Download free space coloring pages! Astronauts, rockets, and solar system planets. Print-ready or generate your own custom space coloring pages with AI.',
+    h1: 'Free Space & Solar System Coloring Pages',
+    description: 'Space coloring pages launch young imaginations into the cosmos. Our free printable space coloring pages feature brave astronauts floating in zero gravity, powerful rockets blasting off, and the planets of our solar system — all with bold, clean outlines that make coloring easy and fun. These pages are perfect for STEM learning, space-themed birthday parties, or any child who gazes at the stars. Coloring space scenes encourages curiosity about science and exploration. Want a specific space adventure? Our AI generator can create custom space coloring pages for any mission!',
+    samples: ['/seo-samples/space-1.png', '/seo-samples/space-2.png', '/seo-samples/space-3.png'],
+    sampleAlts: ['free astronaut floating in space coloring page', 'free rocket ship blasting off coloring page', 'free solar system planets coloring page printable'],
+    relatedThemes: ['dinosaur-coloring-pages', 'alphabet-coloring-pages', 'ocean-coloring-pages', 'christmas-coloring-pages'],
+    keywords: ['space coloring pages', 'solar system coloring pages', 'astronaut coloring pages', 'free space coloring pages', 'printable space coloring pages'],
+    category: 'Kids Science',
+  },
+  {
+    slug: 'christmas-coloring-pages',
+    title: 'Free Christmas Coloring Pages',
+    metaDescription: 'Download free Christmas coloring pages! Christmas trees, Santa Claus, reindeer, and more. Print or generate your own custom holiday coloring pages with AI.',
+    h1: 'Free Christmas Coloring Pages',
+    description: 'Christmas coloring pages bring holiday cheer to kids and families alike. Our free printable Christmas coloring pages feature decorated trees with shining stars, jolly Santa Claus with his gift sack, and friendly reindeer with impressive antlers — all drawn with bold, clean outlines that are perfect for little hands. These festive pages are ideal for holiday parties, advent activities, classroom celebrations, or cozy winter afternoons at home. Coloring Christmas scenes builds excitement for the season and creates lasting memories. Want a personalized holiday page? Our AI generator can create custom Christmas coloring pages with your ideas!',
+    samples: ['/seo-samples/christmas-1.png', '/seo-samples/christmas-2.png', '/seo-samples/christmas-3.png'],
+    sampleAlts: ['free Christmas tree with ornaments coloring page', 'free Santa Claus with sack coloring page', 'free reindeer with antlers coloring page printable'],
+    relatedThemes: ['halloween-coloring-pages', 'princess-coloring-pages', 'unicorn-coloring-pages', 'mandala-coloring-pages'],
+    keywords: ['christmas coloring pages', 'free christmas coloring pages', 'printable christmas coloring pages', 'santa coloring pages', 'holiday coloring pages'],
+    category: 'Seasonal',
+  },
+  {
+    slug: 'halloween-coloring-pages',
+    title: 'Free Halloween Coloring Pages',
+    metaDescription: 'Download free Halloween coloring pages! Pumpkins, ghosts, bats, and witches. Print-ready or generate your own custom spooky coloring pages with AI.',
+    h1: 'Free Halloween Coloring Pages',
+    description: 'Halloween coloring pages add spooky fun to the creepiest season of the year. Our free printable Halloween coloring pages feature grinning jack-o-lantern pumpkins, friendly ghosts with playful bats, and classic witch hats with bubbling cauldrons — all with bold, clean outlines that kids will enjoy coloring. These not-too-scary designs are perfect for Halloween parties, trick-or-treat activities, classroom celebrations, or October fun at home. Coloring Halloween scenes sparks creativity and gets everyone in the holiday spirit. Want a unique spooky design? Our AI generator can create custom Halloween coloring pages — just describe your spooky vision!',
+    samples: ['/seo-samples/halloween-1.png', '/seo-samples/halloween-2.png', '/seo-samples/halloween-3.png'],
+    sampleAlts: ['free pumpkin jack-o-lantern coloring page', 'free friendly ghost and bat coloring page', 'free witch hat and cauldron coloring page printable'],
+    relatedThemes: ['christmas-coloring-pages', 'princess-coloring-pages', 'mandala-coloring-pages', 'dinosaur-coloring-pages'],
+    keywords: ['halloween coloring pages', 'free halloween coloring pages', 'pumpkin coloring pages', 'printable halloween coloring pages', 'spooky coloring pages'],
+    category: 'Seasonal',
+  },
+  {
+    slug: 'farm-animals-coloring-pages',
+    title: 'Free Farm Animals Coloring Pages',
+    metaDescription: 'Download free farm animal coloring pages! Cows, chickens, tractors, and more. Print-ready or generate your own custom farm coloring pages with AI.',
+    h1: 'Free Farm Animals Coloring Pages',
+    description: 'Farm animal coloring pages bring the countryside to life for curious kids. Our free printable farm coloring pages feature happy cows grazing in fields, clucking chickens with their eggs, and trusty tractors ready for a day of work — all with bold, clean outlines that make coloring easy and enjoyable. These pages are perfect for farm-themed lessons, country fairs, or any child who loves animals and the outdoors. Coloring farm scenes teaches children about where food comes from and life on a farm. Want a specific farm scene? Our AI generator can create custom farm animal coloring pages with any animal or activity you choose!',
+    samples: ['/seo-samples/farm-animals-1.png', '/seo-samples/farm-animals-2.png', '/seo-samples/farm-animals-3.png'],
+    sampleAlts: ['free cow standing in field coloring page', 'free chicken with eggs coloring page', 'free tractor in farm coloring page printable'],
+    relatedThemes: ['dinosaur-coloring-pages', 'ocean-coloring-pages', 'alphabet-coloring-pages', 'space-coloring-pages'],
+    keywords: ['farm animal coloring pages', 'free farm coloring pages', 'cow coloring pages', 'printable farm animal coloring pages', 'farm coloring sheets'],
+    category: 'Kids Animals',
+  },
+];
+
+export function getThemeBySlug(slug: string): ColoringTheme | undefined {
+  return themes.find((t) => t.slug === slug);
+}
+
+export function getRelatedThemes(slugs: string[]): ColoringTheme[] {
+  return themes.filter((t) => slugs.includes(t.slug));
+}

@@ -697,7 +697,7 @@ function ColorContent() {
               <div 
                 ref={scrollContainerRef}
                 className="overflow-auto p-4" 
-                style={{ height: '75vh', minHeight: '500px' }}
+                style={{ maxHeight: '75vh', minHeight: '300px' }}
                 onWheel={handleWheel}
               >
                 {/* Spacer creates scrollable area at visual (zoomed) size */}

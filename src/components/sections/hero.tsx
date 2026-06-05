@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Sparkles, Check } from 'lucide-react';
+import { Sparkles, Check, Pencil, Upload, Palette, Printer, ArrowRight } from 'lucide-react';
 
 const styles = [
   {
@@ -40,6 +40,33 @@ const styles = [
   },
 ];
 
+const steps = [
+  {
+    number: 1,
+    title: 'Describe or Upload',
+    description: 'Type what you want, or upload a reference photo',
+    icon: Pencil,
+  },
+  {
+    number: 2,
+    title: 'Choose Style',
+    description: 'Pick Simple, Mandala, or Intricate',
+    icon: Sparkles,
+  },
+  {
+    number: 3,
+    title: 'Generate',
+    description: 'AI creates a clean, printable line art',
+    icon: Sparkles,
+  },
+  {
+    number: 4,
+    title: 'Color or Print',
+    description: 'Color online, or download and print',
+    icon: Palette,
+  },
+];
+
 export function Hero() {
   return (
     <section className="relative overflow-hidden pt-24 pb-16 md:pt-32 md:pb-24">
@@ -69,7 +96,7 @@ export function Hero() {
             </div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap gap-4 justify-center lg:justify-start text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-4 justify-center lg:justify-start text-sm text-muted-foreground mb-10">
               <span className="inline-flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#2ECC71]" />
                 No credit card
@@ -82,6 +109,35 @@ export function Hero() {
                 <Check className="w-4 h-4 text-[#2ECC71]" />
                 Ready to print
               </span>
+            </div>
+
+            {/* How It Works - Inline Steps */}
+            <div className="border-t border-border/50 pt-8">
+              <h3 className="font-display text-lg text-foreground mb-5">How It Works</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {steps.map((step, idx) => {
+                  const Icon = step.icon;
+                  return (
+                    <div key={step.number} className="flex gap-3 items-start">
+                      <div className="relative flex-shrink-0">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}
+                        >
+                          <Icon className="w-5 h-5 text-[#1A1A2E]" />
+                        </div>
+                        <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#1A1A2E] text-white text-[10px] font-bold flex items-center justify-center">
+                          {step.number}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-foreground">{step.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

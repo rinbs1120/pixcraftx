@@ -8,10 +8,7 @@ const productLinks = [
 
 const resourceLinks = [
   { label: 'Help', href: '/help' },
-  { label: 'Dinosaur Coloring Pages', href: '/dinosaur-coloring-pages' },
-  { label: 'Unicorn Coloring Pages', href: '/unicorn-coloring-pages' },
-  { label: 'Mandala Coloring Pages', href: '/mandala-coloring-pages' },
-  { label: 'More Free Coloring Pages', href: '/dinosaur-coloring-pages' },
+  { label: 'Free Coloring Pages', href: '/free-coloring-pages' },
 ];
 
 const legalLinks = [
@@ -26,9 +23,7 @@ export function Footer() {
   return (
     <footer className="py-16 md:py-20 bg-[#1A1A2E]">
       <div className="container mx-auto px-4 md:px-6 max-w-6xl">
-        {/* Top Section - 4 columns */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12">
-          {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="PixCraftX logo">
@@ -48,16 +43,12 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Product Column */}
           <div>
             <h4 className="font-display text-base text-[#FFFBF0] mb-4">Product</h4>
             <ul className="space-y-3">
               {productLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[#B0B0C0] hover:text-[#FFB800] transition-colors"
-                  >
+                  <Link href={link.href} className="text-sm text-[#B0B0C0] hover:text-[#FFB800] transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -65,16 +56,12 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Resources Column */}
           <div>
             <h4 className="font-display text-base text-[#FFFBF0] mb-4">Resources</h4>
             <ul className="space-y-3">
               {resourceLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[#B0B0C0] hover:text-[#FFB800] transition-colors"
-                  >
+                  <Link href={link.href} className="text-sm text-[#B0B0C0] hover:text-[#FFB800] transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -82,16 +69,12 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Legal Column */}
           <div>
             <h4 className="font-display text-base text-[#FFFBF0] mb-4">Legal</h4>
             <ul className="space-y-3">
               {legalLinks.map((link) => (
                 <li key={link.label}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-[#B0B0C0] hover:text-[#FFB800] transition-colors"
-                  >
+                  <Link href={link.href} className="text-sm text-[#B0B0C0] hover:text-[#FFB800] transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -100,7 +83,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom Section - Copyright */}
         <div className="pt-8 border-t border-[#2A2A3E]">
           <p className="text-center text-sm text-[#B0B0C0]">
             © {currentYear} PixCraftX. Made with{' '}

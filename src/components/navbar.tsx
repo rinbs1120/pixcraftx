@@ -49,7 +49,6 @@ export function Navbar() {
         style={{ backgroundColor: 'rgba(255,251,240,0.92)' }}
       >
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between max-w-7xl">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="PixCraftX logo">
               <circle cx="16" cy="16" r="14" fill="#FFB800" opacity="0.15" />
@@ -64,8 +63,10 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
+            <Link href="/free-coloring-pages" className="text-muted-foreground hover:text-primary transition-colors font-medium">
+              Free Pages
+            </Link>
             <Link href="/generate" className="text-muted-foreground hover:text-primary transition-colors font-medium">
               Generate
             </Link>
@@ -79,7 +80,6 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
             {!isLoaded ? (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -112,7 +112,6 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             className="md:hidden p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -123,31 +122,21 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-background/98 backdrop-blur-xl md:hidden pt-16">
           <div className="flex flex-col items-center justify-center gap-8 h-full">
-            <Link
-              href="/generate"
-              className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/free-coloring-pages" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
+              Free Pages
+            </Link>
+            <Link href="/generate" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Generate
             </Link>
             {isSignedIn && (
-              <Link
-                href="/history"
-                className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
+              <Link href="/history" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
                 My Pages
               </Link>
             )}
-            <Link
-              href="/pricing"
-              className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/pricing" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Pricing
             </Link>
             {!isLoaded ? (

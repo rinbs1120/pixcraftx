@@ -208,15 +208,22 @@ function GenerateContent() {
       <main className="min-h-screen pt-20 pb-8 bg-background">
         <div className="container mx-auto px-4 md:px-6 max-w-4xl">
           
+          {/* Page Title */}
+          <div className="text-center mb-4">
+            <h1 className="font-display text-2xl md:text-3xl text-foreground">
+              Create Your Coloring Page
+            </h1>
+          </div>
+
           {/* ====== TOP: Compact Input Area ====== */}
-          <div className="bg-card rounded-2xl p-4 md:p-5 shadow-sm border border-border mb-6">
-            {/* Main input row */}
-            <div className="flex items-end gap-2">
+          <div className="rounded-2xl p-4 md:p-5 shadow-sm border border-border mb-6" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
+            {/* Input row: Upload + Textarea */}
+            <div className="flex items-start gap-2">
               {/* Upload button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
-                  "flex-shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all",
+                  "flex-shrink-0 w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all mt-1",
                   referenceImage 
                     ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]" 
                     : "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800] hover:text-[#FFB800]"
@@ -233,7 +240,7 @@ function GenerateContent() {
                 className="hidden"
               />
 
-              {/* Text input */}
+              {/* Text input - double height */}
               <div className="flex-1 relative">
                 <textarea
                   value={prompt}
@@ -245,49 +252,13 @@ function GenerateContent() {
                     }
                   }}
                   placeholder="Describe your coloring page..."
-                  rows={1}
-                  className="w-full px-4 py-2.5 text-sm bg-white border-2 border-[#E5E0D5] rounded-xl focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20 outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground pr-12"
-                  style={{ maxHeight: '120px' }}
+                  rows={3}
+                  className="w-full px-4 py-3 text-sm bg-white border-2 border-[#E5E0D5] rounded-xl focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20 outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground pr-12"
                 />
                 <span className="absolute right-3 bottom-2 text-[10px] text-muted-foreground/50">
                   {prompt.length > 0 ? `${prompt.length}/500` : ''}
                 </span>
               </div>
-
-              {/* Style toggle */}
-              <div className="flex-shrink-0 flex gap-1">
-                {styles.map((style) => (
-                  <button
-                    key={style.id}
-                    onClick={() => setSelectedStyle(style.id)}
-                    disabled={!!referenceImage}
-                    className={cn(
-                      "flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg text-[10px] font-semibold transition-all border",
-                      selectedStyle === style.id && !referenceImage
-                        ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]"
-                        : "border-transparent text-muted-foreground hover:text-foreground",
-                      referenceImage && "opacity-40 cursor-not-allowed"
-                    )}
-                    title={style.desc}
-                  >
-                    <span className="text-base leading-none">{style.emoji}</span>
-                    <span>{style.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Generate button */}
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim() || prompt.length > 500}
-                className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-[#FFB800] to-[#FF6B6B] text-white flex items-center justify-center shadow-[0_2px_8px_rgba(255,107,107,0.3)] hover:shadow-[0_4px_16px_rgba(255,107,107,0.4)] transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-5 h-5" />
-                )}
-              </button>
             </div>
 
             {/* Reference image thumbnail */}
@@ -325,6 +296,42 @@ function GenerateContent() {
                 </div>
               </div>
             )}
+
+            {/* Style toggle + Generate button */}
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E0D5]/50">
+              <div className="flex gap-1">
+                {styles.map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() => setSelectedStyle(style.id)}
+                    disabled={!!referenceImage}
+                    className={cn(
+                      "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border",
+                      selectedStyle === style.id && !referenceImage
+                        ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-[#E5E0D5]",
+                      referenceImage && "opacity-40 cursor-not-allowed"
+                    )}
+                    title={style.desc}
+                  >
+                    <span className="text-sm">{style.emoji}</span>
+                    <span>{style.label}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating || !prompt.trim() || prompt.length > 500}
+                className="px-5 py-2 rounded-full bg-gradient-to-r from-[#FFB800] to-[#FF6B6B] text-white font-semibold text-sm flex items-center gap-1.5 shadow-[0_2px_8px_rgba(255,107,107,0.3)] hover:shadow-[0_4px_16px_rgba(255,107,107,0.4)] transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                Generate
+              </button>
+            </div>
 
             {/* Hint line */}
             <div className="flex items-center justify-between mt-2 px-0.5">

@@ -1,0 +1,329 @@
+import { Metadata } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { themes, getThemeBySlug, getRelatedThemes } from '@/data/coloring-themes';
+
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return themes.map((theme) => ({ slug: theme.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const theme = getThemeBySlug(slug);
+  if (!theme) return {};
+
+  return {
+    title: theme.title,
+    description: theme.metaDescription,
+    keywords: theme.keywords,
+    openGraph: {
+      title: theme.title,
+      description: theme.metaDescription,
+      url: `https://pixcraftx.com/${theme.slug}`,
+      siteName: 'PixCraftX',
+      type: 'website',
+      images: [
+        {
+          url: `https://pixcraftx.com${theme.samples[0]}`,
+          width: 1200,
+          height: 900,
+          alt: theme.sampleAlts[0],
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: theme.title,
+      description: theme.metaDescription,
+      images: [`https://pixcraftx.com${theme.samples[0]}`],
+    },
+    alternates: {
+      canonical: `https://pixcraftx.com/${theme.slug}`,
+    },
+  };
+}
+
+function formatSlugToName(slug: string): string {
+  return slug
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+export default async function ThemePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const theme = getThemeBySlug(slug);
+  if (!theme) notFound();
+
+  const relatedThemesList = getRelatedThemes(theme.relatedThemes);
+
+  // Schema.org structured data
+  const webpageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: theme.title,
+    description: theme.metaDescription,
+    url: `https://pixcraftx.com/${theme.slug}`,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: 'PixCraftX',
+      url: 'https://pixcraftx.com',
+    },
+  };
+
+  const creativeWorkSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: theme.title,
+    description: theme.metaDescription,
+    genre: 'Coloring Page',
+    audience: {
+      '@type': 'PeopleAudience',
+      suggestedMinAge: 3,
+    },
+    about: {
+      '@type': 'Thing',
+      name: theme.category,
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://pixcraftx.com',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: theme.category,
+        item: `https://pixcraftx.com/${theme.category.toLowerCase().replace(/\s+/g, '-')}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: theme.h1,
+        item: `https://pixcraftx.com/${theme.slug}`,
+      },
+    ],
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webpageSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(creativeWorkSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+
+      <div className="min-h-screen bg-background">
+        {/* Breadcrumbs */}
+        <nav className="container mx-auto px-4 md:px-6 max-w-6xl pt-24 pb-4">
+          <ol className="flex items-center gap-2 text-sm text-muted-foreground">
+            <li>
+              <Link href="/" className="hover:text-primary transition-colors">
+                Home
+              </Link>
+            </li>
+            <li className="text-muted-foreground/50">/</li>
+            <li>
+              <span className="hover:text-primary transition-colors cursor-default">
+                {theme.category}
+              </span>
+            </li>
+            <li className="text-muted-foreground/50">/</li>
+            <li className="text-foreground font-medium">{theme.h1}</li>
+          </ol>
+        </nav>
+
+        {/* Hero Section */}
+        <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-8">
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl text-foreground mb-4">
+            {theme.h1}
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-3xl">
+            {theme.metaDescription}
+          </p>
+        </section>
+
+        {/* Sample Images Grid */}
+        <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {theme.samples.map((sample, index) => (
+              <div
+                key={sample}
+                className="group bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300"
+              >
+                <div className="relative aspect-[4/3] bg-white">
+                  <Image
+                    src={sample}
+                    alt={theme.sampleAlts[index]}
+                    fill
+                    className="object-contain p-4"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                </div>
+                <div className="p-4">
+                  <a
+                    href={sample}
+                    download
+                    className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-full font-semibold text-sm transition-all hover:translate-y-0.5 text-[#1A1A2E]"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+                      boxShadow: '0 2px 8px rgba(255,184,0,0.3)',
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download Free
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-16">
+          <div
+            className="rounded-2xl p-8 md:p-12 text-center"
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(255,184,0,0.1) 0%, rgba(255,107,107,0.1) 100%)',
+              border: '1px solid rgba(255,184,0,0.2)',
+            }}
+          >
+            <h2 className="font-display text-2xl md:text-3xl text-foreground mb-3">
+              Want More? Generate Your Own with AI! ✨
+            </h2>
+            <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+              Describe any {theme.h1.replace('Free ', '').replace(' Coloring Pages', '').toLowerCase()} scene you can imagine, and our AI will create a custom coloring page in seconds.
+            </p>
+            <Link
+              href="/generate"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full font-semibold text-lg transition-all hover:translate-y-0.5 hover:shadow-xl text-[#1A1A2E]"
+              style={{
+                background:
+                  'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+                boxShadow: '0 4px 16px rgba(255,184,0,0.4)',
+              }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              Generate Your Coloring Page
+            </Link>
+          </div>
+        </section>
+
+        {/* SEO Description */}
+        <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-16">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-2xl text-foreground mb-4">
+              About Our {theme.h1}
+            </h2>
+            <p className="text-muted-foreground leading-relaxed text-lg">
+              {theme.description}
+            </p>
+          </div>
+        </section>
+
+        {/* Related Themes */}
+        {relatedThemesList.length > 0 && (
+          <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-20">
+            <h2 className="font-display text-2xl text-foreground mb-6">
+              More Coloring Pages You&apos;ll Love
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {relatedThemesList.map((related) => (
+                <Link
+                  key={related.slug}
+                  href={`/${related.slug}`}
+                  className="group flex items-center gap-4 p-4 bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-md transition-all duration-300"
+                >
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-white flex-shrink-0 border border-border">
+                    <Image
+                      src={related.samples[0]}
+                      alt={related.sampleAlts[0]}
+                      fill
+                      className="object-contain p-1"
+                      sizes="64px"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                      {related.h1}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {related.category}
+                    </p>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0"
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </>
+  );
+}

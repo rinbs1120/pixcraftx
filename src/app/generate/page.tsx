@@ -59,6 +59,7 @@ function GenerateContent() {
   const [pageLimit, setPageLimit] = useState(5);
   const [plan, setPlan] = useState('free');
   const [showSignIn, setShowSignIn] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [referenceFileName, setReferenceFileName] = useState<string>('');
   const [refTrialUsed, setRefTrialUsed] = useState(false);
@@ -117,6 +118,16 @@ function GenerateContent() {
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     if (!isSignedIn) { setShowSignIn(true); return; }
+
+    // Check if reference image needs credits and user has enough
+    if (referenceImage && refTrialUsed) {
+      const totalNeeded = 1 + 5; // 1 base credit + 5 reference surcharge
+      const remaining = pageLimit - pagesUsed;
+      if (remaining < totalNeeded) {
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
 
     setIsGenerating(true);
     setError(null);
@@ -491,6 +502,43 @@ function GenerateContent() {
             </button>
             <h3 className="font-display text-xl mb-4 text-center text-foreground">Sign in to Generate</h3>
             <SignIn routing="hash" />
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#FFB800]/10 flex items-center justify-center">
+                <ImageIcon className="w-8 h-8 text-[#FFB800]" />
+              </div>
+              <h3 className="font-display text-xl mb-2 text-foreground">More Credits Needed</h3>
+              <p className="text-muted-foreground text-sm mb-4">
+                Reference image mode uses 5 extra credits on top of 1 base credit.
+                You have <strong>{pageLimit - pagesUsed}</strong> credit{pageLimit - pagesUsed !== 1 ? 's' : ''} remaining, but need <strong>6</strong>.
+              </p>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-[#1A1A2E] transition-all hover:-translate-y-0.5"
+                style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
+              >
+                View Plans
+              </Link>
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="block mx-auto mt-3 text-sm text-muted-foreground hover:text-foreground"
+              >
+                Maybe Later
+              </button>
+            </div>
           </div>
         </div>
       )}

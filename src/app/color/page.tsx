@@ -679,8 +679,6 @@ function ColorContent() {
                 <button onClick={zoomOut} disabled={zoom <= ZOOM_LEVELS[0]} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all disabled:opacity-30 disabled:cursor-not-allowed"><ZoomOut className="w-4 h-4" /></button>
                 <span className="text-sm font-medium text-foreground min-w-[48px] text-center">{zoom}%</span>
                 <button onClick={zoomIn} disabled={zoom >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1]} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all disabled:opacity-30 disabled:cursor-not-allowed"><ZoomIn className="w-4 h-4" /></button>
-                <div className="w-px h-5 bg-border mx-1" />
-                <button onClick={zoomFit} className="p-1.5 rounded-lg hover:bg-[#E5E0D5] transition-all" title="Fit to view"><Maximize2 className="w-4 h-4" /></button>
               </div>
 
               <div 

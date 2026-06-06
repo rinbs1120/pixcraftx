@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
 }
 
 async function addBonusCredits(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   userId: string,
   month: string,
   credits: number

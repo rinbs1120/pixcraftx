@@ -671,17 +671,6 @@ function ColorContent() {
                   </div>
                 </div>
               </div>
-
-              {/* Action buttons */}
-              <div className="bg-card rounded-2xl p-5 shadow-sm border border-border space-y-2">
-                <button onClick={undo} className="w-full py-2.5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all text-sm font-medium"><Undo2 className="w-4 h-4" /> Undo</button>
-                <button onClick={handleDownload} className="w-full py-2.5 rounded-xl bg-[#1A1A2E] text-white flex items-center justify-center gap-2 hover:bg-[#1A1A2E]/90 transition-all text-sm font-medium"><Download className="w-4 h-4" /> {!isSignedIn ? 'Sign in to Download' : 'Download PNG'}</button>
-                <button onClick={handlePrint} className="w-full py-2.5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all text-sm font-medium"><Printer className="w-4 h-4" /> {!isSignedIn ? 'Sign in to Print' : 'Print A4'}</button>
-                <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="w-full py-2.5 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-2 transition-all text-sm font-medium disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}>
-                  {saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Failed' : !isSignedIn ? 'Sign in to Save' : 'Save to My Pages'}
-                </button>
-              </div>
             </div>
             
             {/* Canvas area */}
@@ -730,6 +719,17 @@ function ColorContent() {
                   </div>
                 </div>
               </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-border">
+                  <button onClick={undo} className="px-3 py-2 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all text-xs font-medium"><Undo2 className="w-3.5 h-3.5" /> Undo</button>
+                  <button onClick={handleDownload} className="px-3 py-2 rounded-xl bg-[#1A1A2E] text-white flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90 transition-all text-xs font-medium"><Download className="w-3.5 h-3.5" /> {!isSignedIn ? 'Sign in to Download' : 'Download'}</button>
+                  <button onClick={handlePrint} className="px-3 py-2 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all text-xs font-medium"><Printer className="w-3.5 h-3.5" /> {!isSignedIn ? 'Sign in to Print' : 'Print'}</button>
+                  <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="px-3 py-2 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-1.5 transition-all text-xs font-medium disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}>
+                    {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Failed' : !isSignedIn ? 'Sign in to Save' : 'Save'}
+                  </button>
+                </div>
           </div>
         </div>
       </div>

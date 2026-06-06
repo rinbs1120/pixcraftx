@@ -550,7 +550,7 @@ function ColorContent() {
             <p className="text-muted-foreground">Pick a color and click to fill · Use Pencil to close gaps before coloring</p>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
             <div className="space-y-4">
               {/* Tools */}
               <div className="bg-card rounded-2xl p-5 shadow-sm border border-border">

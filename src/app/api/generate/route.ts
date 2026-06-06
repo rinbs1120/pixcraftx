@@ -103,9 +103,11 @@ export async function POST(req: NextRequest) {
     if (subData && subData.status === 'active') { plan = subData.plan || 'free'; }
 
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const { data: usageData } = await supabase.from('user_usage').select('pages_used').eq('user_id', userId).eq('month', currentMonth).single();
+    const { data: usageData } = await supabase.from('user_usage').select('pages_used, bonus_credits').eq('user_id', userId).eq('month', currentMonth).single();
     const pagesUsed = usageData?.pages_used || 0;
-    const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 2;
+    const bonusCredits = usageData?.bonus_credits || 0;
+    const baseLimit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 2;
+    const limit = baseLimit + bonusCredits;
     let creditCost = referenceImageUrl ? getReferenceCost() : 1;
 
     // Reference image free trial: first reference image is free
@@ -193,13 +195,13 @@ export async function POST(req: NextRequest) {
         if (usageData) {
           await supabase.from('user_usage').update({ ref_trial_used: true, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
         } else {
-          await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: 0, plan, ref_trial_used: true });
+          await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: 0, plan, ref_trial_used: true, bonus_credits: 0 });
         }
       } else {
         if (usageData) {
           await supabase.from('user_usage').update({ pages_used: pagesUsed + creditCost, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
         } else {
-          await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: creditCost, plan });
+          await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: creditCost, plan, bonus_credits: 0 });
         }
       }
 
@@ -249,7 +251,7 @@ export async function POST(req: NextRequest) {
     if (usageData) {
       await supabase.from('user_usage').update({ pages_used: pagesUsed + creditCost, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
     } else {
-      await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: creditCost, plan });
+      await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: creditCost, plan, bonus_credits: 0 });
     }
 
     // Log generation history

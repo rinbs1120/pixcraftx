@@ -21,7 +21,7 @@ export async function GET() {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 优先从subscriptions表获取plan（更可靠）
+    // 优先从subscriptions表获取plan
     const { data: subData } = await supabase
       .from('subscriptions')
       .select('plan, status')
@@ -37,20 +37,24 @@ export async function GET() {
     const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: usageData } = await supabase
       .from('user_usage')
-      .select('pages_used, ref_trial_used')
+      .select('pages_used, ref_trial_used, bonus_credits')
       .eq('user_id', userId)
       .eq('month', currentMonth)
       .single();
 
     const pagesUsed = usageData?.pages_used || 0;
     const refTrialUsed = usageData?.ref_trial_used || false;
+    const bonusCredits = usageData?.bonus_credits || 0;
     const limit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 2;
+    const effectiveLimit = limit + bonusCredits;
 
     return NextResponse.json({
       plan,
       pagesUsed,
       limit,
-      remaining: Math.max(0, limit - pagesUsed),
+      bonusCredits,
+      effectiveLimit,
+      remaining: Math.max(0, effectiveLimit - pagesUsed),
       refTrialUsed,
     });
   } catch (error) {

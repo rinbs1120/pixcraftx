@@ -263,3 +263,27 @@ body {
 .brush-stroke-edge {
   animation: brushEdgeGlow 6s ease-in-out infinite;
 }
+
+/* Invite banner slide-up animation */
+@keyframes slideUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  10% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  90% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 4s ease-in-out;
+}

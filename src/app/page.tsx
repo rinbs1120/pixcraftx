@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
+import { InviteBanner } from '@/components/invite-banner';
 import { Hero } from '@/components/sections/hero';
 import { ColoringGallery } from '@/components/sections/coloring-gallery';
 import { PerfectFor } from '@/components/sections/perfect-for';
@@ -11,6 +12,7 @@ export default function HomePage() {
   return (
     <>
       <Navbar />
+      <InviteBanner />
       <main>
         <Hero />
         <ColoringGallery />

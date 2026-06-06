@@ -5,6 +5,7 @@ import { useScrolled } from '@/hooks/use-scrolled';
 import { SignInButton, SignUpButton, UserButton, useAuth } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { Menu, X, Crown, Loader2 } from 'lucide-react';
+import { InvitePanel } from '@/components/invite-panel';
 import { useState, useEffect } from 'react';
 
 export function Navbar() {
@@ -94,6 +95,7 @@ export function Navbar() {
                     {planLabel}
                   </span>
                 )}
+                <InvitePanel />
                 <UserButton />
               </div>
             ) : (
@@ -152,6 +154,7 @@ export function Navbar() {
                     {planLabel}
                   </span>
                 )}
+                <InvitePanel />
                 <UserButton />
               </div>
             ) : (

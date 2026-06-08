@@ -28,29 +28,8 @@ export async function GET() {
       .eq('user_id', userId)
       .single();
 
-    // 如果按user_id查不到，尝试迁移旧记录（Clerk test→prod ID变化）
-    if (!subData) {
-      try {
-        const { data: oldSubs } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .like('user_id', 'user_%')
-          .neq('user_id', userId);
-
-        if (oldSubs && oldSubs.length > 0) {
-          const activeSub = oldSubs.find(s => s.status === 'active');
-          if (activeSub) {
-            await supabase
-              .from('subscriptions')
-              .update({ user_id: userId })
-              .eq('id', activeSub.id);
-            subData = activeSub;
-          }
-        }
-      } catch (e) {
-        console.error('[Usage] Migration lookup failed:', e);
-      }
-    }
+    // Clerk test→prod ID迁移已完成（2026-06-08），不再自动迁移
+    // 新用户没有subscription记录是正常的，plan默认free
 
     let plan = 'free';
     if (subData && subData.status === 'active') {

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil, Pipette, FileText } from 'lucide-react';
+import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil, Pipette, FileText, ChevronDown } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
 import { useAuth, useClerk } from '@clerk/nextjs';
 import { downloadPNG, downloadPDF, canExportPDF } from '@/lib/download-utils';
@@ -87,6 +87,7 @@ function ColorContent() {
   const [selectedColor, setSelectedColor] = useState('#FF6B6B');
   const [tool, setTool] = useState<'fill' | 'pencil' | 'brush' | 'eraser' | 'eyedropper'>('fill');
   const [brushSize, setBrushSize] = useState(8);
+  const [dlOpen, setDlOpen] = useState(false)
   const [plan, setPlan] = useState('free');
   const [isDrawing, setIsDrawing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -788,8 +789,15 @@ function ColorContent() {
                 {/* Action buttons */}
                 <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-border">
                   <button onClick={undo} className="px-3 py-2 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all text-xs font-medium"><Undo2 className="w-3.5 h-3.5" /> Undo</button>
-                  <button onClick={handleDownload} className="px-3 py-2 rounded-xl bg-[#1A1A2E] text-white flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90 transition-all text-xs font-medium"><Download className="w-3.5 h-3.5" /> {!isSignedIn ? 'Sign in to Download' : 'Download'}</button>
-                  {canExportPDF(plan) && <button onClick={handleDownloadPDF} className="px-3 py-2 rounded-xl border-2 border-[#FFB800] text-[#FFB800] flex items-center justify-center gap-1.5 hover:bg-[#FFB800]/10 transition-all text-xs font-medium"><FileText className="w-3.5 h-3.5" /> PDF</button>}
+                  <div className="relative">
+                    <button onClick={() => { if (canExportPDF(plan)) { setDlOpen(!dlOpen); } else { handleDownload(); } }} className="px-3 py-2 rounded-xl bg-[#1A1A2E] text-white flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90 transition-all text-xs font-medium"><Download className="w-3.5 h-3.5" /> {!isSignedIn ? 'Sign in' : 'Download'}{canExportPDF(plan) && <ChevronDown className="w-3 h-3" />}</button>
+                    {dlOpen && canExportPDF(plan) && (
+                      <div className="absolute bottom-full left-0 mb-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[100px] z-50">
+                        <button onClick={() => { setDlOpen(false); handleDownload(); }} className="w-full px-3 py-2 text-xs text-left hover:bg-amber-50 flex items-center gap-1.5 text-[#1A1A2E]"><Download className="w-3 h-3" /> PNG</button>
+                        <button onClick={() => { setDlOpen(false); handleDownloadPDF(); }} className="w-full px-3 py-2 text-xs text-left hover:bg-amber-50 flex items-center gap-1.5 text-[#FFB800]"><FileText className="w-3 h-3" /> PDF</button>
+                      </div>
+                    )}
+                  </div>
                   <button onClick={handlePrint} className="px-3 py-2 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all text-xs font-medium"><Printer className="w-3.5 h-3.5" /> {!isSignedIn ? 'Sign in to Print' : 'Print'}</button>
                   <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="px-3 py-2 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-1.5 transition-all text-xs font-medium disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}>
                     {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}

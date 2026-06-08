@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus, FileText } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus, FileText, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import { downloadPDF, canExportPDF } from '@/lib/download-utils';
@@ -58,6 +58,7 @@ function GenerateContent() {
   const [error, setError] = useState<string | null>(null);
   const [pagesUsed, setPagesUsed] = useState(0);
   const [pageLimit, setPageLimit] = useState(5);
+  const [dlOpen, setDlOpen] = useState(false)
   const [plan, setPlan] = useState('free');
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -472,7 +473,7 @@ function GenerateContent() {
                   <button
                     onClick={handleGenerate}
                     disabled={isGenerating}
-                    className="flex-1 py-3 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all disabled:opacity-50"
+                    className="py-3 px-5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all disabled:opacity-50"
                   >
                     <RotateCcw className="w-4 h-4" />
                     Regenerate
@@ -485,14 +486,26 @@ function GenerateContent() {
                     <Palette className="w-4 h-4" />
                     Color It!
                   </Link>
-                  <button
-                    onClick={handleDownload}
-                    className="flex-1 py-3 rounded-xl bg-[#1A1A2E] text-white font-semibold flex items-center justify-center gap-2 hover:bg-[#1A1A2E]/90 transition-all"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  {canExportPDF(plan) && <button onClick={handleDownloadPDF} className="flex-1 py-3 rounded-xl border-2 border-[#FFB800] text-[#FFB800] font-semibold flex items-center justify-center gap-2 hover:bg-[#FFB800]/10 transition-all"><FileText className="w-4 h-4" /> PDF</button>}
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => { if (canExportPDF(plan)) { setDlOpen(!dlOpen); } else { handleDownload(); } }}
+                      className="py-3 px-5 rounded-xl bg-[#1A1A2E] text-white font-semibold flex items-center justify-center gap-2 hover:bg-[#1A1A2E]/90 transition-all"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                      {canExportPDF(plan) && <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+                    {dlOpen && canExportPDF(plan) && (
+                      <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[120px] z-50">
+                        <button onClick={() => { setDlOpen(false); handleDownload(); }} className="w-full px-4 py-2.5 text-sm text-left hover:bg-amber-50 flex items-center gap-2 text-[#1A1A2E]">
+                          <Download className="w-3.5 h-3.5" /> PNG
+                        </button>
+                        <button onClick={() => { setDlOpen(false); handleDownloadPDF(); }} className="w-full px-4 py-2.5 text-sm text-left hover:bg-amber-50 flex items-center gap-2 text-[#FFB800]">
+                          <FileText className="w-3.5 h-3.5" /> PDF
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : isGenerating ? (

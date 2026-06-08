@@ -49,7 +49,8 @@ export function Navbar() {
         )}
         style={{ backgroundColor: 'rgba(255,251,240,0.92)' }}
       >
-        <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between max-w-7xl">
+        <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between max-w-7xl"
+        >
           <Link href="/" className="flex items-center gap-2">
             <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="PixCraftX logo">
               <circle cx="16" cy="16" r="14" fill="#FFB800" opacity="0.15" />
@@ -89,14 +90,16 @@ export function Navbar() {
               </div>
             ) : isSignedIn ? (
               <div className="flex items-center gap-2">
-                {planLabel && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${planBadgeClass}`}>
-                    <Crown className="w-3 h-3" />
-                    {planLabel}
-                  </span>
-                )}
                 <InvitePanel />
-                <UserButton />
+                <div className="relative">
+                  <UserButton />
+                  {planLabel && (
+                    <span className={`absolute -bottom-1 -right-1 inline-flex items-center gap-0.5 px-1.5 py-0 rounded-full text-[10px] font-bold border ${planBadgeClass} shadow-sm`}>
+                      <Crown className="w-2.5 h-2.5" />
+                      {planLabel}
+                    </span>
+                  )}
+                </div>
               </div>
             ) : (
               <>

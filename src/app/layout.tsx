@@ -5,6 +5,7 @@ import { RefHandler } from '@/components/ref-handler';
 import './globals.css';
 
 export const metadata: Metadata = {
+  verification: { "p:domain_verify": "88a5b8cbaf6eb49fa1682d7ee76f0525" },
   title: {
     default: 'PixCraftX — Create Any Coloring Page in Seconds',
     template: '%s | PixCraftX',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { Gift, Copy, Check, Share2, Users, X } from 'lucide-react';
 
@@ -34,6 +34,17 @@ export function InvitePanel() {
     }
   }, [open, isSignedIn, info]);
 
+  const handleClose = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [open, handleClose]);
+
   const handleCopy = async () => {
     if (!info) return;
     try {
@@ -41,7 +52,6 @@ export function InvitePanel() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
       const textArea = document.createElement('textarea');
       textArea.value = info.inviteUrl;
       document.body.appendChild(textArea);
@@ -86,13 +96,16 @@ export function InvitePanel() {
 
       {/* 弹窗 */}
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={handleClose}
+        >
           <div
             className="bg-white rounded-2xl shadow-2xl border border-border max-w-md w-full mx-4 p-6 relative"
             onClick={e => e.stopPropagation()}
           >
             <button
-              onClick={() => setOpen(false)}
+              onClick={handleClose}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
             >
               <X className="w-5 h-5" />

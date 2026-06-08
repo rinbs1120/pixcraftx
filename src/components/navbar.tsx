@@ -27,7 +27,7 @@ export function Navbar() {
       .catch(() => {});
   }, [isSignedIn]);
 
-  const planLabel = plan && plan !== 'free'
+  const planLabel = plan
     ? plan.charAt(0).toUpperCase() + plan.slice(1)
     : null;
 
@@ -37,7 +37,7 @@ export function Navbar() {
     ? 'bg-amber-100 text-amber-700 border-amber-200'
     : plan === 'starter'
     ? 'bg-green-100 text-green-700 border-green-200'
-    : '';
+    : 'bg-gray-100 text-gray-500 border-gray-200';
 
   return (
     <>

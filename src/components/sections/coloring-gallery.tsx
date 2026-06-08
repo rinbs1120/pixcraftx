@@ -6,18 +6,23 @@ import Image from 'next/image';
 const themes = [
   { name: 'Dinosaur', image: '/seo-samples/dinosaur-1.png' },
   { name: 'Unicorn', image: '/seo-samples/unicorn-1.png' },
+  { name: 'Dragon', image: '/seo-samples/dragon-1.png' },
+  { name: 'Cat', image: '/seo-samples/cat-1.png' },
+  { name: 'Dog', image: '/seo-samples/dog-1.png' },
+  { name: 'Flower', image: '/seo-samples/flower-1.png' },
   { name: 'Mandala', image: '/seo-samples/mandala-1.png' },
-  { name: 'Alphabet', image: '/seo-samples/alphabet-1.png' },
   { name: 'Ocean', image: '/seo-samples/ocean-1.png' },
   { name: 'Princess', image: '/seo-samples/princess-1.png' },
   { name: 'Space', image: '/seo-samples/space-1.png' },
   { name: 'Christmas', image: '/seo-samples/christmas-1.png' },
   { name: 'Halloween', image: '/seo-samples/halloween-1.png' },
   { name: 'Farm Animals', image: '/seo-samples/farm-animals-1.png' },
+  { name: 'Alphabet', image: '/seo-samples/alphabet-1.png' },
 ];
 
 const row1 = themes.slice(0, 5);
 const row2 = themes.slice(5, 10);
+const row3 = themes.slice(10, 14);
 
 function ColoringCard({ theme }: { theme: (typeof themes)[0] }) {
   return (
@@ -91,6 +96,7 @@ export function ColoringGallery() {
       <div className="space-y-4">
         <MarqueeRow items={row1} direction="left" />
         <MarqueeRow items={row2} direction="right" />
+        <MarqueeRow items={row3} direction="left" />
       </div>
     </section>
   );

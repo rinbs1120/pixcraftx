@@ -30,7 +30,7 @@ const faqs = [
   {
     question: 'Can I use generated images commercially?',
     answer:
-      'Paid subscribers may use generated coloring pages for personal and small-scale commercial purposes, subject to our Terms of Service. Free-plan users are limited to personal, non-commercial use. Please review our Terms of Service for full details on usage rights.',
+      'Pro and Business plan subscribers are granted a commercial license to use generated coloring pages for commercial purposes. Starter plan and Free plan users are limited to personal, non-commercial use only. Please review our Terms of Service for full details.',
   },
   {
     question: 'Is it safe for children?',

@@ -28,17 +28,22 @@ const faqs = [
   {
     question: 'Can I use the images commercially?',
     answer:
-      'Yes! Pro and Business plans include a commercial license, so you can use generated pages for KDP books, Etsy products, and other commercial projects.',
+      'Pro and Business plans include a commercial license, so you can use generated pages for KDP books, Etsy products, and other commercial projects. Free and Starter plans are for personal, non-commercial use only.',
   },
   {
     question: 'How many pages can I generate for free?',
     answer:
-      'Free accounts get 5 credits per month. Each text-generated page costs 1 credit, and reference image generation costs 5 credits. No credit card required to start.',
+      'Free accounts get 2 credits per month. Each text-generated page costs 1 credit, and reference image generation costs 5 credits (first one is free!). No credit card required to start.',
   },
   {
     question: 'What image formats are available for download?',
     answer:
       'All pages can be downloaded as high-resolution PNG files. Pro and Business plans also support PDF export for easy printing.',
+  },
+  {
+    question: 'Do free downloads have a watermark?',
+    answer:
+      'Free plan downloads include a subtle PixCraftX watermark. Starter plan and above get clean, watermark-free downloads.',
   },
   {
     question: 'What AI technology powers PixCraftX?',

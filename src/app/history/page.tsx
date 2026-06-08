@@ -5,8 +5,8 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Loader2, Download, Trash2, Sparkles, Image as ImageIcon, Palette } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { Loader2, Download, Trash2, Sparkles, Image as ImageIcon, Palette, FileText } from 'lucide-react';
+import { downloadPNG, downloadPDF, canExportPDF } from '@/lib/download-utils';
 
 interface GenerationRecord {
   id: number;
@@ -22,6 +22,8 @@ function HistoryContent() {
   const router = useRouter();
   const [records, setRecords] = useState<GenerationRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState('free');
+  const [downloading, setDownloading] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -33,20 +35,17 @@ function HistoryContent() {
   }, [isSignedIn, isLoaded]);
 
   const fetchHistory = async () => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // Use REST API with service role via a different approach
-    // Since we don't have Clerk-Supabase integration, use the API route
     try {
       const res = await fetch('/api/history');
       if (res.ok) {
         const data = await res.json();
         setRecords(data.records || []);
+      }
+      // Also fetch plan
+      const usageRes = await fetch('/api/usage');
+      if (usageRes.ok) {
+        const usageData = await usageRes.json();
+        if (usageData.plan) setPlan(usageData.plan);
       }
     } catch (err) {
       console.error('Failed to fetch history:', err);
@@ -55,20 +54,27 @@ function HistoryContent() {
     }
   };
 
-  const handleDownload = async (imageUrl: string, prompt: string) => {
+  const handleDownloadPNG = async (imageUrl: string, prompt: string, id: number) => {
+    setDownloading(id);
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `pixcraftx-${prompt.slice(0, 30).replace(/\s+/g, '-')}.png`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const filename = `pixcraftx-${prompt.slice(0, 30).replace(/\s+/g, '-')}`;
+      await downloadPNG(imageUrl, filename, plan);
     } catch (err) {
       console.error('Download failed:', err);
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const handleDownloadPDF = async (imageUrl: string, prompt: string, id: number) => {
+    setDownloading(id);
+    try {
+      const filename = `pixcraftx-${prompt.slice(0, 30).replace(/\s+/g, '-')}`;
+      await downloadPDF(imageUrl, filename);
+    } catch (err) {
+      console.error('PDF download failed:', err);
+    } finally {
+      setDownloading(null);
     }
   };
 
@@ -164,7 +170,7 @@ function HistoryContent() {
                       }}
                     />
                     {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
                       <a
                         href={`/color?src=${encodeURIComponent(record.image_url)}`}
                         className="p-2 bg-white rounded-full shadow-md hover:bg-amber-50"
@@ -173,12 +179,23 @@ function HistoryContent() {
                         <Palette className="w-4 h-4 text-[#FFB800]" />
                       </a>
                       <button
-                        onClick={() => handleDownload(record.image_url, record.prompt)}
+                        onClick={() => handleDownloadPNG(record.image_url, record.prompt, record.id)}
                         className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
-                        title="Download"
+                        title="Download PNG"
+                        disabled={downloading === record.id}
                       >
                         <Download className="w-4 h-4 text-[#1A1A2E]" />
                       </button>
+                      {canExportPDF(plan) && (
+                        <button
+                          onClick={() => handleDownloadPDF(record.image_url, record.prompt, record.id)}
+                          className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+                          title="Download PDF"
+                          disabled={downloading === record.id}
+                        >
+                          <FileText className="w-4 h-4 text-[#FFB800]" />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(record.id)}
                         className="p-2 bg-white rounded-full shadow-md hover:bg-red-50"
@@ -187,6 +204,11 @@ function HistoryContent() {
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
                     </div>
+                    {downloading === record.id && (
+                      <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#FFB800]" />
+                      </div>
+                    )}
                   </div>
                   {/* Info */}
                   <div className="p-3">

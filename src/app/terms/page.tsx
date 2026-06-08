@@ -72,9 +72,9 @@ export default function TermsPage() {
               PixCraftX offers the following account tiers:
             </p>
             <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
-              <li><strong>Free:</strong> Limited number of image generations per month for personal, non-commercial use.</li>
-              <li><strong>Pro:</strong> Increased generation limits with commercial use rights for generated content.</li>
-              <li><strong>Business:</strong> Highest generation limits with extended commercial rights and priority processing.</li>
+              <li><strong>Free:</strong> 2 credits per month for personal, non-commercial use. Downloads include a watermark.</li>
+              <li><strong>Starter:</strong> 60 credits per month, reference image upload, no watermark on downloads, for personal use.<br/><strong>Pro:</strong> 300 credits per month, PDF export, commercial use rights for generated content, no watermark.</li>
+              <li><strong>Business:</strong> 1000 credits per month, PDF export, extended commercial rights, no watermark.</li>
             </ul>
             <p className="leading-relaxed mb-6">
               The specific features, limits, and pricing for each tier are described on our website and
@@ -93,8 +93,8 @@ export default function TermsPage() {
               rights for generated coloring page images depend on your subscription tier:
             </p>
             <ul className="list-disc pl-6 mb-6 space-y-2 text-muted-foreground">
-              <li><strong>Free Tier:</strong> Generated images are licensed for personal, non-commercial use only.</li>
-              <li><strong>Pro and Business Tiers:</strong> You are granted a license to use generated images for both personal and commercial purposes, subject to these Terms.</li>
+              <li><strong>Free and Starter Tiers:</strong> Generated images are licensed for personal, non-commercial use only. Free tier downloads include a PixCraftX watermark.</li>
+              <li><strong>Pro and Business Tiers:</strong> You are granted a commercial license to use generated images for both personal and commercial purposes, subject to these Terms. Downloads do not include a watermark and are available in PNG and PDF formats.</li>
             </ul>
 
             <h3 className="font-display text-xl mt-6 mb-3 text-foreground">

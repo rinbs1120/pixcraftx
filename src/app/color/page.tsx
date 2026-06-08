@@ -4,9 +4,10 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil, Pipette } from 'lucide-react';
+import { Palette, Undo2, Download, Printer, Eraser, Paintbrush, Save, Loader2, ZoomIn, ZoomOut, Maximize2, Pencil, Pipette, FileText } from 'lucide-react';
 import { floodFill } from '@/lib/floodFill';
 import { useAuth, useClerk } from '@clerk/nextjs';
+import { downloadPNG, downloadPDF, canExportPDF } from '@/lib/download-utils';
 
 // --- Color Utilities ---
 function hexToRgb(hex: string): [number, number, number] {
@@ -86,6 +87,7 @@ function ColorContent() {
   const [selectedColor, setSelectedColor] = useState('#FF6B6B');
   const [tool, setTool] = useState<'fill' | 'pencil' | 'brush' | 'eraser' | 'eyedropper'>('fill');
   const [brushSize, setBrushSize] = useState(8);
+  const [plan, setPlan] = useState('free');
   const [isDrawing, setIsDrawing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -279,6 +281,16 @@ function ColorContent() {
     const bestZoom = ZOOM_LEVELS.reduce((prev, curr) => Math.abs(curr - fitZoom) < Math.abs(prev - fitZoom) ? curr : prev);
     setZoom(bestZoom);
   }, [imageLoaded, canvasSize]);
+
+  // Fetch user plan for PDF/watermark features
+  useEffect(() => {
+    if (isSignedIn) {
+      fetch('/api/usage')
+        .then(res => res.json())
+        .then(data => { if (data.plan) setPlan(data.plan); })
+        .catch(() => {});
+    }
+  }, [isSignedIn]);
 
   // Handle HSL slider change
   const handleHslChange = useCallback((newHsl: [number, number, number]) => {
@@ -496,12 +508,67 @@ function ColorContent() {
     return merged;
   }, []);
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async () => {
     if (!isSignedIn) { openSignIn(); return; }
     const merged = getMergedCanvas(); if (!merged) return;
-    const link = document.createElement('a');
-    link.download = 'pixcraftx-colored-' + Date.now() + '.png';
-    link.href = merged.toDataURL('image/png'); link.click();
+    const dataUrl = merged.toDataURL('image/png');
+    const filename = `pixcraftx-colored-${Date.now()}`;
+    if (plan !== 'free') {
+      const link = document.createElement('a');
+      link.download = filename + '.png';
+      link.href = dataUrl; link.click();
+    } else {
+      // Free user: add watermark
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        ctx.save();
+        const fontSize = Math.max(16, Math.floor(canvas.width / 25));
+        ctx.font = `${fontSize}px Arial, sans-serif`;
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const text = 'PixCraftX';
+        const textWidth = ctx.measureText(text).width;
+        const stepX = textWidth + 60; const stepY = fontSize * 4;
+        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.rotate(-Math.PI/6);
+        for (let y = -canvas.height; y < canvas.height; y += stepY) {
+          for (let x = -canvas.width; x < canvas.width; x += stepX) {
+            ctx.fillText(text, x, y);
+          }
+        }
+        ctx.restore();
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.download = filename + '.png'; a.href = url; a.click();
+          URL.revokeObjectURL(url);
+        }, 'image/png');
+      };
+      img.src = dataUrl;
+    }
+  }, [isSignedIn, getMergedCanvas, plan]);
+
+  const handleDownloadPDF = useCallback(async () => {
+    if (!isSignedIn) { openSignIn(); return; }
+    const merged = getMergedCanvas(); if (!merged) return;
+    const dataUrl = merged.toDataURL('image/png');
+    const { jsPDF } = await import('jspdf');
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
+    const pageW = 8.5, pageH = 11, margin = 0.5;
+    const maxW = pageW - margin*2, maxH = pageH - margin*2;
+    const img = new Image();
+    await new Promise<void>((resolve) => { img.onload = () => resolve(); img.src = dataUrl; });
+    const aspect = img.width / img.height;
+    let dw = maxW, dh = dw / aspect;
+    if (dh > maxH) { dh = maxH; dw = dh * aspect; }
+    const x = (pageW - dw) / 2, y = (pageH - dh) / 2;
+    pdf.addImage(dataUrl, 'PNG', x, y, dw, dh);
+    pdf.save(`pixcraftx-colored-${Date.now()}.pdf`);
   }, [isSignedIn, getMergedCanvas]);
 
   const handlePrint = useCallback(() => {
@@ -722,6 +789,7 @@ function ColorContent() {
                 <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-border">
                   <button onClick={undo} className="px-3 py-2 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all text-xs font-medium"><Undo2 className="w-3.5 h-3.5" /> Undo</button>
                   <button onClick={handleDownload} className="px-3 py-2 rounded-xl bg-[#1A1A2E] text-white flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90 transition-all text-xs font-medium"><Download className="w-3.5 h-3.5" /> {!isSignedIn ? 'Sign in to Download' : 'Download'}</button>
+                  {canExportPDF(plan) && <button onClick={handleDownloadPDF} className="px-3 py-2 rounded-xl border-2 border-[#FFB800] text-[#FFB800] flex items-center justify-center gap-1.5 hover:bg-[#FFB800]/10 transition-all text-xs font-medium"><FileText className="w-3.5 h-3.5" /> PDF</button>}
                   <button onClick={handlePrint} className="px-3 py-2 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all text-xs font-medium"><Printer className="w-3.5 h-3.5" /> {!isSignedIn ? 'Sign in to Print' : 'Print'}</button>
                   <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="px-3 py-2 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-1.5 transition-all text-xs font-medium disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}>
                     {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}

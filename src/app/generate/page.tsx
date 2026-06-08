@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
+import { downloadPDF, canExportPDF } from '@/lib/download-utils';
 
 
 
@@ -203,16 +204,59 @@ function GenerateContent() {
     try {
       const response = await fetch(generatedImageUrl);
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `pixcraftx-${selectedStyle}-${Date.now()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (plan !== 'free') {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pixcraftx-${selectedStyle}-${Date.now()}.png`;
+        document.body.appendChild(a); a.click();
+        window.URL.revokeObjectURL(url); document.body.removeChild(a);
+      } else {
+        const img = new Image(); img.crossOrigin = 'anonymous';
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve(); img.onerror = () => reject();
+          img.src = URL.createObjectURL(blob);
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        ctx.save();
+        const fontSize = Math.max(16, Math.floor(canvas.width / 25));
+        ctx.font = `${fontSize}px Arial, sans-serif`;
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const text = 'PixCraftX';
+        const textWidth = ctx.measureText(text).width;
+        const stepX = textWidth + 60; const stepY = fontSize * 4;
+        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.rotate(-Math.PI/6);
+        for (let y = -canvas.height; y < canvas.height; y += stepY) {
+          for (let x = -canvas.width; x < canvas.width; x += stepX) {
+            ctx.fillText(text, x, y);
+          }
+        }
+        ctx.restore();
+        canvas.toBlob((wBlob) => {
+          if (!wBlob) return;
+          const url = URL.createObjectURL(wBlob);
+          const a = document.createElement('a');
+          a.download = `pixcraftx-${selectedStyle}-${Date.now()}.png`;
+          a.href = url; a.click(); URL.revokeObjectURL(url);
+        }, 'image/png');
+        URL.revokeObjectURL(img.src);
+      }
     } catch (err) {
       console.error('Download failed:', err);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!generatedImageUrl) return;
+    try {
+      await downloadPDF(generatedImageUrl, `pixcraftx-${selectedStyle}-${Date.now()}`);
+    } catch (err) {
+      console.error('PDF download failed:', err);
     }
   };
 
@@ -447,6 +491,7 @@ function GenerateContent() {
                   >
                     <Download className="w-4 h-4" />
                     Download
+                  {canExportPDF(plan) && <button onClick={handleDownloadPDF} className="flex-1 py-3 rounded-xl border-2 border-[#FFB800] text-[#FFB800] font-semibold flex items-center justify-center gap-2 hover:bg-[#FFB800]/10 transition-all"><FileText className="w-4 h-4" /> PDF</button>}
                   </button>
                 </div>
               </div>

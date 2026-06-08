@@ -23,7 +23,7 @@ export function InviteBanner() {
   if (!visible) return null;
 
   return (
-    <div className="relative w-full bg-gradient-to-r from-[#FFB800]/10 via-[#FF6B6D]/10 to-[#9B59B6]/10 border-b border-[#FFB800]/20">
+    <div className="fixed top-16 left-0 right-0 z-40 w-full bg-gradient-to-r from-[#FFB800]/10 via-[#FF6B6D]/10 to-[#9B59B6]/10 border-b border-[#FFB800]/20 backdrop-blur-sm">
       <div className="container mx-auto max-w-7xl px-4 md:px-6 py-2 flex items-center justify-center gap-2">
         <Megaphone className="w-4 h-4 text-[#FFB800] flex-shrink-0" />
         <div className="overflow-hidden relative h-5">

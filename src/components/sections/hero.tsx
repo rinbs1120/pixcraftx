@@ -69,7 +69,7 @@ const steps = [
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-24 pb-16 md:pt-32 md:pb-24">
+    <section className="relative overflow-hidden pt-28 pb-16 md:pt-36 md:pb-24">
       {/* Radial gradient decoration */}
       <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.12] pointer-events-none" style={{ background: 'radial-gradient(circle, #FFB800 0%, transparent 70%)' }} />
 

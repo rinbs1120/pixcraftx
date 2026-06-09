@@ -18,18 +18,21 @@ const styles = [
     label: 'Simple',
     emoji: '✏️',
     desc: 'Bold outlines, big areas',
+    thumbnail: '/styles/simple-preview.jpg',
   },
   {
     id: 'mandala' as const,
     label: 'Mandala',
     emoji: '🔮',
     desc: 'Symmetrical patterns',
+    thumbnail: '/styles/mandala-preview.jpg',
   },
   {
     id: 'intricate' as const,
     label: 'Intricate',
     emoji: '🎨',
     desc: 'Fine details, rich scenes',
+    thumbnail: '/styles/intricate-preview.jpg',
   },
 ];
 
@@ -65,6 +68,7 @@ function GenerateContent() {
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [referenceFileName, setReferenceFileName] = useState<string>('');
   const [refTrialUsed, setRefTrialUsed] = useState(false);
+  const [history, setHistory] = useState<{url: string; style: string; prompt: string; ts: number}[]>([]);
 
   useEffect(() => {
     const p = searchParams.get('p');
@@ -175,6 +179,7 @@ function GenerateContent() {
             const statusData = await statusRes.json();
             if (statusData.status === 'completed') {
               setGeneratedImageUrl(statusData.imageUrl);
+              setHistory(prev => [{url: statusData.imageUrl, style: selectedStyle, prompt: prompt.trim(), ts: Date.now()}, ...prev].slice(0, 20));
               pollCompleted = true;
               break;
             } else if (statusData.status === 'failed') {
@@ -189,6 +194,7 @@ function GenerateContent() {
         }
       } else {
         setGeneratedImageUrl(data.imageUrl);
+        setHistory(prev => [{url: data.imageUrl, style: selectedStyle, prompt: prompt.trim(), ts: Date.now()}, ...prev].slice(0, 20));
         setPagesUsed(data.pagesUsed);
         setPageLimit(data.limit);
         setPlan(data.plan);
@@ -354,23 +360,27 @@ function GenerateContent() {
 
             {/* Style toggle + Generate button */}
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E0D5]/50">
-              <div className="flex gap-1">
+              <div className="flex gap-2">
                 {styles.map((style) => (
                   <button
                     key={style.id}
                     onClick={() => setSelectedStyle(style.id)}
                     disabled={!!referenceImage}
                     className={cn(
-                      "inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border",
+                      "relative rounded-xl overflow-hidden transition-all border-2 flex flex-col items-center",
                       selectedStyle === style.id && !referenceImage
-                        ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]"
-                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-[#E5E0D5]",
+                        ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
+                        : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
                       referenceImage && "opacity-40 cursor-not-allowed"
                     )}
                     title={style.desc}
                   >
-                    <span className="text-sm">{style.emoji}</span>
-                    <span>{style.label}</span>
+                    <img
+                      src={style.thumbnail}
+                      alt={style.label}
+                      className="w-14 h-[18px] object-cover object-top"
+                    />
+                    <span className="text-[10px] font-semibold py-0.5 px-1 whitespace-nowrap text-foreground/80">{style.label}</span>
                   </button>
                 ))}
               </div>
@@ -534,6 +544,28 @@ function GenerateContent() {
               </div>
             )}
           </div>
+
+          {/* Generation History */}
+          {history.length > 1 && (
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Recent Generations</span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {history.slice(1).map((item, i) => (
+                  <button
+                    key={item.ts}
+                    onClick={() => { setGeneratedImageUrl(item.url); setSelectedStyle(item.style as any); }}
+                    className="flex-shrink-0 w-16 h-[86px] rounded-lg overflow-hidden border-2 border-[#E5E0D5] hover:border-[#FFB800] transition-all"
+                    title={item.prompt}
+                  >
+                    <img src={item.url} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Feedback */}
           <div className="text-center mt-8">

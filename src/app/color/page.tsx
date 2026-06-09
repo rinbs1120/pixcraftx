@@ -120,7 +120,9 @@ function ColorContent() {
 
   useEffect(() => {
     if (!imageUrl) return;
+    let cancelled = false;
     const timer = setTimeout(() => {
+      if (cancelled) return;
       const baseCanvas = baseCanvasRef.current;
       const colorCanvas = colorCanvasRef.current;
       if (!baseCanvas || !colorCanvas) { setLoadError('Canvas not ready'); return; }
@@ -132,6 +134,7 @@ function ColorContent() {
       img.crossOrigin = 'anonymous';
       img.src = localUrl;
       img.onload = () => {
+        if (cancelled) return;
         let w = img.width; let h = img.height;
         if (w > 800) { h = (800 / w) * h; w = 800; }
         if (h > 1000) { w = (1000 / h) * w; h = 1000; }
@@ -157,6 +160,7 @@ function ColorContent() {
             const blobUrl = URL.createObjectURL(blob);
             const img2 = new Image();
             img2.onload = () => {
+              if (cancelled) { URL.revokeObjectURL(blobUrl); return; }
               const bc = baseCanvasRef.current; const cc = colorCanvasRef.current;
               if (!bc || !cc) return;
               const bCtx = bc.getContext('2d'); const cCtx = cc.getContext('2d');
@@ -184,7 +188,7 @@ function ColorContent() {
           .catch(() => { setLoadError('Image load failed'); setImageLoaded(true); });
       };
     }, 200);
-    return () => clearTimeout(timer);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [imageUrl]);
 
   const saveToHistory = useCallback(() => {

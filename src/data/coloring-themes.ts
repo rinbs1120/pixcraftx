@@ -131,7 +131,7 @@ export const themes: ColoringTheme[] = [
     relatedThemes: ['dinosaur-coloring-pages', 'ocean-coloring-pages', 'alphabet-coloring-pages', 'space-coloring-pages'],
     keywords: ['farm animal coloring pages', 'free farm coloring pages', 'cow coloring pages', 'printable farm animal coloring pages', 'farm coloring sheets'],
     category: 'Kids Animals',
-  },,
+  },
   {
     slug: 'dragon-coloring-pages',
     title: 'Free Dragon Coloring Pages',

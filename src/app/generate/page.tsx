@@ -36,6 +36,45 @@ const styles = [
   },
 ];
 
+
+const ARTISTIC_STYLES = [
+  {
+    id: 'chubby-doodle',
+    label: 'Chubby Doodle',
+    desc: 'Crayon marker scribble style, messy lines, distorted proportions, coloring overflow, meme-fun vibe',
+    thumbnail: '/styles/art-chubby-doodle.jpg',
+    prompt: 'Transform this coloring page into a chubby doodle style illustration. Use crayon and marker scribble strokes, intentionally messy and wobbly lines, distorted proportions and perspective, colors slightly overflowing the outlines, playful meme-like expressions, hand-drawn spontaneous feel on white paper background',
+  },
+  {
+    id: 'pop-art',
+    label: 'Pop Art',
+    desc: 'Halftone dots, bold outlines, limited color palette, 1950s print art, grainy paper texture',
+    thumbnail: '/styles/art-pop-art.jpg',
+    prompt: 'Transform this coloring page into a Pop Art style illustration. Use halftone dot printing texture, thick bold black outlines, limited flat color palette (no gradients), 1950s-60s commercial print aesthetic, Ben-Day dots pattern, grainy paper texture on white background',
+  },
+  {
+    id: 'city-pop',
+    label: 'City Pop',
+    desc: '1980s Japanese anime aesthetic, flat vector, high saturation retro colors, Showa nostalgia',
+    thumbnail: '/styles/art-city-pop.jpg',
+    prompt: 'Transform this coloring page into a City Pop style illustration. Use 1980s Japanese anime aesthetic, flat vector art style, high saturation retro color palette, Showa-era nostalgic atmosphere, pastel sky gradient, add handwritten English text elements, dreamy vaporwave mood',
+  },
+  {
+    id: 'fridge-magnet',
+    label: 'Fridge Magnet',
+    desc: 'Minimalist icon design, slight 3D shadow, white border outline, handwritten English label',
+    thumbnail: '/styles/art-fridge-magnet.jpg',
+    prompt: 'Transform this coloring page into a fridge magnet style illustration. Extract the main subject as a minimalist icon design, slight 3D depth with drop shadow, clean white border outline around the shape, add handwritten English text label below the icon, flat bold colors, white background, cute and clean aesthetic',
+  },
+  {
+    id: 'handwritten-piog',
+    label: 'Handwritten Piog',
+    desc: 'White hand-drawn annotations, Japanese lifestyle feel, low saturation soft light, Instagram story vibe',
+    thumbnail: '/styles/art-piog.jpg',
+    prompt: 'Transform this coloring page into a Handwritten Piog style illustration. Add white hand-drawn annotation lines and text overlays, Japanese daily life aesthetic, low saturation soft lighting, Instagram story filter feel, light leaks and warm tones, casual lifestyle photography mood with hand-drawn decorative elements',
+  },
+];
+
 const EXAMPLE_PROMPTS = [
   { emoji: '🐱', text: 'Cute cat sitting on a mushroom' },
   { emoji: '🏰', text: 'Princess castle in the clouds' },
@@ -69,6 +108,9 @@ function GenerateContent() {
   const [referenceFileName, setReferenceFileName] = useState<string>('');
   const [refTrialUsed, setRefTrialUsed] = useState(false);
   const [history, setHistory] = useState<{url: string; style: string; prompt: string; ts: number}[]>([]);
+  const [styledImageUrl, setStyledImageUrl] = useState<string | null>(null);
+  const [selectedArtStyle, setSelectedArtStyle] = useState<string | null>(null);
+  const [isStyling, setIsStyling] = useState(false);
 
   useEffect(() => {
     const p = searchParams.get('p');
@@ -119,6 +161,55 @@ function GenerateContent() {
     setPrompt('');
     setReferenceFileName('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+
+
+  const handleStyleTransfer = async (artStyle: typeof ARTISTIC_STYLES[0]) => {
+    if (!generatedImageUrl) return;
+    if (!isSignedIn) { setShowSignIn(true); return; }
+    setSelectedArtStyle(artStyle.id);
+    setIsStyling(true);
+    setStyledImageUrl(null);
+    try {
+      const response = await fetch('/api/style-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          stylePrompt: artStyle.prompt,
+          styleId: artStyle.id,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || 'Style transfer failed. Please try again.');
+        return;
+      }
+      if (data.status === 'processing' && data.requestId) {
+        const maxAttempts = 30;
+        for (let i = 0; i < maxAttempts; i++) {
+          await new Promise(r => setTimeout(r, 3000));
+          try {
+            const statusRes = await fetch('/api/style-transfer?requestId=' + data.requestId);
+            const statusData = await statusRes.json();
+            if (statusData.status === 'completed') {
+              setStyledImageUrl(statusData.imageUrl);
+              break;
+            } else if (statusData.status === 'failed') {
+              setError(statusData.error || 'Style transfer failed.');
+              break;
+            }
+          } catch { /* retry */ }
+        }
+      } else {
+        setStyledImageUrl(data.imageUrl);
+      }
+    } catch {
+      setError('Network error during style transfer.');
+    } finally {
+      setIsStyling(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -516,6 +607,74 @@ function GenerateContent() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Style Transfer Section */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wand2 className="w-4 h-4 text-[#FFB800]" />
+                    <span className="text-sm font-semibold text-foreground">Style It</span>
+                    <span className="text-[10px] text-muted-foreground">Transform into artwork</span>
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {ARTISTIC_STYLES.map((art) => (
+                      <button
+                        key={art.id}
+                        onClick={() => handleStyleTransfer(art)}
+                        disabled={isStyling}
+                        className={cn(
+                          "flex-shrink-0 rounded-xl overflow-hidden transition-all border-2",
+                          selectedArtStyle === art.id
+                            ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
+                            : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
+                          isStyling && selectedArtStyle !== art.id && "opacity-40"
+                        )}
+                        title={art.desc}
+                      >
+                        <div className="w-16 h-10 bg-gradient-to-br from-purple-100 via-pink-100 to-amber-100 flex items-center justify-center text-lg">
+                          {art.id === 'chubby-doodle' ? '🖍️' : art.id === 'pop-art' ? '💥' : art.id === 'city-pop' ? '🌆' : art.id === 'fridge-magnet' ? '🧲' : '✏️'}
+                        </div>
+                        <div className="px-1.5 py-1 text-center">
+                          <span className="text-[9px] font-semibold text-foreground/80 leading-tight block">{art.label}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  {isStyling && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#FFB800]" />
+                      <span>Applying {ARTISTIC_STYLES.find(s => s.id === selectedArtStyle)?.label} style...</span>
+                    </div>
+                  )}
+                  {styledImageUrl && (
+                    <div className="mt-3 bg-card rounded-2xl p-3 border border-border">
+                      <img
+                        src={styledImageUrl}
+                        alt="Styled artwork"
+                        className="w-full h-auto object-contain rounded-xl"
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            const a = document.createElement('a');
+                            a.href = styledImageUrl;
+                            a.download = 'pixcraftx-styled-' + selectedArtStyle + '-' + Date.now() + '.png';
+                            a.click();
+                          }}
+                          className="flex-1 py-2 rounded-xl bg-[#1A1A2E] text-white text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Download
+                        </button>
+                        <button
+                          onClick={() => { setStyledImageUrl(null); setSelectedArtStyle(null); }}
+                          className="py-2 px-4 rounded-xl border-2 border-[#E5E0D5] text-sm hover:border-[#FFB800]"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : isGenerating ? (

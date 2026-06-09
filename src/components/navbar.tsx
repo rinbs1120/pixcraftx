@@ -80,9 +80,6 @@ export function Navbar() {
             <Link href="/pricing" className="text-muted-foreground hover:text-primary transition-colors font-medium">
               Pricing
             </Link>
-            <Link href="/color" className="text-muted-foreground hover:text-primary transition-colors font-medium">
-              Color Your Page
-            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -146,9 +143,6 @@ export function Navbar() {
             )}
             <Link href="/pricing" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Pricing
-            </Link>
-            <Link href="/color" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
-              Color Your Page
             </Link>
             {!isLoaded ? (
               <div className="flex items-center gap-2 text-muted-foreground">

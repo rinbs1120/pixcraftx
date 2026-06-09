@@ -181,11 +181,3 @@ export const themes: ColoringTheme[] = [
     category: 'Adult Relaxation',
   },
 ];
-
-export function getThemeBySlug(slug: string): ColoringTheme | undefined {
-  return themes.find((t) => t.slug === slug);
-}
-
-export function getRelatedThemes(slugs: string[]): ColoringTheme[] {
-  return themes.filter((t) => slugs.includes(t.slug));
-}

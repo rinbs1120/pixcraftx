@@ -2,60 +2,55 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { themes } from '@/data/coloring-themes';
 
-const themes = [
-  { name: 'Dinosaur', image: '/seo-samples/dinosaur-1.png', slug: 'dinosaur-coloring-pages' },
-  { name: 'Unicorn', image: '/seo-samples/unicorn-1.png', slug: 'unicorn-coloring-pages' },
-  { name: 'Dragon', image: '/seo-samples/dragon-1.png', slug: 'dragon-coloring-pages' },
-  { name: 'Cat', image: '/seo-samples/cat-1.png', slug: 'cat-coloring-pages' },
-  { name: 'Dog', image: '/seo-samples/dog-1.png', slug: 'dog-coloring-pages' },
-  { name: 'Flower', image: '/seo-samples/flower-1.png', slug: 'flower-coloring-pages' },
-  { name: 'Mandala', image: '/seo-samples/mandala-1.png', slug: 'mandala-coloring-pages' },
-  { name: 'Ocean', image: '/seo-samples/ocean-1.png', slug: 'ocean-coloring-pages' },
-  { name: 'Princess', image: '/seo-samples/princess-1.png', slug: 'princess-coloring-pages' },
-  { name: 'Space', image: '/seo-samples/space-1.png', slug: 'space-coloring-pages' },
-  { name: 'Christmas', image: '/seo-samples/christmas-1.png', slug: 'christmas-coloring-pages' },
-  { name: 'Halloween', image: '/seo-samples/halloween-1.png', slug: 'halloween-coloring-pages' },
-  { name: 'Farm Animals', image: '/seo-samples/farm-animals-1.png', slug: 'farm-animals-coloring-pages' },
-  { name: 'Alphabet', image: '/seo-samples/alphabet-1.png', slug: 'alphabet-coloring-pages' },
-];
+// Flatten all samples for marquee display (42 images from 14 themes × 3)
+interface MarqueeItem {
+  name: string;
+  image: string;
+  slug: string;
+}
 
-// 2 rows for now (14 themes). Row3 opens when 20+ themes.
-// Each row max 10. New themes append to existing rows first.
-const ROW_SIZE = 10;
-const row1 = themes.slice(0, Math.min(themes.length, ROW_SIZE));
-const row2 = themes.slice(ROW_SIZE, Math.min(themes.length, ROW_SIZE * 2));
-const row3 = themes.slice(ROW_SIZE * 2, Math.min(themes.length, ROW_SIZE * 3));
+const allItems: MarqueeItem[] = themes.flatMap(theme =>
+  theme.samples.map((sample, i) => ({
+    name: `${theme.h1} #${i + 1}`,
+    image: sample,
+    slug: theme.slug,
+  }))
+);
 
-function ColoringCard({ theme }: { theme: (typeof themes)[0] }) {
+// 42 items → 3 rows of 14
+const ROW_SIZE = 14;
+const row1 = allItems.slice(0, ROW_SIZE);
+const row2 = allItems.slice(ROW_SIZE, ROW_SIZE * 2);
+const row3 = allItems.slice(ROW_SIZE * 2);
+
+function ColoringCard({ item }: { item: MarqueeItem }) {
   return (
-    <a
-      href={`/${theme.slug}`}
-      className="flex-shrink-0 w-[130px] md:w-[150px]"
-    >
+    <div className="flex-shrink-0 w-[130px] md:w-[150px]">
       <div
         className="bg-white rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#FFB800] hover:shadow-xl hover:scale-105 transition-all duration-300"
         style={{ boxShadow: '0 4px 12px rgba(26,26,46,0.08)' }}
       >
         <div className="relative w-full aspect-[3/4] bg-white">
           <Image
-            src={theme.image}
-            alt={theme.name + ' coloring page'}
+            src={item.image}
+            alt={item.name}
             fill
             className="object-contain p-2"
             sizes="150px"
           />
         </div>
       </div>
-    </a>
+    </div>
   );
 }
 
-function MarqueeRow({ items, direction }: { items: typeof themes; direction: 'left' | 'right' }) {
+function MarqueeRow({ items, direction }: { items: MarqueeItem[]; direction: 'left' | 'right' }) {
   if (items.length === 0) return null;
 
   const animationName = direction === 'left' ? 'marquee-left' : 'marquee-right';
-  // Duplicate once for seamless infinite loop (CSS marquee technique)
+  // Duplicate once for seamless infinite loop
   const duplicated = [...items, ...items];
 
   return (
@@ -68,8 +63,8 @@ function MarqueeRow({ items, direction }: { items: typeof themes; direction: 'le
           willChange: 'transform',
         }}
       >
-        {duplicated.map((theme, i) => (
-          <ColoringCard key={`${theme.slug}-${i}`} theme={theme} />
+        {duplicated.map((item, i) => (
+          <ColoringCard key={`${item.slug}-${i}`} item={item} />
         ))}
       </div>
     </div>

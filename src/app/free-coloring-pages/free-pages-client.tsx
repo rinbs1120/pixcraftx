@@ -7,12 +7,33 @@ import { useState } from 'react';
 
 const categories = ['All', ...Array.from(new Set(themes.map(t => t.category)))];
 
+// Flatten: each sample image = one card, with parent theme info
+interface SampleCard {
+  image: string;
+  alt: string;
+  h1: string;
+  metaDescription: string;
+  category: string;
+  slug: string;
+}
+
+const allSamples: SampleCard[] = themes.flatMap(theme =>
+  theme.samples.map((sample, i) => ({
+    image: sample,
+    alt: theme.sampleAlts[i],
+    h1: theme.h1,
+    metaDescription: theme.metaDescription,
+    category: theme.category,
+    slug: theme.slug,
+  }))
+);
+
 export function FreePagesClient() {
   const [activeCategory, setActiveCategory] = useState('All');
 
-  const filteredThemes = activeCategory === 'All'
-    ? themes
-    : themes.filter(t => t.category === activeCategory);
+  const filteredSamples = activeCategory === 'All'
+    ? allSamples
+    : allSamples.filter(s => s.category === activeCategory);
 
   return (
     <>
@@ -39,30 +60,31 @@ export function FreePagesClient() {
         </div>
       </section>
 
-      {/* Compact Grid */}
+      {/* Sample Image Grid - each image is its own card */}
       <section className="container mx-auto px-4 md:px-6 max-w-6xl pb-20">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filteredThemes.map((theme) => (
+          {filteredSamples.map((sample, idx) => (
             <div
-              key={theme.slug}
+              key={`${sample.slug}-${idx}`}
               className="group bg-white rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#FFB800] hover:shadow-xl hover:scale-[1.03] transition-all duration-300"
               style={{ boxShadow: '0 4px 12px rgba(26,26,46,0.08)' }}
             >
               <div className="relative w-full aspect-[3/4] bg-white">
                 <Image
-                  src={theme.samples[0]}
-                  alt={theme.sampleAlts[0]}
+                  src={sample.image}
+                  alt={sample.alt}
                   fill
                   className="object-contain p-2"
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                 />
               </div>
               <div className="p-2.5">
-                <p className="text-xs font-semibold text-foreground truncate mb-2">{theme.h1}</p>
+                <p className="text-xs font-semibold text-foreground truncate mb-1">{sample.h1}</p>
+                <p className="text-[10px] text-muted-foreground line-clamp-2 mb-2">{sample.metaDescription}</p>
                 <div className="flex gap-1.5">
-                  <DownloadAuthButton href={theme.samples[0]} compact />
+                  <DownloadAuthButton href={sample.image} compact />
                   <a
-                    href={"/color?src=" + encodeURIComponent("https://pixcraftx.com" + theme.samples[0])}
+                    href={"/color?src=" + encodeURIComponent("https://pixcraftx.com" + sample.image)}
                     className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-full font-semibold text-[10px] transition-all text-[#1A1A2E]"
                     style={{
                       background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',

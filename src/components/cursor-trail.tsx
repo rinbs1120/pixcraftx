@@ -25,11 +25,11 @@ export function CursorTrail() {
   const rafRef = useRef<number>(0);
   const isTouchRef = useRef(false);
 
-  // Disable cursor trail on coloring canvas page
-  if (pathname.startsWith('/color')) return null;
+  const isDisabled = pathname.startsWith('/color');
 
   useEffect(() => {
-    // Skip on touch devices
+    // Skip on color page or touch devices
+    if (isDisabled) return;
     if (typeof window === 'undefined') return;
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
       isTouchRef.current = true;
@@ -52,16 +52,14 @@ export function CursorTrail() {
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
 
-      // Add a new particle at cursor position
       const particles = particlesRef.current;
       const color = CRAYON_COLORS[colorIndexRef.current % CRAYON_COLORS.length];
       colorIndexRef.current++;
 
-      const size = 4 + Math.random() * 6; // 4-10px, crayon-like variation
-      const maxLife = 25 + Math.random() * 15; // frames to live
+      const size = 4 + Math.random() * 6;
+      const maxLife = 25 + Math.random() * 15;
 
       if (particles.length >= MAX_PARTICLES) {
-        // Replace the oldest particle
         particles.shift();
       }
 
@@ -91,26 +89,22 @@ export function CursorTrail() {
           continue;
         }
 
-        // Fade out as life progresses
         const progress = p.life / p.maxLife;
         p.opacity = (1 - progress) * 0.8;
-
-        // Slightly shrink as it fades
         const currentSize = p.size * (1 - progress * 0.3);
 
-        // Draw crayon-like dot with soft edge
         ctx.save();
         ctx.globalAlpha = p.opacity;
         ctx.fillStyle = p.color;
 
-        // Slight blur for crayon texture feel
-        ctx.filter = 'blur(1px)';
+        // Slight blur for crayon texture feel (with fallback)
+        try { ctx.filter = 'blur(1px)'; } catch { /* filter not supported */ }
         ctx.beginPath();
         ctx.arc(p.x, p.y, currentSize / 2, 0, Math.PI * 2);
         ctx.fill();
 
         // Inner brighter core for crayon texture
-        ctx.filter = 'none';
+        try { ctx.filter = 'none'; } catch { /* filter not supported */ }
         ctx.globalAlpha = p.opacity * 0.5;
         ctx.beginPath();
         ctx.arc(p.x, p.y, currentSize / 4, 0, Math.PI * 2);
@@ -129,9 +123,10 @@ export function CursorTrail() {
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [isDisabled]);
 
-  // Don't render canvas on touch devices
+  // Don't render on color page or touch devices
+  if (isDisabled) return null;
   if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
     return null;
   }

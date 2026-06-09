@@ -48,7 +48,7 @@ export function FreePagesClient() {
               className="group bg-white rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#FFB800] hover:shadow-xl hover:scale-[1.03] transition-all duration-300"
               style={{ boxShadow: '0 4px 12px rgba(26,26,46,0.08)' }}
             >
-              <div className="relative w-full aspect-[3/2] bg-[#FFFBF0]">
+              <div className="relative w-full aspect-[3/4] bg-white">
                 <Image
                   src={theme.samples[0]}
                   alt={theme.sampleAlts[0]}

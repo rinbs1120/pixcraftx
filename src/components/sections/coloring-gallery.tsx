@@ -4,64 +4,72 @@ import React from 'react';
 import Image from 'next/image';
 
 const themes = [
-  { name: 'Dinosaur', image: '/seo-samples/dinosaur-1.png' },
-  { name: 'Unicorn', image: '/seo-samples/unicorn-1.png' },
-  { name: 'Dragon', image: '/seo-samples/dragon-1.png' },
-  { name: 'Cat', image: '/seo-samples/cat-1.png' },
-  { name: 'Dog', image: '/seo-samples/dog-1.png' },
-  { name: 'Flower', image: '/seo-samples/flower-1.png' },
-  { name: 'Mandala', image: '/seo-samples/mandala-1.png' },
-  { name: 'Ocean', image: '/seo-samples/ocean-1.png' },
-  { name: 'Princess', image: '/seo-samples/princess-1.png' },
-  { name: 'Space', image: '/seo-samples/space-1.png' },
-  { name: 'Christmas', image: '/seo-samples/christmas-1.png' },
-  { name: 'Halloween', image: '/seo-samples/halloween-1.png' },
-  { name: 'Farm Animals', image: '/seo-samples/farm-animals-1.png' },
-  { name: 'Alphabet', image: '/seo-samples/alphabet-1.png' },
+  { name: 'Dinosaur', image: '/seo-samples/dinosaur-1.png', slug: 'dinosaur-coloring-pages' },
+  { name: 'Unicorn', image: '/seo-samples/unicorn-1.png', slug: 'unicorn-coloring-pages' },
+  { name: 'Dragon', image: '/seo-samples/dragon-1.png', slug: 'dragon-coloring-pages' },
+  { name: 'Cat', image: '/seo-samples/cat-1.png', slug: 'cat-coloring-pages' },
+  { name: 'Dog', image: '/seo-samples/dog-1.png', slug: 'dog-coloring-pages' },
+  { name: 'Flower', image: '/seo-samples/flower-1.png', slug: 'flower-coloring-pages' },
+  { name: 'Mandala', image: '/seo-samples/mandala-1.png', slug: 'mandala-coloring-pages' },
+  { name: 'Ocean', image: '/seo-samples/ocean-1.png', slug: 'ocean-coloring-pages' },
+  { name: 'Princess', image: '/seo-samples/princess-1.png', slug: 'princess-coloring-pages' },
+  { name: 'Space', image: '/seo-samples/space-1.png', slug: 'space-coloring-pages' },
+  { name: 'Christmas', image: '/seo-samples/christmas-1.png', slug: 'christmas-coloring-pages' },
+  { name: 'Halloween', image: '/seo-samples/halloween-1.png', slug: 'halloween-coloring-pages' },
+  { name: 'Farm Animals', image: '/seo-samples/farm-animals-1.png', slug: 'farm-animals-coloring-pages' },
+  { name: 'Alphabet', image: '/seo-samples/alphabet-1.png', slug: 'alphabet-coloring-pages' },
 ];
 
-const row1 = themes.slice(0, 5);
-const row2 = themes.slice(5, 10);
-const row3 = themes.slice(10, 14);
+// 2 rows for now (14 themes). Row3 opens when 20+ themes.
+// Each row max 10. New themes append to existing rows first.
+const ROW_SIZE = 10;
+const row1 = themes.slice(0, Math.min(themes.length, ROW_SIZE));
+const row2 = themes.slice(ROW_SIZE, Math.min(themes.length, ROW_SIZE * 2));
+const row3 = themes.slice(ROW_SIZE * 2, Math.min(themes.length, ROW_SIZE * 3));
 
 function ColoringCard({ theme }: { theme: (typeof themes)[0] }) {
   return (
-    <div className="flex-shrink-0 w-[180px] md:w-[200px]">
-      <div className="bg-white rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#FFB800] hover:shadow-xl hover:scale-105 transition-all duration-300"
+    <a
+      href={`/${theme.slug}`}
+      className="flex-shrink-0 w-[130px] md:w-[150px]"
+    >
+      <div
+        className="bg-white rounded-2xl overflow-hidden border-2 border-transparent hover:border-[#FFB800] hover:shadow-xl hover:scale-105 transition-all duration-300"
         style={{ boxShadow: '0 4px 12px rgba(26,26,46,0.08)' }}
       >
-        <div className="relative w-full aspect-[3/2] bg-[#FFFBF0]">
+        <div className="relative w-full aspect-[3/4] bg-white">
           <Image
             src={theme.image}
             alt={theme.name + ' coloring page'}
             fill
             className="object-contain p-2"
-            sizes="200px"
+            sizes="150px"
           />
         </div>
       </div>
-    </div>
+    </a>
   );
 }
 
 function MarqueeRow({ items, direction }: { items: typeof themes; direction: 'left' | 'right' }) {
+  if (items.length === 0) return null;
+
   const animationName = direction === 'left' ? 'marquee-left' : 'marquee-right';
+  // Duplicate once for seamless infinite loop (CSS marquee technique)
+  const duplicated = [...items, ...items];
 
   return (
     <div className="overflow-hidden py-2">
       <div
         className="flex gap-4 md:gap-6"
         style={{
-          animation: animationName + ' 35s linear infinite',
+          animation: `${animationName} 40s linear infinite`,
           width: 'max-content',
           willChange: 'transform',
         }}
       >
-        {items.map((theme) => (
-          <ColoringCard key={'a-' + theme.name} theme={theme} />
-        ))}
-        {items.map((theme) => (
-          <ColoringCard key={'b-' + theme.name} theme={theme} />
+        {duplicated.map((theme, i) => (
+          <ColoringCard key={`${theme.slug}-${i}`} theme={theme} />
         ))}
       </div>
     </div>
@@ -96,7 +104,7 @@ export function ColoringGallery() {
       <div className="space-y-4">
         <MarqueeRow items={row1} direction="left" />
         <MarqueeRow items={row2} direction="right" />
-        <MarqueeRow items={row3} direction="left" />
+        {row3.length > 0 && <MarqueeRow items={row3} direction="left" />}
       </div>
     </section>
   );

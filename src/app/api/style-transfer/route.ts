@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not enough credits for style transfer', limit, used: pagesUsed, needed: 3 }, { status: 429 });
     }
 
-    // Use fal queue mode to avoid Vercel 10s function timeout
+    // Use fal queue mode to avoid Vercel timeout
     const { request_id } = await fal.queue.submit('fal-ai/flux/dev/image-to-image', {
       input: {
         image_url: imageUrl,
@@ -55,10 +55,21 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Poll for result with timeout
-    const result = await fal.queue.result('fal-ai/flux/dev/image-to-image', {
-      requestId: request_id,
-    });
+    // Poll for result with timeout (max 50s)
+    let result;
+    const startTime = Date.now();
+    const maxWait = 50000;
+    while (Date.now() - startTime < maxWait) {
+      const status = await fal.queue.status('fal-ai/flux/dev/image-to-image', { requestId: request_id });
+      if (status.status === 'COMPLETED') {
+        result = await fal.queue.result('fal-ai/flux/dev/image-to-image', { requestId: request_id });
+        break;
+      }
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    if (!result) {
+      return NextResponse.json({ error: 'Style transfer timed out' }, { status: 504 });
+    }
 
     const styledImageUrl = result.data?.images?.[0]?.url;
     if (!styledImageUrl) {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus, FileText, ChevronDown, Upload, Clock, Paintbrush } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus, FileText, ChevronDown, Upload, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import { downloadPDF, canExportPDF } from '@/lib/download-utils';
@@ -123,15 +123,6 @@ function GenerateContent() {
   const [styleUploadImage, setStyleUploadImage] = useState<string | null>(null);
   const [selectedMyPagesIdx, setSelectedMyPagesIdx] = useState<number>(0);
 
-  // Auto Color states
-  const [autoColorSource, setAutoColorSource] = useState<'current' | 'mypages' | 'upload'>('current');
-  const [autoColorUploadImage, setAutoColorUploadImage] = useState<string | null>(null);
-  const [autoColorMyPagesIdx, setAutoColorMyPagesIdx] = useState<number>(0);
-  const [selectedPalette, setSelectedPalette] = useState<string | null>(null);
-  const [isAutoColoring, setIsAutoColoring] = useState(false);
-  const [autoColorImageUrl, setAutoColorImageUrl] = useState<string | null>(null);
-  const autoColorFileInputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     const p = searchParams.get('p');
     const s = searchParams.get('s');
@@ -210,64 +201,6 @@ function GenerateContent() {
     if (styleSource === 'upload') return styleUploadImage;
     if (styleSource === 'mypages' && history.length > 0) return history[selectedMyPagesIdx]?.url || history[0].url;
     return generatedImageUrl;
-  };
-
-  // Auto Color: get source image based on source selection
-  const getAutoColorSourceImage = (): string | null => {
-    if (autoColorSource === 'current') return generatedImageUrl;
-    if (autoColorSource === 'upload') return autoColorUploadImage;
-    if (autoColorSource === 'mypages' && history.length > 0) return history[autoColorMyPagesIdx]?.url || history[0].url;
-    return generatedImageUrl;
-  };
-
-  // Auto Color: upload image handler
-  const handleAutoColorFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file (PNG, JPG, WEBP)');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAutoColorUploadImage(reader.result as string);
-      setAutoColorSource('upload');
-    };
-    reader.readAsDataURL(file);
-    setError(null);
-  };
-
-  // Auto Color: main handler
-  const handleAutoColor = async (paletteId: string) => {
-    const sourceImage = getAutoColorSourceImage();
-    if (!sourceImage) {
-      setError('No image available. Generate a coloring page first or upload an image.');
-      return;
-    }
-    if (!isSignedIn) { setShowSignIn(true); return; }
-    setSelectedPalette(paletteId);
-    setIsAutoColoring(true);
-    setAutoColorImageUrl(null);
-    try {
-      const response = await fetch('/api/auto-color', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: sourceImage, palette: paletteId }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Auto color failed. Please try again.');
-        return;
-      }
-      setAutoColorImageUrl(data.imageUrl);
-      setPagesUsed(data.pagesUsed);
-      setPageLimit(data.limit);
-      setPlan(data.plan);
-    } catch {
-      setError('Network error during auto color.');
-    } finally {
-      setIsAutoColoring(false);
-    }
   };
 
   const handleStyleTransfer = async (artStyle: typeof ARTISTIC_STYLES[0]) => {
@@ -468,7 +401,7 @@ function GenerateContent() {
   };
 
   // The display image: styled result takes priority, then generated image
-  const displayImageUrl = autoColorImageUrl || styledImageUrl || generatedImageUrl;
+  const displayImageUrl = styledImageUrl || generatedImageUrl;
 
   return (
     <>
@@ -815,14 +748,7 @@ function GenerateContent() {
                       alt="Generated coloring page"
                       className="w-full h-auto max-h-[560px] object-contain rounded-xl"
                     />
-                    {autoColorImageUrl && (
-                      <div className="mt-2 text-center">
-                        <span className="text-[10px] text-muted-foreground">
-                          🎨 Auto colored ({selectedPalette} palette)
-                        </span>
-                      </div>
-                    )}
-                    {styledImageUrl && !autoColorImageUrl && (
+                    {styledImageUrl && (
                       <div className="mt-2 text-center">
                         <span className="text-[10px] text-muted-foreground">
                           ✨ {ARTISTIC_STYLES.find(s => s.id === selectedArtStyle)?.label} style applied
@@ -894,7 +820,7 @@ function GenerateContent() {
                       </div>
                     )}
                   </div>
-                  {styledImageUrl && !autoColorImageUrl && (
+                  {styledImageUrl && (
                     <button
                       onClick={() => {
                         const a = document.createElement('a');
@@ -906,20 +832,6 @@ function GenerateContent() {
                     >
                       <Download className="w-4 h-4" />
                       Save Styled
-                    </button>
-                  )}
-                  {autoColorImageUrl && (
-                    <button
-                      onClick={() => {
-                        const a = document.createElement('a');
-                        a.href = autoColorImageUrl;
-                        a.download = 'pixcraftx-autocolor-' + selectedPalette + '-' + Date.now() + '.png';
-                        a.click();
-                      }}
-                      className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      Save Colored
                     </button>
                   )}
                 </div>

@@ -176,7 +176,6 @@ function AutoColorContent() {
     setError(null);
 
     try {
-      // Step 1: Submit job
       const res = await fetch('/api/auto-color', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -184,7 +183,7 @@ function AutoColorContent() {
       });
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res.ok || data.status === 'failed') {
         setError(data.error || 'Auto color failed');
         if (data.limit) setPageLimit(data.limit);
         if (data.used !== undefined) setPagesUsed(data.used);
@@ -195,27 +194,7 @@ function AutoColorContent() {
       if (data.limit) setPageLimit(data.limit);
       if (data.plan) setPlan(data.plan);
 
-      // Step 2: Poll for result
-      const requestId = data.requestId;
-      const maxPollTime = 120000; // 2 min timeout
-      const startTime = Date.now();
-
-      while (Date.now() - startTime < maxPollTime) {
-        await new Promise(r => setTimeout(r, 3000)); // poll every 3s
-        const pollRes = await fetch(`/api/auto-color?requestId=${requestId}`);
-        const pollData = await pollRes.json();
-
-        if (pollData.status === 'completed') {
-          setResultImageUrl(pollData.imageUrl);
-          return;
-        }
-        if (pollData.status === 'failed') {
-          setError(pollData.error || 'Auto color failed');
-          return;
-        }
-        // Still processing, continue polling
-      }
-      setError('Auto color timed out. Please try again.');
+      setResultImageUrl(data.imageUrl);
     } catch (err) {
       setError('Network error. Please try again.');
     } finally {
@@ -237,7 +216,6 @@ function AutoColorContent() {
     setError(null);
 
     try {
-      // Step 1: Submit job
       const res = await fetch('/api/style-transfer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -250,7 +228,7 @@ function AutoColorContent() {
       });
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res.ok || data.status === 'failed') {
         setError(data.error || 'Style transfer failed');
         if (data.limit) setPageLimit(data.limit);
         if (data.used !== undefined) setPagesUsed(data.used);
@@ -261,27 +239,7 @@ function AutoColorContent() {
       if (data.limit) setPageLimit(data.limit);
       if (data.plan) setPlan(data.plan);
 
-      // Step 2: Poll for result
-      const requestId = data.requestId;
-      const maxPollTime = 120000; // 2 min timeout
-      const startTime = Date.now();
-
-      while (Date.now() - startTime < maxPollTime) {
-        await new Promise(r => setTimeout(r, 3000)); // poll every 3s
-        const pollRes = await fetch(`/api/style-transfer?requestId=${requestId}`);
-        const pollData = await pollRes.json();
-
-        if (pollData.status === 'completed') {
-          setResultImageUrl(pollData.imageUrl);
-          return;
-        }
-        if (pollData.status === 'failed') {
-          setError(pollData.error || 'Style transfer failed');
-          return;
-        }
-        // Still processing, continue polling
-      }
-      setError('Style transfer timed out. Please try again.');
+      setResultImageUrl(data.imageUrl);
     } catch (err) {
       setError('Network error. Please try again.');
     } finally {
@@ -581,7 +539,7 @@ function AutoColorContent() {
                     <p className="text-lg font-semibold text-foreground mb-2">
                       {mode === 'palette' ? 'AI is coloring your page...' : 'Applying art style...'}
                     </p>
-                    <p className="text-sm text-muted-foreground">This usually takes 15-40 seconds</p>
+                    <p className="text-sm text-muted-foreground">This usually takes 5-15 seconds</p>
                   </div>
                 ) : error ? (
                   <div className="text-center px-4">

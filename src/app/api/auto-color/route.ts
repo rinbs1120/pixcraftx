@@ -1,12 +1,13 @@
-// Auto Color API - Automatically fill colors into a coloring page using SDXL ControlNet Union
-// V3: Async submit+poll pattern - submit returns requestId, client polls for result
+// Auto Color API - Automatically fill colors into a coloring page
+// V4: Using SiliconFlow Kolors img2img (synchronous, free)
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
+
+const SILICONFLOW_API = 'https://api.siliconflow.cn/v1/images/generations';
 
 // 3 color palettes with descriptive prompts
 const COLOR_PALETTES: Record<string, { prompt: string; negative: string }> = {
@@ -24,11 +25,17 @@ const COLOR_PALETTES: Record<string, { prompt: string; negative: string }> = {
   },
 };
 
-// POST - Submit auto color job
 export async function POST(req: NextRequest) {
   try {
-    fal.config({ credentials: process.env.FAL_KEY! });
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const apiKey = process.env.SILICONFLOW_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     const { userId } = await auth();
     if (!userId) {
@@ -41,7 +48,6 @@ export async function POST(req: NextRequest) {
     if (!imageUrl) {
       return NextResponse.json({ error: 'Missing imageUrl - a coloring page is required' }, { status: 400 });
     }
-
     if (!palette || !COLOR_PALETTES[palette]) {
       return NextResponse.json({ error: 'Invalid or missing palette (pastel, vivid, muted)' }, { status: 400 });
     }
@@ -64,29 +70,64 @@ export async function POST(req: NextRequest) {
 
     const paletteConfig = COLOR_PALETTES[palette];
 
-    // Submit to fal queue (non-blocking)
-    const { request_id } = await fal.queue.submit('fal-ai/sdxl-controlnet-union/image-to-image', {
-      input: {
-        image_url: imageUrl,
+    // Call Kolors img2img (synchronous, ~5-10 seconds)
+    console.log('[AutoColor] Calling Kolors img2img with palette:', palette);
+
+    const kolorsResponse = await fetch(SILICONFLOW_API, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'Kwai-Kolors/Kolors',
         prompt: paletteConfig.prompt,
         negative_prompt: paletteConfig.negative,
-        canny_image_url: imageUrl,
-        canny_preprocess: true,
-        teed_image_url: imageUrl,
-        teed_preprocess: true,
-        controlnet_conditioning_scale: 0.8,
-        strength: 0.65,
-        guidance_scale: 6,
-        num_inference_steps: 18,
-        num_images: 1,
-        format: 'png',
-        enable_safety_checker: true,
-      },
+        image: imageUrl,
+        image_size: '960x1280',
+        batch_size: 1,
+        num_inference_steps: 30,
+        guidance_scale: 7.5,
+      }),
     });
 
-    console.log('[AutoColor] Submitted job:', request_id);
+    if (!kolorsResponse.ok) {
+      const errorText = await kolorsResponse.text();
+      console.error('[AutoColor] Kolors API error:', kolorsResponse.status, errorText);
+      return NextResponse.json({ error: 'Color generation failed. Please try again.' }, { status: 500 });
+    }
 
-    // Deduct credits immediately on submit
+    const kolorsData = await kolorsResponse.json();
+    const generatedImageUrl = kolorsData?.images?.[0]?.url;
+
+    if (!generatedImageUrl) {
+      console.error('[AutoColor] No image returned from Kolors:', kolorsData);
+      return NextResponse.json({ error: 'No image generated. Please try again.' }, { status: 500 });
+    }
+
+    // Upload to Supabase Storage (Kolors URL expires in 1 hour)
+    let permanentUrl = generatedImageUrl;
+    let storagePath: string | null = null;
+
+    try {
+      const imageResponse = await fetch(generatedImageUrl);
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const timestamp = Date.now();
+      const filePath = `${userId}/autocolor-${timestamp}.png`;
+      const { error: uploadError } = await supabase.storage.from('coloring-pages').upload(filePath, imageBuffer, {
+        contentType: 'image/png',
+        upsert: false,
+      });
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(filePath);
+        permanentUrl = urlData.publicUrl;
+        storagePath = filePath;
+      }
+    } catch (storageErr) {
+      console.error('[AutoColor] Storage upload failed:', storageErr);
+    }
+
+    // Deduct credits
     if (usageData) {
       await supabase.from('user_usage').update({
         pages_used: pagesUsed + 2,
@@ -103,86 +144,27 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Log in generation history
+    await supabase.from('generation_history').insert({
+      user_id: userId,
+      prompt: `[AutoColor] ${palette} palette`,
+      style: 'autocolor',
+      image_url: permanentUrl,
+      storage_path: storagePath,
+      credit_cost: 2,
+      has_reference: true,
+    });
+
     return NextResponse.json({
-      status: 'processing',
-      requestId: request_id,
-      palette,
+      status: 'completed',
+      imageUrl: permanentUrl,
       pagesUsed: pagesUsed + 2,
       limit,
       plan,
     });
   } catch (error) {
-    console.error('[AutoColor] Submit error:', error);
+    console.error('[AutoColor] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
-  }
-}
-
-// GET - Poll auto color job status
-export async function GET(req: NextRequest) {
-  try {
-    fal.config({ credentials: process.env.FAL_KEY! });
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-    const { userId } = await auth();
-    if (!userId) { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
-
-    const requestId = req.nextUrl.searchParams.get('requestId');
-    if (!requestId) { return NextResponse.json({ error: 'Missing requestId' }, { status: 400 }); }
-
-    const status = await fal.queue.status('fal-ai/sdxl-controlnet-union/image-to-image', { requestId });
-
-    if (status.status === 'COMPLETED') {
-      const result = await fal.queue.result('fal-ai/sdxl-controlnet-union/image-to-image', { requestId });
-      const coloredImageUrl = result.data?.images?.[0]?.url;
-
-      if (!coloredImageUrl) {
-        return NextResponse.json({ status: 'failed', error: 'No image returned' });
-      }
-
-      // Upload to Supabase Storage
-      let permanentUrl = coloredImageUrl;
-      let storagePath: string | null = null;
-
-      try {
-        const imageResponse = await fetch(coloredImageUrl);
-        const imageBuffer = await imageResponse.arrayBuffer();
-        const timestamp = Date.now();
-        const filePath = `${userId}/autocolor-${timestamp}.png`;
-        const { error: uploadError } = await supabase.storage.from('coloring-pages').upload(filePath, imageBuffer, {
-          contentType: 'image/png',
-          upsert: false,
-        });
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(filePath);
-          permanentUrl = urlData.publicUrl;
-          storagePath = filePath;
-        }
-      } catch (storageErr) {
-        console.error('[AutoColor] Storage upload failed:', storageErr);
-      }
-
-      // Log in generation history
-      await supabase.from('generation_history').insert({
-        user_id: userId,
-        prompt: `[AutoColor] palette request`,
-        style: 'autocolor',
-        image_url: permanentUrl,
-        storage_path: storagePath,
-        credit_cost: 2,
-        has_reference: true,
-      });
-
-      return NextResponse.json({ status: 'completed', imageUrl: permanentUrl });
-    }
-
-    if (status.status === 'FAILED') {
-      return NextResponse.json({ status: 'failed', error: 'Auto color processing failed' });
-    }
-
-    // Still in progress
-    return NextResponse.json({ status: 'processing' });
-  } catch (error) {
-    console.error('[AutoColor] Poll error:', error);
-    return NextResponse.json({ status: 'failed', error: 'Status check failed' });
   }
 }

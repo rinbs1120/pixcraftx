@@ -64,22 +64,18 @@ export async function POST(req: NextRequest) {
 
     const paletteConfig = COLOR_PALETTES[palette];
 
-    // Use SDXL ControlNet Union: image_url for img2img + canny/teed for edge constraint
-    // Passing the same image as canny/teed with preprocess=true auto-extracts edges
-    const result = await fal.subscribe('fal-ai/sdxl-controlnet-union/image-to-image', {
+    // Use SDXL ControlNet Union via queue to avoid Vercel timeout
+    const { request_id } = await fal.queue.submit('fal-ai/sdxl-controlnet-union/image-to-image', {
       input: {
         image_url: imageUrl,
         prompt: paletteConfig.prompt,
         negative_prompt: paletteConfig.negative,
-        // Edge constraints: same image passed for canny + teed, API auto-extracts edges
         canny_image_url: imageUrl,
         canny_preprocess: true,
         teed_image_url: imageUrl,
         teed_preprocess: true,
-        // Control parameters - optimized for Vercel free tier (10s timeout)
-        // Reduced steps from 35→18, guidance from 7.5→6 to fit within timeout
-        controlnet_conditioning_scale: 0.8,  // Strong constraint to keep outlines
-        strength: 0.65,                       // Slightly less to preserve structure with fewer steps
+        controlnet_conditioning_scale: 0.8,
+        strength: 0.65,
         guidance_scale: 6,
         num_inference_steps: 18,
         num_images: 1,
@@ -87,6 +83,22 @@ export async function POST(req: NextRequest) {
         enable_safety_checker: true,
       },
     });
+
+    // Poll for result with timeout (max 50s)
+    let result;
+    const startTime = Date.now();
+    const maxWait = 50000;
+    while (Date.now() - startTime < maxWait) {
+      const status = await fal.queue.status('fal-ai/sdxl-controlnet-union/image-to-image', { requestId: request_id });
+      if (status.status === 'COMPLETED') {
+        result = await fal.queue.result('fal-ai/sdxl-controlnet-union/image-to-image', { requestId: request_id });
+        break;
+      }
+      await new Promise(r => setTimeout(r, 2000));
+    }
+    if (!result) {
+      return NextResponse.json({ error: 'Auto color timed out' }, { status: 504 });
+    }
 
     const coloredImageUrl = result.data?.images?.[0]?.url;
     if (!coloredImageUrl) {

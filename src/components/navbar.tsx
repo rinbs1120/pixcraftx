@@ -72,6 +72,10 @@ export function Navbar() {
             <Link href="/generate" className="text-muted-foreground hover:text-primary transition-colors font-medium">
               Generate
             </Link>
+            <Link href="/auto-color" className="text-muted-foreground hover:text-primary transition-colors font-medium"
+            >
+              Auto Color
+            </Link>
             {isSignedIn && (
               <Link href="/history" className="text-muted-foreground hover:text-primary transition-colors font-medium">
                 My Pages
@@ -135,6 +139,9 @@ export function Navbar() {
             </Link>
             <Link href="/generate" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Generate
+            </Link>
+            <Link href="/auto-color" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
+              Auto Color
             </Link>
             {isSignedIn && (
               <Link href="/history" className="text-xl font-semibold text-foreground hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>

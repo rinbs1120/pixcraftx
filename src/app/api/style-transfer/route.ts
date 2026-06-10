@@ -1,35 +1,12 @@
-// Style Transfer API - V5: Kolors img2img + line art overlay (multiply blend)
+// Style Transfer API - V6: Kolors img2img, NO line art overlay (style defines line quality), high guidance
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
-import sharp from 'sharp';
 
 const SILICONFLOW_API = 'https://api.siliconflow.cn/v1/images/generations';
-
-async function overlayLineArt(styledBuffer: Buffer, lineArtBuffer: Buffer): Promise<Buffer> {
-  const meta = await sharp(styledBuffer).metadata();
-  const width = meta.width || 960;
-  const height = meta.height || 1280;
-
-  const resizedLineArt = await sharp(lineArtBuffer)
-    .resize(width, height, { fit: 'fill' })
-    .ensureAlpha()
-    .toBuffer();
-
-  const resizedStyled = await sharp(styledBuffer)
-    .resize(width, height, { fit: 'fill' })
-    .ensureAlpha()
-    .toBuffer();
-
-  // Multiply blend: black lines stay black, white areas let styled colors show through
-  return sharp(resizedStyled)
-    .composite([{ input: resizedLineArt, blend: 'multiply' }])
-    .png()
-    .toBuffer();
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,26 +40,23 @@ export async function POST(req: NextRequest) {
 
     if (pagesUsed + 3 > limit) return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: 3 }, { status: 429 });
 
-    // Step 1: Download original line art
-    console.log('[StyleTransfer] Downloading original line art...');
-    const lineArtResp = await fetch(imageUrl);
-    if (!lineArtResp.ok) return NextResponse.json({ error: 'Failed to download original image' }, { status: 500 });
-    const lineArtBuffer = Buffer.from(await lineArtResp.arrayBuffer());
+    // Add CRITICAL prefix to force dramatic style transformation
+    const enhancedPrompt = `CRITICAL: Dramatically transform this illustration's visual style. Do NOT just adjust colors — completely change the art technique, line quality, and visual treatment. ${stylePrompt}`;
 
-    // Step 2: Call Kolors img2img
-    console.log('[StyleTransfer] Calling Kolors img2img, style:', styleId);
+    // Call Kolors img2img — NO line art overlay, style must define line quality
+    console.log('[StyleTransfer] Calling Kolors img2img, style:', styleId, 'strength:', strength);
     const kolorsResp = await fetch(SILICONFLOW_API, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'Kwai-Kolors/Kolors',
-        prompt: stylePrompt,
-        negative_prompt: 'low quality, blurry, distorted, deformed, ugly, bad anatomy, grayscale, black and white, different subject, different composition',
+        prompt: enhancedPrompt,
+        negative_prompt: 'low quality, blurry, distorted, deformed, ugly, bad anatomy, grayscale, black and white, different subject, different composition, just color change, minor adjustment, same style, original style, same lines, same technique, no transformation',
         image: imageUrl,
         image_size: '960x1280',
         batch_size: 1,
         num_inference_steps: 30,
-        guidance_scale: 7.5,
+        guidance_scale: 15,
       }),
     });
 
@@ -96,28 +70,18 @@ export async function POST(req: NextRequest) {
     const genUrl = kolorsData?.images?.[0]?.url;
     if (!genUrl) return NextResponse.json({ error: 'No image generated' }, { status: 500 });
 
-    // Step 3: Download styled result
-    const styledResp = await fetch(genUrl);
-    if (!styledResp.ok) return NextResponse.json({ error: 'Failed to download result' }, { status: 500 });
-    const styledBuffer = Buffer.from(await styledResp.arrayBuffer());
+    // Download result for storage upload
+    const resultResp = await fetch(genUrl);
+    if (!resultResp.ok) return NextResponse.json({ error: 'Failed to download result' }, { status: 500 });
+    const resultBuffer = Buffer.from(await resultResp.arrayBuffer());
 
-    // Step 4: Overlay line art (multiply blend)
-    let finalBuffer: Buffer;
-    try {
-      finalBuffer = await overlayLineArt(styledBuffer, lineArtBuffer);
-      console.log('[StyleTransfer] Line art overlay done');
-    } catch (e) {
-      console.error('[StyleTransfer] Overlay failed, using raw:', e);
-      finalBuffer = styledBuffer;
-    }
-
-    // Step 5: Upload to Supabase Storage
+    // Upload to Supabase Storage (NO line art overlay — style defines everything)
     let permanentUrl = genUrl;
     let storagePath: string | null = null;
     try {
       const ts = Date.now();
       const fp = `${userId}/styled-${ts}.png`;
-      const { error: upErr } = await supabase.storage.from('coloring-pages').upload(fp, finalBuffer, { contentType: 'image/png', upsert: false });
+      const { error: upErr } = await supabase.storage.from('coloring-pages').upload(fp, resultBuffer, { contentType: 'image/png', upsert: false });
       if (!upErr) {
         const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(fp);
         permanentUrl = urlData.publicUrl;

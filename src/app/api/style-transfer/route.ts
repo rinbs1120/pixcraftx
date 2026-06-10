@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not enough credits for style transfer', limit, used: pagesUsed, needed: 1 }, { status: 429 });
     }
 
-    // Use flux/dev image-to-image for composition-preserving style transfer
-    const result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
+    // Use fal queue mode to avoid Vercel 10s function timeout
+    const { request_id } = await fal.queue.submit('fal-ai/flux/dev/image-to-image', {
       input: {
         image_url: imageUrl,
         prompt: stylePrompt,
@@ -53,6 +53,11 @@ export async function POST(req: NextRequest) {
         num_inference_steps: 28,
         guidance_scale: 3.5,
       },
+    });
+
+    // Poll for result with timeout
+    const result = await fal.queue.result('fal-ai/flux/dev/image-to-image', {
+      requestId: request_id,
     });
 
     const styledImageUrl = result.data?.images?.[0]?.url;

@@ -220,8 +220,8 @@ function AutoColorContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl: sourceImage,
-          style: selectedArtStyle,
-          prompt: styleObj.prompt,
+          styleId: selectedArtStyle,
+          stylePrompt: styleObj.prompt,
           strength: styleObj.strength,
         }),
       });

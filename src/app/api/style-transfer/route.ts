@@ -1,5 +1,5 @@
 // Style Transfer API - Transform a coloring page into styled artwork
-// V2: Uses image-to-image (flux/dev) for composition-preserving style transfer
+// V3: Async submit+poll pattern - submit returns requestId, client polls for result
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
@@ -8,6 +8,7 @@ import { fal } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
 
+// POST - Submit style transfer job
 export async function POST(req: NextRequest) {
   try {
     fal.config({ credentials: process.env.FAL_KEY! });
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing imageUrl - a source image is required for style transfer' }, { status: 400 });
     }
 
-    // Check usage limits (style transfer costs 3 credits - flux/dev img2img ~$0.03)
+    // Check usage limits
     const { data: subData } = await supabase.from('subscriptions').select('plan, status').eq('user_id', userId).single();
     let plan = 'free';
     if (subData && subData.status === 'active') { plan = subData.plan || 'free'; }
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not enough credits for style transfer', limit, used: pagesUsed, needed: 3 }, { status: 429 });
     }
 
-    // Use fal queue mode to avoid Vercel timeout
+    // Submit to fal queue (non-blocking)
     const { request_id } = await fal.queue.submit('fal-ai/flux/dev/image-to-image', {
       input: {
         image_url: imageUrl,
@@ -55,50 +56,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Poll for result with timeout (max 50s)
-    let result;
-    const startTime = Date.now();
-    const maxWait = 50000;
-    while (Date.now() - startTime < maxWait) {
-      const status = await fal.queue.status('fal-ai/flux/dev/image-to-image', { requestId: request_id });
-      if (status.status === 'COMPLETED') {
-        result = await fal.queue.result('fal-ai/flux/dev/image-to-image', { requestId: request_id });
-        break;
-      }
-      await new Promise(r => setTimeout(r, 2000));
-    }
-    if (!result) {
-      return NextResponse.json({ error: 'Style transfer timed out' }, { status: 504 });
-    }
+    console.log('[StyleTransfer] Submitted job:', request_id);
 
-    const styledImageUrl = result.data?.images?.[0]?.url;
-    if (!styledImageUrl) {
-      return NextResponse.json({ error: 'Style transfer failed - no image returned' }, { status: 500 });
-    }
-
-    // Upload to Supabase Storage for persistence
-    let permanentUrl = styledImageUrl;
-    let storagePath: string | null = null;
-
-    try {
-      const imageResponse = await fetch(styledImageUrl);
-      const imageBuffer = await imageResponse.arrayBuffer();
-      const timestamp = Date.now();
-      const filePath = `${userId}/styled-${styleId}-${timestamp}.png`;
-      const { error: uploadError } = await supabase.storage.from('coloring-pages').upload(filePath, imageBuffer, {
-        contentType: 'image/png',
-        upsert: false,
-      });
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(filePath);
-        permanentUrl = urlData.publicUrl;
-        storagePath = filePath;
-      }
-    } catch (storageErr) {
-      console.error('[StyleTransfer] Storage upload failed:', storageErr);
-    }
-
-    // Deduct 3 credits (flux/dev img2img cost)
+    // Deduct credits immediately on submit
     if (usageData) {
       await supabase.from('user_usage').update({
         pages_used: pagesUsed + 3,
@@ -115,27 +75,86 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Log in generation history
-    await supabase.from('generation_history').insert({
-      user_id: userId,
-      prompt: `[Style: ${styleId}] ${stylePrompt.slice(0, 100)}`,
-      style: styleId,
-      image_url: permanentUrl,
-      storage_path: storagePath,
-      credit_cost: 3,
-      has_reference: true,
-    });
-
     return NextResponse.json({
-      imageUrl: permanentUrl,
+      status: 'processing',
+      requestId: request_id,
       styleId,
       pagesUsed: pagesUsed + 3,
       limit,
       plan,
     });
   } catch (error) {
-    console.error('[StyleTransfer] Error:', error);
+    console.error('[StyleTransfer] Submit error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}
+
+// GET - Poll style transfer job status
+export async function GET(req: NextRequest) {
+  try {
+    fal.config({ credentials: process.env.FAL_KEY! });
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const { userId } = await auth();
+    if (!userId) { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
+    const requestId = req.nextUrl.searchParams.get('requestId');
+    if (!requestId) { return NextResponse.json({ error: 'Missing requestId' }, { status: 400 }); }
+
+    const status = await fal.queue.status('fal-ai/flux/dev/image-to-image', { requestId });
+
+    if (status.status === 'COMPLETED') {
+      const result = await fal.queue.result('fal-ai/flux/dev/image-to-image', { requestId });
+      const styledImageUrl = result.data?.images?.[0]?.url;
+
+      if (!styledImageUrl) {
+        return NextResponse.json({ status: 'failed', error: 'No image returned' });
+      }
+
+      // Upload to Supabase Storage
+      let permanentUrl = styledImageUrl;
+      let storagePath: string | null = null;
+
+      try {
+        const imageResponse = await fetch(styledImageUrl);
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const timestamp = Date.now();
+        const filePath = `${userId}/styled-${timestamp}.png`;
+        const { error: uploadError } = await supabase.storage.from('coloring-pages').upload(filePath, imageBuffer, {
+          contentType: 'image/png',
+          upsert: false,
+        });
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(filePath);
+          permanentUrl = urlData.publicUrl;
+          storagePath = filePath;
+        }
+      } catch (storageErr) {
+        console.error('[StyleTransfer] Storage upload failed:', storageErr);
+      }
+
+      // Log in generation history
+      await supabase.from('generation_history').insert({
+        user_id: userId,
+        prompt: `[StyleTransfer] style request`,
+        style: 'style-transfer',
+        image_url: permanentUrl,
+        storage_path: storagePath,
+        credit_cost: 3,
+        has_reference: true,
+      });
+
+      return NextResponse.json({ status: 'completed', imageUrl: permanentUrl });
+    }
+
+    if (status.status === 'FAILED') {
+      return NextResponse.json({ status: 'failed', error: 'Style transfer processing failed' });
+    }
+
+    // Still in progress
+    return NextResponse.json({ status: 'processing' });
+  } catch (error) {
+    console.error('[StyleTransfer] Poll error:', error);
+    return NextResponse.json({ status: 'failed', error: 'Status check failed' });
   }
 }

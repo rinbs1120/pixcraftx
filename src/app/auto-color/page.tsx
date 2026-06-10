@@ -176,6 +176,7 @@ function AutoColorContent() {
     setError(null);
 
     try {
+      // Step 1: Submit job
       const res = await fetch('/api/auto-color', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -190,10 +191,31 @@ function AutoColorContent() {
         return;
       }
 
-      setResultImageUrl(data.imageUrl);
       if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
       if (data.limit) setPageLimit(data.limit);
       if (data.plan) setPlan(data.plan);
+
+      // Step 2: Poll for result
+      const requestId = data.requestId;
+      const maxPollTime = 120000; // 2 min timeout
+      const startTime = Date.now();
+
+      while (Date.now() - startTime < maxPollTime) {
+        await new Promise(r => setTimeout(r, 3000)); // poll every 3s
+        const pollRes = await fetch(`/api/auto-color?requestId=${requestId}`);
+        const pollData = await pollRes.json();
+
+        if (pollData.status === 'completed') {
+          setResultImageUrl(pollData.imageUrl);
+          return;
+        }
+        if (pollData.status === 'failed') {
+          setError(pollData.error || 'Auto color failed');
+          return;
+        }
+        // Still processing, continue polling
+      }
+      setError('Auto color timed out. Please try again.');
     } catch (err) {
       setError('Network error. Please try again.');
     } finally {
@@ -215,6 +237,7 @@ function AutoColorContent() {
     setError(null);
 
     try {
+      // Step 1: Submit job
       const res = await fetch('/api/style-transfer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -234,10 +257,31 @@ function AutoColorContent() {
         return;
       }
 
-      setResultImageUrl(data.imageUrl);
       if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
       if (data.limit) setPageLimit(data.limit);
       if (data.plan) setPlan(data.plan);
+
+      // Step 2: Poll for result
+      const requestId = data.requestId;
+      const maxPollTime = 120000; // 2 min timeout
+      const startTime = Date.now();
+
+      while (Date.now() - startTime < maxPollTime) {
+        await new Promise(r => setTimeout(r, 3000)); // poll every 3s
+        const pollRes = await fetch(`/api/style-transfer?requestId=${requestId}`);
+        const pollData = await pollRes.json();
+
+        if (pollData.status === 'completed') {
+          setResultImageUrl(pollData.imageUrl);
+          return;
+        }
+        if (pollData.status === 'failed') {
+          setError(pollData.error || 'Style transfer failed');
+          return;
+        }
+        // Still processing, continue polling
+      }
+      setError('Style transfer timed out. Please try again.');
     } catch (err) {
       setError('Network error. Please try again.');
     } finally {
@@ -539,6 +583,18 @@ function AutoColorContent() {
                     </p>
                     <p className="text-sm text-muted-foreground">This usually takes 15-40 seconds</p>
                   </div>
+                ) : error ? (
+                  <div className="text-center px-4">
+                    <div className="relative mb-4">
+                      <AlertCircle className="w-12 h-12 mx-auto text-red-400" />
+                    </div>
+                    <p className="text-red-700 text-sm font-medium mb-2">{error}</p>
+                    {(error.includes('credit') || error.includes('limit')) && (
+                      <a href="/pricing" className="text-red-600 underline text-xs hover:text-red-800">
+                        View pricing plans →
+                      </a>
+                    )}
+                  </div>
                 ) : sourceImage ? (
                   <div className="text-center w-full">
                     <div className="aspect-[3/4] max-w-[480px] mx-auto rounded-xl overflow-hidden border-2 border-dashed border-[#E5E0D5] bg-white">
@@ -588,17 +644,7 @@ function AutoColorContent() {
             </div>
           </div>
 
-          {error && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-red-700 text-sm font-medium">{error}</p>
-                {(error.includes('credit') || error.includes('limit')) && (
-                  <a href="/pricing" className="text-red-600 underline text-xs hover:text-red-800">View pricing plans →</a>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Error Display - now shown in preview area */}
         </div>
       </main>
       <Footer />

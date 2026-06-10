@@ -1,6 +1,5 @@
 // Auto Color API - Automatically fill colors into a coloring page using SDXL ControlNet Union
-// Strategy: Pass line art as both image_url (img2img base) and canny/teed (edge constraint)
-// Double constraint keeps outlines intact while colors fill inside the lines
+// V3: Async submit+poll pattern - submit returns requestId, client polls for result
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
@@ -25,6 +24,7 @@ const COLOR_PALETTES: Record<string, { prompt: string; negative: string }> = {
   },
 };
 
+// POST - Submit auto color job
 export async function POST(req: NextRequest) {
   try {
     fal.config({ credentials: process.env.FAL_KEY! });
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid or missing palette (pastel, vivid, muted)' }, { status: 400 });
     }
 
-    // Check usage limits (auto color costs 2 credits - SDXL ControlNet ~$0.015)
+    // Check usage limits
     const { data: subData } = await supabase.from('subscriptions').select('plan, status').eq('user_id', userId).single();
     let plan = 'free';
     if (subData && subData.status === 'active') { plan = subData.plan || 'free'; }
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     const paletteConfig = COLOR_PALETTES[palette];
 
-    // Use SDXL ControlNet Union via queue to avoid Vercel timeout
+    // Submit to fal queue (non-blocking)
     const { request_id } = await fal.queue.submit('fal-ai/sdxl-controlnet-union/image-to-image', {
       input: {
         image_url: imageUrl,
@@ -84,50 +84,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Poll for result with timeout (max 50s)
-    let result;
-    const startTime = Date.now();
-    const maxWait = 50000;
-    while (Date.now() - startTime < maxWait) {
-      const status = await fal.queue.status('fal-ai/sdxl-controlnet-union/image-to-image', { requestId: request_id });
-      if (status.status === 'COMPLETED') {
-        result = await fal.queue.result('fal-ai/sdxl-controlnet-union/image-to-image', { requestId: request_id });
-        break;
-      }
-      await new Promise(r => setTimeout(r, 2000));
-    }
-    if (!result) {
-      return NextResponse.json({ error: 'Auto color timed out' }, { status: 504 });
-    }
+    console.log('[AutoColor] Submitted job:', request_id);
 
-    const coloredImageUrl = result.data?.images?.[0]?.url;
-    if (!coloredImageUrl) {
-      return NextResponse.json({ error: 'Auto color failed - no image returned' }, { status: 500 });
-    }
-
-    // Upload to Supabase Storage for persistence
-    let permanentUrl = coloredImageUrl;
-    let storagePath: string | null = null;
-
-    try {
-      const imageResponse = await fetch(coloredImageUrl);
-      const imageBuffer = await imageResponse.arrayBuffer();
-      const timestamp = Date.now();
-      const filePath = `${userId}/autocolor-${palette}-${timestamp}.png`;
-      const { error: uploadError } = await supabase.storage.from('coloring-pages').upload(filePath, imageBuffer, {
-        contentType: 'image/png',
-        upsert: false,
-      });
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(filePath);
-        permanentUrl = urlData.publicUrl;
-        storagePath = filePath;
-      }
-    } catch (storageErr) {
-      console.error('[AutoColor] Storage upload failed:', storageErr);
-    }
-
-    // Deduct 2 credits (SDXL ControlNet cost)
+    // Deduct credits immediately on submit
     if (usageData) {
       await supabase.from('user_usage').update({
         pages_used: pagesUsed + 2,
@@ -144,27 +103,86 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Log in generation history
-    await supabase.from('generation_history').insert({
-      user_id: userId,
-      prompt: `[AutoColor: ${palette}] ${paletteConfig.prompt.slice(0, 100)}`,
-      style: `autocolor-${palette}`,
-      image_url: permanentUrl,
-      storage_path: storagePath,
-      credit_cost: 2,
-      has_reference: true,
-    });
-
     return NextResponse.json({
-      imageUrl: permanentUrl,
+      status: 'processing',
+      requestId: request_id,
       palette,
       pagesUsed: pagesUsed + 2,
       limit,
       plan,
     });
   } catch (error) {
-    console.error('[AutoColor] Error:', error);
+    console.error('[AutoColor] Submit error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}
+
+// GET - Poll auto color job status
+export async function GET(req: NextRequest) {
+  try {
+    fal.config({ credentials: process.env.FAL_KEY! });
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const { userId } = await auth();
+    if (!userId) { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
+    const requestId = req.nextUrl.searchParams.get('requestId');
+    if (!requestId) { return NextResponse.json({ error: 'Missing requestId' }, { status: 400 }); }
+
+    const status = await fal.queue.status('fal-ai/sdxl-controlnet-union/image-to-image', { requestId });
+
+    if (status.status === 'COMPLETED') {
+      const result = await fal.queue.result('fal-ai/sdxl-controlnet-union/image-to-image', { requestId });
+      const coloredImageUrl = result.data?.images?.[0]?.url;
+
+      if (!coloredImageUrl) {
+        return NextResponse.json({ status: 'failed', error: 'No image returned' });
+      }
+
+      // Upload to Supabase Storage
+      let permanentUrl = coloredImageUrl;
+      let storagePath: string | null = null;
+
+      try {
+        const imageResponse = await fetch(coloredImageUrl);
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const timestamp = Date.now();
+        const filePath = `${userId}/autocolor-${timestamp}.png`;
+        const { error: uploadError } = await supabase.storage.from('coloring-pages').upload(filePath, imageBuffer, {
+          contentType: 'image/png',
+          upsert: false,
+        });
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(filePath);
+          permanentUrl = urlData.publicUrl;
+          storagePath = filePath;
+        }
+      } catch (storageErr) {
+        console.error('[AutoColor] Storage upload failed:', storageErr);
+      }
+
+      // Log in generation history
+      await supabase.from('generation_history').insert({
+        user_id: userId,
+        prompt: `[AutoColor] palette request`,
+        style: 'autocolor',
+        image_url: permanentUrl,
+        storage_path: storagePath,
+        credit_cost: 2,
+        has_reference: true,
+      });
+
+      return NextResponse.json({ status: 'completed', imageUrl: permanentUrl });
+    }
+
+    if (status.status === 'FAILED') {
+      return NextResponse.json({ status: 'failed', error: 'Auto color processing failed' });
+    }
+
+    // Still in progress
+    return NextResponse.json({ status: 'processing' });
+  } catch (error) {
+    console.error('[AutoColor] Poll error:', error);
+    return NextResponse.json({ status: 'failed', error: 'Status check failed' });
   }
 }

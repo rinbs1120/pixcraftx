@@ -1,6 +1,5 @@
 // Style Transfer API - Transform a coloring page into styled artwork
-// MVP: Uses text-to-image with combined prompt (original + style)
-// TODO: Upgrade to image-to-image for better composition preservation
+// V2: Uses image-to-image (flux/dev) for composition-preserving style transfer
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
@@ -20,10 +19,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { prompt: originalPrompt, stylePrompt, styleId } = body;
+    const { imageUrl, stylePrompt, styleId, strength } = body;
 
     if (!stylePrompt) {
       return NextResponse.json({ error: 'Missing stylePrompt' }, { status: 400 });
+    }
+    if (!imageUrl) {
+      return NextResponse.json({ error: 'Missing imageUrl - a source image is required for style transfer' }, { status: 400 });
     }
 
     // Check usage limits (style transfer costs 1 credit)
@@ -42,15 +44,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not enough credits for style transfer', limit, used: pagesUsed, needed: 1 }, { status: 429 });
     }
 
-    // Combine original prompt with style prompt
-    const fullPrompt = `${stylePrompt}. Subject: ${originalPrompt || 'a cute character'}`;
-
-    // Use flux/schnell for fast generation
-    const result = await fal.subscribe('fal-ai/flux/schnell', {
+    // Use flux/dev image-to-image for composition-preserving style transfer
+    const result = await fal.subscribe('fal-ai/flux/dev/image-to-image', {
       input: {
-        prompt: fullPrompt,
-        image_size: 'portrait_4_3',
-        num_images: 1,
+        image_url: imageUrl,
+        prompt: stylePrompt,
+        strength: strength || 0.85,
+        num_inference_steps: 28,
+        guidance_scale: 3.5,
       },
     });
 
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
       image_url: permanentUrl,
       storage_path: storagePath,
       credit_cost: 1,
-      has_reference: false,
+      has_reference: true,
     });
 
     return NextResponse.json({

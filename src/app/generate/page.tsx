@@ -44,6 +44,7 @@ const ARTISTIC_STYLES = [
     desc: 'Crayon marker scribble style, messy lines, distorted proportions, coloring overflow, meme-fun vibe',
     thumbnail: '/styles/art-chubby-doodle.jpg',
     prompt: 'Transform this coloring page into a chubby doodle style illustration. Use crayon and marker scribble strokes, intentionally messy and wobbly lines, distorted proportions and perspective, colors slightly overflowing the outlines, playful meme-like expressions, hand-drawn spontaneous feel on white paper background',
+    strength: 0.85,
   },
   {
     id: 'pop-art',
@@ -51,6 +52,7 @@ const ARTISTIC_STYLES = [
     desc: 'Halftone dots, bold outlines, limited color palette, 1950s print art, grainy paper texture',
     thumbnail: '/styles/art-pop-art.jpg',
     prompt: 'Transform this coloring page into a Pop Art style illustration. Use halftone dot printing texture, thick bold black outlines, limited flat color palette (no gradients), 1950s-60s commercial print aesthetic, Ben-Day dots pattern, grainy paper texture on white background',
+    strength: 0.85,
   },
   {
     id: 'city-pop',
@@ -58,6 +60,7 @@ const ARTISTIC_STYLES = [
     desc: '1980s Japanese anime aesthetic, flat vector, high saturation retro colors, Showa nostalgia',
     thumbnail: '/styles/art-city-pop.jpg',
     prompt: 'Transform this coloring page into a City Pop style illustration. Use 1980s Japanese anime aesthetic, flat vector art style, high saturation retro color palette, Showa-era nostalgic atmosphere, pastel sky gradient, add handwritten English text elements, dreamy vaporwave mood',
+    strength: 0.85,
   },
   {
     id: 'fridge-magnet',
@@ -65,6 +68,7 @@ const ARTISTIC_STYLES = [
     desc: 'Minimalist icon design, slight 3D shadow, white border outline, handwritten English label',
     thumbnail: '/styles/art-fridge-magnet.jpg',
     prompt: 'Transform this coloring page into a fridge magnet style illustration. Extract the main subject as a minimalist icon design, slight 3D depth with drop shadow, clean white border outline around the shape, add handwritten English text label below the icon, flat bold colors, white background, cute and clean aesthetic',
+    strength: 0.9,
   },
   {
     id: 'handwritten-piog',
@@ -72,6 +76,7 @@ const ARTISTIC_STYLES = [
     desc: 'White hand-drawn annotations, Japanese lifestyle feel, low saturation soft light, Instagram story vibe',
     thumbnail: '/styles/art-piog.jpg',
     prompt: 'Transform this coloring page into a Handwritten Piog style illustration. Add white hand-drawn annotation lines and text overlays, Japanese daily life aesthetic, low saturation soft lighting, Instagram story filter feel, light leaks and warm tones, casual lifestyle photography mood with hand-drawn decorative elements',
+    strength: 0.8,
   },
 ];
 
@@ -212,9 +217,10 @@ function GenerateContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: prompt.trim(),
+          imageUrl: sourceImage,
           stylePrompt: artStyle.prompt,
           styleId: artStyle.id,
+          strength: artStyle.strength || 0.85,
         }),
       });
       const data = await response.json();

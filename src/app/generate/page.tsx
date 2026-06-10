@@ -155,7 +155,7 @@ function GenerateContent() {
     if (!isSignedIn) { setShowSignIn(true); return; }
 
     if (referenceImage && refTrialUsed) {
-      const baseCost = quality === 'hd' ? 3 : 1;
+      const baseCost = quality === 'hd' ? 2 : 1;
       const totalNeeded = baseCost + 5;
       const remaining = pageLimit - pagesUsed;
       if (remaining < totalNeeded) {
@@ -414,9 +414,9 @@ function GenerateContent() {
                   <button
                     onClick={() => setQuality('hd')}
                     className={"text-xs px-3 py-1.5 rounded-full border transition-all " + (quality === 'hd' ? 'border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800] font-semibold' : 'border-gray-200 text-muted-foreground hover:border-gray-300')}
-                  >✨ HD · 3 cr</button>
+                  >✨ HD · 2 cr</button>
                 </div>
-                💰 Costs {referenceImage ? '5' : quality === 'hd' ? '3' : '1'} credit{referenceImage || quality === 'hd' ? 's' : ''} · {pageLimit - pagesUsed} remaining
+                💰 Costs {referenceImage ? '5' : quality === 'hd' ? '2' : '1'} credit{referenceImage || quality === 'hd' ? 's' : ''} · {pageLimit - pagesUsed} remaining
                 </div>
                 <button
                   onClick={handleGenerate}
@@ -620,8 +620,8 @@ function GenerateContent() {
               </div>
               <h3 className="font-display text-xl mb-2 text-foreground">More Credits Needed</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                Reference image mode uses 5 extra credits on top of {quality === 'hd' ? '3' : '1'} base credit{(quality === 'hd' || referenceImage) ? 's' : ''}.
-                You have <strong>{pageLimit - pagesUsed}</strong> credit{pageLimit - pagesUsed !== 1 ? 's' : ''} remaining, but need <strong>{(quality === 'hd' ? 3 : 1) + 5}</strong>.
+                Reference image mode uses 5 extra credits on top of {quality === 'hd' ? '2' : '1'} base credit{(quality === 'hd' || referenceImage) ? 's' : ''}.
+                You have <strong>{pageLimit - pagesUsed}</strong> credit{pageLimit - pagesUsed !== 1 ? 's' : ''} remaining, but need <strong>{(quality === 'hd' ? 2 : 1) + 5}</strong>.
               </p>
               <Link
                 href="/pricing"

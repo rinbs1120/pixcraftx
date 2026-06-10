@@ -3,7 +3,6 @@ export const maxDuration = 60; // 60 seconds max (only effective on Vercel Pro)
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
 
@@ -23,10 +22,10 @@ const STYLE_PROMPTS = {
   }
 };
 
-// Credit costs proportional to backend model cost
+// Credit costs - Kolors is cheaper than FLUX
 const GENERATE_CREDIT_COSTS = {
-  fast: 1,   // flux/schnell ~$0.003
-  hd: 3,     // flux/dev ~$0.025
+  fast: 1,   // Kolors 20 steps (currently free on SiliconFlow)
+  hd: 2,     // Kolors 50 steps (cheaper than old FLUX HD)
 };
 
 const REFERENCE_COST = 5;  // AILabTools ~$0.02
@@ -66,7 +65,6 @@ async function moderatePrompt(prompt: string, externalId?: string): Promise<'all
 
 export async function POST(req: NextRequest) {
   try {
-    fal.config({ credentials: process.env.FAL_KEY! });
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
     const { userId } = await auth();
@@ -222,41 +220,47 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ===== Text-to-image: quality-based model selection =====
-    const isHD = quality === 'hd';
-    const falModel = isHD ? 'fal-ai/flux/dev' : 'fal-ai/flux/schnell';
-    console.log(`[Generate] Quality: ${quality}, Model: ${falModel}, Credit cost: ${creditCost}`);
-
-    let result;
-    if (isHD) {
-      // HD mode: use queue to avoid Vercel timeout
-      const { request_id } = await fal.queue.submit(falModel, {
-        input: { prompt: fullPrompt, image_size: 'portrait_4_3', num_images: 1 },
-      });
-      // Poll for result with timeout
-      const startTime = Date.now();
-      const maxWait = 50000; // 50 seconds max wait
-      while (Date.now() - startTime < maxWait) {
-        const status = await fal.queue.status(falModel, { requestId: request_id });
-        if (status.status === 'COMPLETED') {
-          result = await fal.queue.result(falModel, { requestId: request_id });
-          break;
-        }
-        await new Promise(r => setTimeout(r, 2000)); // poll every 2s
-      }
-      if (!result) {
-        return NextResponse.json({ error: 'HD generation timed out' }, { status: 504 });
-      }
-    } else {
-      // Fast mode: flux/schnell is quick enough for sync
-      result = await fal.subscribe(falModel, {
-        input: { prompt: fullPrompt, image_size: 'portrait_4_3', num_images: 1 },
-      });
+    // ===== Text-to-image: SiliconFlow Kolors (Chinese model for better Oriental understanding) =====
+    const siliconflowApiKey = process.env.SILICONFLOW_API_KEY;
+    if (!siliconflowApiKey) {
+      console.error('[Generate] SILICONFLOW_API_KEY not configured');
+      return NextResponse.json({ error: 'Image generation service not configured' }, { status: 500 });
     }
 
-    const tempImageUrl = result.data?.images?.[0]?.url;
+    const isHD = quality === 'hd';
+    const inferenceSteps = isHD ? 50 : 20;
+    const kolorsImageSize = '960x1280'; // 3:4 vertical, closest to our 1200x1600 requirement
+
+    console.log(`[Generate] Quality: ${quality}, Model: SiliconFlow Kolors, Steps: ${inferenceSteps}, Credit cost: ${creditCost}`);
+
+    const sfResponse = await fetch('https://api.siliconflow.cn/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${siliconflowApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'Kwai-Kolors/Kolors',
+        prompt: fullPrompt,
+        image_size: kolorsImageSize,
+        batch_size: 1,
+        num_inference_steps: inferenceSteps,
+        guidance_scale: 7.5,
+      }),
+    });
+
+    if (!sfResponse.ok) {
+      const errorText = await sfResponse.text();
+      console.error('[Generate] SiliconFlow API error:', sfResponse.status, errorText);
+      return NextResponse.json({ error: 'Image generation failed', details: errorText.slice(0, 200) }, { status: 500 });
+    }
+
+    const sfData = await sfResponse.json();
+    const tempImageUrl = sfData.images?.[0]?.url;
+
     if (!tempImageUrl) {
-      return NextResponse.json({ error: 'Image generation failed' }, { status: 500 });
+      console.error('[Generate] No image URL in SiliconFlow response:', JSON.stringify(sfData).slice(0, 300));
+      return NextResponse.json({ error: 'Image generation failed - no image returned' }, { status: 500 });
     }
 
     // Try to download and upload to Supabase Storage
@@ -280,7 +284,7 @@ export async function POST(req: NextRequest) {
       }
     } catch (storageErr) { console.error('[Storage] Upload exception:', storageErr); storageFailed = true; }
 
-    // Deduct credits (text-to-image always costs 1)
+    // Deduct credits
     if (usageData) {
       await supabase.from('user_usage').update({ pages_used: pagesUsed + creditCost, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
     } else {

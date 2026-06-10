@@ -32,10 +32,7 @@ export default function AboutPage() {
 
             <h2 className="font-display text-2xl mt-8 mb-4">How It Works</h2>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Using advanced AI image generation, PixCraftX transforms your text descriptions
-              into clean, print-ready line art. Our models are specifically trained to create
-              coloring pages — with clear outlines, appropriate detail levels, and print-quality
-              resolution.
+              Using advanced AI image generation, PixCraftX transforms your text descriptions into clean, print-ready line art. Go further with Auto Color to fill colors automatically, or apply art styles like Chubby Doodle and City Pop for creative transformations. Our models are specifically trained to create coloring pages — with clear outlines, appropriate detail levels, and print-quality resolution.
             </p>
 
             <h2 className="font-display text-2xl mt-8 mb-4">Made With Love</h2>

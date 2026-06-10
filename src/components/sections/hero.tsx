@@ -49,8 +49,8 @@ const steps = [
   },
   {
     number: 2,
-    title: 'Choose Style',
-    description: 'Pick Simple, Mandala, or Intricate',
+    title: 'Choose Line Style',
+    description: 'Pick Simple, Mandala, or Intricate line art',
     icon: Sparkles,
   },
   {
@@ -61,8 +61,8 @@ const steps = [
   },
   {
     number: 4,
-    title: 'Color or Print',
-    description: 'Color online, or download and print',
+    title: 'Auto Color & Style',
+    description: 'Auto-color it, or transform with 5 art styles',
     icon: Palette,
   },
 ];
@@ -103,7 +103,7 @@ export function Hero() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#2ECC71]" />
-                5 free pages
+                2 free credits
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#2ECC71]" />

@@ -44,7 +44,7 @@ export default function HelpPage() {
               Monthly Limit Reached
             </h3>
             <p className="leading-relaxed mb-6">
-              Free accounts can generate up to 5 pages per month. To get more, check out our <a href="/pricing" className="text-[#FFB800] hover:underline">Pricing plans</a>.
+              Free accounts get 2 credits per month (1 credit = 1 generation). To get more, check out our <a href="/pricing" className="text-[#FFB800] hover:underline">Pricing plans</a>.
             </p>
 
             <h3 className="font-display text-xl mt-6 mb-3 text-foreground">

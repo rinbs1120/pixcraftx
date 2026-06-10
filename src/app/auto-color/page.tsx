@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Loader2, Download, AlertCircle, Palette, ImageIcon, Upload, Paintbrush } from 'lucide-react';
+import { Loader2, Download, AlertCircle, Palette, ImageIcon, Upload, Paintbrush, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 
@@ -31,10 +33,55 @@ const COLOR_PALETTES = [
   },
 ];
 
+const ARTISTIC_STYLES = [
+  {
+    id: 'chubby-doodle',
+    label: 'Chubby Doodle',
+    desc: 'Crayon marker scribble style, messy lines, distorted proportions',
+    thumbnail: '/styles/art-chubby-doodle.jpg',
+    prompt: 'Transform this coloring page into a chubby doodle style illustration. Use crayon and marker scribble strokes, intentionally messy and wobbly lines, distorted proportions and perspective, colors slightly overflowing the outlines, playful meme-like expressions, hand-drawn spontaneous feel on white paper background',
+    strength: 0.85,
+  },
+  {
+    id: 'pop-art',
+    label: 'Pop Art',
+    desc: 'Halftone dots, bold outlines, limited color palette, 1950s print art',
+    thumbnail: '/styles/art-pop-art.jpg',
+    prompt: 'Transform this coloring page into a Pop Art style illustration. Use halftone dot printing texture, thick bold black outlines, limited flat color palette (no gradients), 1950s-60s commercial print aesthetic, Ben-Day dots pattern, grainy paper texture on white background',
+    strength: 0.85,
+  },
+  {
+    id: 'city-pop',
+    label: 'City Pop',
+    desc: '1980s Japanese anime aesthetic, flat vector, high saturation retro colors',
+    thumbnail: '/styles/art-city-pop.jpg',
+    prompt: 'Transform this coloring page into a City Pop style illustration. Use 1980s Japanese anime aesthetic, flat vector art style, high saturation retro color palette, Showa-era nostalgic atmosphere, pastel sky gradient, add handwritten English text elements, dreamy vaporwave mood',
+    strength: 0.85,
+  },
+  {
+    id: 'fridge-magnet',
+    label: 'Fridge Magnet',
+    desc: 'Minimalist icon design, slight 3D shadow, white border outline',
+    thumbnail: '/styles/art-fridge-magnet.jpg',
+    prompt: 'Transform this coloring page into a fridge magnet style illustration. Extract the main subject as a minimalist icon design, slight 3D depth with drop shadow, clean white border outline around the shape, add handwritten English text label below the icon, flat bold colors, white background, cute and clean aesthetic',
+    strength: 0.9,
+  },
+  {
+    id: 'handwritten-piog',
+    label: 'Handwritten Piog',
+    desc: 'White hand-drawn annotations, Japanese lifestyle feel, Instagram story vibe',
+    thumbnail: '/styles/art-piog.jpg',
+    prompt: 'Transform this coloring page into a Handwritten Piog style illustration. Add white hand-drawn annotation lines and text overlays, Japanese daily life aesthetic, low saturation soft lighting, Instagram story filter feel, light leaks and warm tones, casual lifestyle photography mood with hand-drawn decorative elements',
+    strength: 0.8,
+  },
+];
+
 type ImageSource = 'mypages' | 'upload';
+type Mode = 'palette' | 'artstyle';
 
 function AutoColorContent() {
   const { isSignedIn, isLoaded } = useAuth();
+  const searchParams = useSearchParams();
 
   const [imageSource, setImageSource] = useState<ImageSource>('mypages');
   const [uploadImage, setUploadImage] = useState<string | null>(null);
@@ -44,14 +91,25 @@ function AutoColorContent() {
   const [history, setHistory] = useState<{ url: string; style: string; prompt: string; ts: number }[]>([]);
 
   const [selectedPalette, setSelectedPalette] = useState<string | null>(null);
-  const [isAutoColoring, setIsAutoColoring] = useState(false);
-  const [autoColorImageUrl, setAutoColorImageUrl] = useState<string | null>(null);
+  const [selectedArtStyle, setSelectedArtStyle] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>('palette');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [pagesUsed, setPagesUsed] = useState(0);
   const [pageLimit, setPageLimit] = useState(5);
   const [plan, setPlan] = useState('free');
   const [showSignIn, setShowSignIn] = useState(false);
+
+  // Support ?src= URL parameter
+  useEffect(() => {
+    const src = searchParams.get('src');
+    if (src) {
+      setUploadImage(decodeURIComponent(src));
+      setImageSource('upload');
+    }
+  }, [searchParams]);
 
   const getSourceImage = (): string | null => {
     if (imageSource === 'upload' && uploadImage) return uploadImage;
@@ -114,7 +172,7 @@ function AutoColorContent() {
     const sourceImage = getSourceImage();
     if (!sourceImage) { setError('Please select or upload a coloring page first'); return; }
 
-    setIsAutoColoring(true);
+    setIsProcessing(true);
     setError(null);
 
     try {
@@ -132,28 +190,82 @@ function AutoColorContent() {
         return;
       }
 
-      setAutoColorImageUrl(data.imageUrl);
+      setResultImageUrl(data.imageUrl);
       if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
       if (data.limit) setPageLimit(data.limit);
       if (data.plan) setPlan(data.plan);
     } catch (err) {
       setError('Network error. Please try again.');
     } finally {
-      setIsAutoColoring(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const handleStyleTransfer = async () => {
+    if (!isSignedIn) { setShowSignIn(true); return; }
+    if (!selectedArtStyle) { setError('Please select an art style'); return; }
+
+    const sourceImage = getSourceImage();
+    if (!sourceImage) { setError('Please select or upload a coloring page first'); return; }
+
+    const styleObj = ARTISTIC_STYLES.find(s => s.id === selectedArtStyle);
+    if (!styleObj) return;
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const res = await fetch('/api/style-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: sourceImage,
+          style: selectedArtStyle,
+          prompt: styleObj.prompt,
+          strength: styleObj.strength,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Style transfer failed');
+        if (data.limit) setPageLimit(data.limit);
+        if (data.used !== undefined) setPagesUsed(data.used);
+        return;
+      }
+
+      setResultImageUrl(data.imageUrl);
+      if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
+      if (data.limit) setPageLimit(data.limit);
+      if (data.plan) setPlan(data.plan);
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGenerate = () => {
+    if (mode === 'palette') {
+      handleAutoColor();
+    } else {
+      handleStyleTransfer();
     }
   };
 
   const handleReset = () => {
-    setAutoColorImageUrl(null);
+    setResultImageUrl(null);
     setSelectedPalette(null);
+    setSelectedArtStyle(null);
     setError(null);
   };
 
   const handleDownload = () => {
-    if (!autoColorImageUrl) return;
+    if (!resultImageUrl) return;
+    const suffix = mode === 'artstyle' ? `styled-${selectedArtStyle}` : `autocolor-${selectedPalette}`;
     const a = document.createElement('a');
-    a.href = autoColorImageUrl;
-    a.download = `pixcraftx-autocolor-${selectedPalette}-${Date.now()}.png`;
+    a.href = resultImageUrl;
+    a.download = `pixcraftx-${suffix}-${Date.now()}.png`;
     a.click();
   };
 
@@ -169,10 +281,10 @@ function AutoColorContent() {
           <div className="mb-8">
             <h1 className="font-display text-3xl md:text-4xl text-foreground mb-2">
               <Paintbrush className="w-8 h-8 inline-block mr-2 text-[#FF6B6B]" />
-              Auto Color
+              Color & Style
             </h1>
             <p className="text-muted-foreground">
-              Pick a coloring page, choose a palette, and let AI fill in the colors for you.
+              Pick a coloring page, then choose Auto Color or an art style
             </p>
           </div>
 
@@ -221,7 +333,6 @@ function AutoColorContent() {
                               "aspect-[3/4] rounded-md overflow-hidden border-2 transition-all",
                               myPagesIdx === i ? "border-[#FFB800] shadow-sm" : "border-[#E5E0D5] hover:border-[#FFB800]/50"
                             )}
-                            title={item.prompt}
                           >
                             <img src={item.url} alt="" className="w-full h-full object-cover" />
                           </button>
@@ -272,37 +383,88 @@ function AutoColorContent() {
                 )}
               </div>
 
-              {/* Step 2: Choose Palette */}
+              {/* Step 2: Color Palette / Art Style Tabs */}
               <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-[#FF6B6B] text-white text-[10px] flex items-center justify-center font-bold">2</span>
-                  Pick a Color Palette
+                  Choose Color or Style
                 </h3>
-                <div className="space-y-2">
-                  {COLOR_PALETTES.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => { setSelectedPalette(p.id); setAutoColorImageUrl(null); }}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-2.5 rounded-xl border-2 transition-all text-left",
-                        selectedPalette === p.id
-                          ? "border-[#FFB800] bg-[#FFB800]/5 shadow-sm"
-                          : "border-[#E5E0D5] hover:border-[#FFB800]/50"
-                      )}
-                    >
-                      <div
-                        className="w-10 h-10 rounded-lg flex-shrink-0"
-                        style={{ background: p.preview }}
-                      />
-                      <div>
-                        <div className="text-xs font-semibold text-foreground flex items-center gap-1">
-                          {p.emoji} {p.label}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">{p.desc}</div>
-                      </div>
-                    </button>
-                  ))}
+
+                {/* Tab Switcher */}
+                <div className="flex gap-1 mb-3 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => { setMode('palette'); setSelectedArtStyle(null); setResultImageUrl(null); }}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-md text-xs font-semibold transition-all",
+                      mode === 'palette' ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    🎨 Color Palette
+                  </button>
+                  <button
+                    onClick={() => { setMode('artstyle'); setSelectedPalette(null); setResultImageUrl(null); }}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-md text-xs font-semibold transition-all",
+                      mode === 'artstyle' ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    ✨ Art Style
+                  </button>
                 </div>
+
+                {/* Tab Content: Color Palette */}
+                {mode === 'palette' && (
+                  <div className="space-y-2">
+                    {COLOR_PALETTES.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedPalette(p.id); setResultImageUrl(null); }}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-2.5 rounded-xl border-2 transition-all text-left",
+                          selectedPalette === p.id
+                            ? "border-[#FFB800] bg-[#FFB800]/5 shadow-sm"
+                            : "border-[#E5E0D5] hover:border-[#FFB800]/50"
+                        )}
+                      >
+                        <div
+                          className="w-10 h-10 rounded-lg flex-shrink-0"
+                          style={{ background: p.preview }}
+                        />
+                        <div>
+                          <div className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            {p.emoji} {p.label}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">{p.desc}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Tab Content: Art Style */}
+                {mode === 'artstyle' && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {ARTISTIC_STYLES.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => { setSelectedArtStyle(s.id); setResultImageUrl(null); }}
+                        className={cn(
+                          "rounded-xl border-2 overflow-hidden transition-all text-left",
+                          selectedArtStyle === s.id
+                            ? "border-[#FFB800] shadow-sm"
+                            : "border-[#E5E0D5] hover:border-[#FFB800]/50"
+                        )}
+                      >
+                        <div className="aspect-square bg-gray-100">
+                          <img src={s.thumbnail} alt={s.label} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="p-1.5">
+                          <div className="text-[10px] font-semibold text-foreground truncate">{s.label}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Step 3: Generate */}
@@ -317,30 +479,30 @@ function AutoColorContent() {
                 </div>
 
                 <button
-                  onClick={handleAutoColor}
-                  disabled={isAutoColoring || !selectedPalette || !sourceImage}
+                  onClick={handleGenerate}
+                  disabled={isProcessing || (mode === 'palette' ? !selectedPalette : !selectedArtStyle) || !sourceImage}
                   className="w-full py-3 rounded-xl font-semibold text-[#1A1A2E] flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 text-sm"
                   style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                 >
-                  {isAutoColoring ? (
+                  {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Coloring...
+                      {mode === 'palette' ? 'Coloring...' : 'Styling...'}
                     </>
                   ) : (
                     <>
-                      <Paintbrush className="w-4 h-4" />
-                      Auto Color
+                      {mode === 'palette' ? <Paintbrush className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                      {mode === 'palette' ? 'Auto Color' : 'Apply Style'}
                     </>
                   )}
                 </button>
 
-                {autoColorImageUrl && (
+                {resultImageUrl && (
                   <button
                     onClick={handleReset}
                     className="w-full mt-2 py-2 rounded-xl border-2 border-[#E5E0D5] text-foreground text-xs font-semibold flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all"
                   >
-                    ← Try Another Palette
+                    ← Try Another
                   </button>
                 )}
               </div>
@@ -349,28 +511,32 @@ function AutoColorContent() {
             {/* Right Preview */}
             <div className="flex-1 space-y-3">
               <div className="rounded-2xl p-4 shadow-sm border border-border bg-white min-h-[500px] flex items-center justify-center">
-                {autoColorImageUrl ? (
+                {resultImageUrl ? (
                   <div className="text-center w-full">
                     <div className="aspect-[3/4] max-w-[480px] mx-auto rounded-xl overflow-hidden border border-[#E5E0D5] bg-white shadow-sm">
                       <img
-                        src={autoColorImageUrl}
-                        alt="Auto colored result"
+                        src={resultImageUrl}
+                        alt="Result"
                         className="w-full h-full object-contain"
                       />
                     </div>
                     <div className="mt-2 text-center">
                       <span className="text-[10px] text-muted-foreground">
-                        🎨 Auto colored ({selectedPalette} palette)
+                        {mode === 'palette'
+                          ? `🎨 Auto colored (${selectedPalette} palette)`
+                          : `✨ ${ARTISTIC_STYLES.find(s => s.id === selectedArtStyle)?.label} style applied`}
                       </span>
                     </div>
                   </div>
-                ) : isAutoColoring ? (
+                ) : isProcessing ? (
                   <div className="text-center">
                     <div className="relative mb-6">
                       <div className="w-20 h-20 mx-auto rounded-full border-4 border-[#FF6B6B]/20 border-t-[#FF6B6B] animate-spin" />
                       <Paintbrush className="w-7 h-7 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#FF6B6B]" />
                     </div>
-                    <p className="text-lg font-semibold text-foreground mb-2">AI is coloring your page...</p>
+                    <p className="text-lg font-semibold text-foreground mb-2">
+                      {mode === 'palette' ? 'AI is coloring your page...' : 'Applying art style...'}
+                    </p>
                     <p className="text-sm text-muted-foreground">This usually takes 15-40 seconds</p>
                   </div>
                 ) : sourceImage ? (
@@ -382,7 +548,9 @@ function AutoColorContent() {
                         className="w-full h-full object-contain opacity-60"
                       />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-3">Pick a palette and click Auto Color</p>
+                    <p className="text-sm text-muted-foreground mt-3">
+                      {mode === 'palette' ? 'Pick a palette and click Auto Color' : 'Pick a style and click Apply Style'}
+                    </p>
                   </div>
                 ) : (
                   <div className="text-center text-muted-foreground">
@@ -393,28 +561,28 @@ function AutoColorContent() {
                       </div>
                     </div>
                     <p className="text-lg font-semibold mb-1 text-foreground/60">Your colored page will appear here</p>
-                    <p className="text-sm">Select a coloring page and a palette to start</p>
+                    <p className="text-sm">Select a coloring page and a palette or style to start</p>
                   </div>
                 )}
               </div>
 
-              {autoColorImageUrl && (
+              {resultImageUrl && (
                 <div className="flex gap-2">
                   <button
                     onClick={handleDownload}
                     className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-sm"
                   >
                     <Download className="w-4 h-4" />
-                    Save Colored
+                    Download
                   </button>
-                  <a
-                    href={`/color?src=${encodeURIComponent(autoColorImageUrl)}`}
+                  <Link
+                    href={`/color?src=${encodeURIComponent(resultImageUrl)}`}
                     className="py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-[#1A1A2E] transition-all hover:-translate-y-0.5 text-sm"
                     style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                   >
                     <Palette className="w-4 h-4" />
                     Color It!
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>
@@ -444,7 +612,7 @@ function AutoColorContent() {
             >
               ✕
             </button>
-            <h3 className="font-display text-xl mb-4 text-center text-foreground">Sign in to Auto Color</h3>
+            <h3 className="font-display text-xl mb-4 text-center text-foreground">Sign in to Continue</h3>
             <SignIn routing="hash" />
           </div>
         </div>

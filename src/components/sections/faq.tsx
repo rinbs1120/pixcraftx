@@ -13,7 +13,7 @@ const faqs = [
   {
     question: 'What styles are available?',
     answer:
-      'We offer three core styles: Simple (bold lines, large areas for kids), Mandala (symmetrical circular patterns for relaxation), and Intricate (fine lines and rich details for adults and artists).',
+      'Three line art styles: Simple (bold lines for kids), Mandala (symmetrical patterns for relaxation), and Intricate (fine details for adults). Plus, 5 art transformation styles: Chubby Doodle, Pop Art, City Pop, Fridge Magnet, and Handwritten Piog.',
   },
   {
     question: 'Can I upload a reference image?',
@@ -23,7 +23,7 @@ const faqs = [
   {
     question: 'Can I color the pages online?',
     answer:
-      'Absolutely! After generating a page, click the "Color It!" button to open our built-in digital coloring tool. Choose colors and fill areas with a click — no download needed.',
+      'Yes! Three ways: (1) Use our built-in digital coloring tool to color by hand, (2) Use Auto Color to fill colors automatically with Pastel, Vivid, or Muted palettes, or (3) Apply an art style like Chubby Doodle or City Pop for a creative transformation.',
   },
   {
     question: 'Can I use the images commercially?',

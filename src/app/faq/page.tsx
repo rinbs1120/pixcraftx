@@ -15,7 +15,7 @@ const faqs = [
   {
     question: 'How does it work?',
     answer:
-      'It is simple! Just type a text prompt describing the coloring page you want (for example, "a cute cat sitting on a windowsill"), and our AI will generate a black-and-white line art illustration. You can then download the image, print it, or color it directly in the browser.',
+      'Type a text prompt (e.g., "a cute cat on a windowsill") and our AI generates a line art coloring page. Then you can: color it online with our built-in tool, use Auto Color to fill colors automatically, or apply art styles (Chubby Doodle, Pop Art, etc.) for a creative twist. Download as PNG or print directly.',
   },
   {
     question: 'Is it free?',
@@ -25,7 +25,7 @@ const faqs = [
   {
     question: 'What styles are available?',
     answer:
-      'PixCraftX supports three main styles: Kids — bold, simple lines perfect for young children; Mandala — symmetrical, intricate patterns for a relaxing experience; and Detailed — fine, complex line art designed for adult colorists. You can select your preferred style when generating a page.',
+      'PixCraftX offers three line art styles: Simple (bold lines for kids), Mandala (symmetrical patterns for relaxation), and Intricate (fine details for adults). After generating, use Auto Color to fill colors automatically with Pastel, Vivid, or Muted palettes, or apply one of 5 art styles (Chubby Doodle, Pop Art, City Pop, Fridge Magnet, Handwritten Piog) to transform your page.',
   },
   {
     question: 'Can I use generated images commercially?',

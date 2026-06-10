@@ -19,7 +19,7 @@ const highlights = [
   {
     icon: Zap,
     tag: 'Free to Start',
-    text: 'Generate 5 coloring pages per month for free. No credit card required to try it out.',
+    text: 'Get 2 free credits per month. Auto-color your pages or transform them with 5 art styles. No credit card required.',
   },
 ] as const;
 

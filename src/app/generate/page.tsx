@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus, FileText, ChevronDown, Upload, Clock } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, FileText, ChevronDown, Upload, Clock, Paintbrush } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import { downloadPDF, canExportPDF } from '@/lib/download-utils';
@@ -37,49 +37,6 @@ const styles = [
 ];
 
 
-const ARTISTIC_STYLES = [
-  {
-    id: 'chubby-doodle',
-    label: 'Chubby Doodle',
-    desc: 'Crayon marker scribble style, messy lines, distorted proportions, coloring overflow, meme-fun vibe',
-    thumbnail: '/styles/art-chubby-doodle.jpg',
-    prompt: 'Transform this coloring page into a chubby doodle style illustration. Use crayon and marker scribble strokes, intentionally messy and wobbly lines, distorted proportions and perspective, colors slightly overflowing the outlines, playful meme-like expressions, hand-drawn spontaneous feel on white paper background',
-    strength: 0.85,
-  },
-  {
-    id: 'pop-art',
-    label: 'Pop Art',
-    desc: 'Halftone dots, bold outlines, limited color palette, 1950s print art, grainy paper texture',
-    thumbnail: '/styles/art-pop-art.jpg',
-    prompt: 'Transform this coloring page into a Pop Art style illustration. Use halftone dot printing texture, thick bold black outlines, limited flat color palette (no gradients), 1950s-60s commercial print aesthetic, Ben-Day dots pattern, grainy paper texture on white background',
-    strength: 0.85,
-  },
-  {
-    id: 'city-pop',
-    label: 'City Pop',
-    desc: '1980s Japanese anime aesthetic, flat vector, high saturation retro colors, Showa nostalgia',
-    thumbnail: '/styles/art-city-pop.jpg',
-    prompt: 'Transform this coloring page into a City Pop style illustration. Use 1980s Japanese anime aesthetic, flat vector art style, high saturation retro color palette, Showa-era nostalgic atmosphere, pastel sky gradient, add handwritten English text elements, dreamy vaporwave mood',
-    strength: 0.85,
-  },
-  {
-    id: 'fridge-magnet',
-    label: 'Fridge Magnet',
-    desc: 'Minimalist icon design, slight 3D shadow, white border outline, handwritten English label',
-    thumbnail: '/styles/art-fridge-magnet.jpg',
-    prompt: 'Transform this coloring page into a fridge magnet style illustration. Extract the main subject as a minimalist icon design, slight 3D depth with drop shadow, clean white border outline around the shape, add handwritten English text label below the icon, flat bold colors, white background, cute and clean aesthetic',
-    strength: 0.9,
-  },
-  {
-    id: 'handwritten-piog',
-    label: 'Handwritten Piog',
-    desc: 'White hand-drawn annotations, Japanese lifestyle feel, low saturation soft light, Instagram story vibe',
-    thumbnail: '/styles/art-piog.jpg',
-    prompt: 'Transform this coloring page into a Handwritten Piog style illustration. Add white hand-drawn annotation lines and text overlays, Japanese daily life aesthetic, low saturation soft lighting, Instagram story filter feel, light leaks and warm tones, casual lifestyle photography mood with hand-drawn decorative elements',
-    strength: 0.8,
-  },
-];
-
 const EXAMPLE_PROMPTS = [
   { emoji: '🐱', text: 'Cute cat sitting on a mushroom' },
   { emoji: '🏰', text: 'Princess castle in the clouds' },
@@ -93,13 +50,11 @@ const EXAMPLE_PROMPTS = [
 
 const REFERENCE_PROMPT = { emoji: '📸', text: 'Transform this photo into a coloring page' };
 
-type StyleSource = 'current' | 'mypages' | 'upload';
 
 function GenerateContent() {
   const { isSignedIn, isLoaded } = useAuth();
   const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const styleFileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedStyle, setSelectedStyle] = useState<'simple' | 'mandala' | 'intricate'>('simple');
   const [prompt, setPrompt] = useState('');
@@ -116,14 +71,6 @@ function GenerateContent() {
   const [referenceFileName, setReferenceFileName] = useState<string>('');
   const [refTrialUsed, setRefTrialUsed] = useState(false);
   const [history, setHistory] = useState<{url: string; style: string; prompt: string; ts: number}[]>([]);
-  const [styledImageUrl, setStyledImageUrl] = useState<string | null>(null);
-  const [selectedArtStyle, setSelectedArtStyle] = useState<string | null>(null);
-  const [isStyling, setIsStyling] = useState(false);
-  const [styleSource, setStyleSource] = useState<StyleSource>('current');
-  const [styleUploadImage, setStyleUploadImage] = useState<string | null>(null);
-  const [selectedMyPagesIdx, setSelectedMyPagesIdx] = useState<number>(0);
-  const [showDescribeMyPages, setShowDescribeMyPages] = useState(false);
-  const [describeMyPagesIdx, setDescribeMyPagesIdx] = useState<number>(0);
 
   useEffect(() => {
     const p = searchParams.get('p');
@@ -192,104 +139,6 @@ function GenerateContent() {
     setPrompt('');
     setReferenceFileName('');
     if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  // Style It: upload image handler
-  const handleStyleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file (PNG, JPG, WEBP)');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image must be under 10MB');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setStyleUploadImage(reader.result as string);
-      setStyleSource('upload');
-    };
-    reader.readAsDataURL(file);
-    setError(null);
-  };
-
-  // Get the image to use for style transfer based on source
-  const getStyleSourceImage = (): string | null => {
-    if (styleSource === 'current') {
-      // If there's a styled result, use that (it's colored); otherwise it's line art
-      return styledImageUrl || generatedImageUrl;
-    }
-    if (styleSource === 'upload') return styleUploadImage;
-    if (styleSource === 'mypages' && history.length > 0) return history[selectedMyPagesIdx]?.url || history[0].url;
-    return generatedImageUrl;
-  };
-
-  // Check if the style source image has color (not just B&W line art)
-  // Line art can't produce good style transfer results
-  const isSourceColoredImage = (): boolean => {
-    if (styleSource === 'current') return !!styledImageUrl;
-    if (styleSource === 'upload') return !!styleUploadImage;
-    // For mypages, assume colored (user chose it intentionally)
-    if (styleSource === 'mypages') return history.length > 0;
-    return false;
-  };
-
-  const handleStyleTransfer = async (artStyle: typeof ARTISTIC_STYLES[0]) => {
-    const sourceImage = getStyleSourceImage();
-    if (!sourceImage) {
-      setError('No image available. Generate a coloring page first or upload an image.');
-      return;
-    }
-    if (!isSourceColoredImage()) {
-      setError('Style It works best with colored images. Please use Auto Color first or upload a colored image. Line art produces unpredictable results.');
-      return;
-    }
-    if (!isSignedIn) { setShowSignIn(true); return; }
-    setSelectedArtStyle(artStyle.id);
-    setIsStyling(true);
-    setStyledImageUrl(null);
-    try {
-      const response = await fetch('/api/style-transfer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageUrl: sourceImage,
-          stylePrompt: artStyle.prompt,
-          styleId: artStyle.id,
-          strength: artStyle.strength || 0.85,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error || 'Style transfer failed. Please try again.');
-        return;
-      }
-      if (data.status === 'processing' && data.requestId) {
-        const maxAttempts = 30;
-        for (let i = 0; i < maxAttempts; i++) {
-          await new Promise(r => setTimeout(r, 3000));
-          try {
-            const statusRes = await fetch('/api/style-transfer?requestId=' + data.requestId);
-            const statusData = await statusRes.json();
-            if (statusData.status === 'completed') {
-              setStyledImageUrl(statusData.imageUrl);
-              break;
-            } else if (statusData.status === 'failed') {
-              setError(statusData.error || 'Style transfer failed.');
-              break;
-            }
-          } catch { /* retry */ }
-        }
-      } else {
-        setStyledImageUrl(data.imageUrl);
-      }
-    } catch {
-      setError('Network error during style transfer.');
-    } finally {
-      setIsStyling(false);
-    }
   };
 
   const handleGenerate = async () => {
@@ -437,391 +286,148 @@ function GenerateContent() {
     }
   };
 
-  // The display image: styled result takes priority, then generated image
-  const displayImageUrl = styledImageUrl || generatedImageUrl;
-
   return (
     <>
       <Navbar />
       <main className="min-h-screen pt-20 pb-8 bg-background">
         <div className="container mx-auto px-4 md:px-6 max-w-7xl">
 
-          {/* Page Title */}
-          <div className="text-center mb-4">
-            <h1 className="font-display text-2xl md:text-3xl text-foreground">
-              Create Your Coloring Page
-            </h1>
-          </div>
+          <div className="flex gap-6">
 
-          {/* ====== LEFT-RIGHT SPLIT LAYOUT ====== */}
-          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Left Panel */}
+            <div className="w-[340px] flex-shrink-0 space-y-4">
 
-            {/* ====== LEFT PANEL: Tools ====== */}
-            <div className="w-full lg:w-[340px] lg:flex-shrink-0 flex flex-col gap-3">
-
-              {/* 1. Prompt Input */}
+              {/* Describe Section */}
               <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Sparkles className="w-3.5 h-3.5 text-[#FFB800]" />
-                  <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Describe</span>
-                </div>
-                <div className="relative">
-                  <textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleGenerate();
-                      }
-                    }}
-                    placeholder="Describe your coloring page..."
-                    rows={3}
-                    className="w-full px-3 py-2.5 text-sm bg-white border-2 border-[#E5E0D5] rounded-xl focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20 outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground pr-10"
-                  />
-                  <span className="absolute right-2 bottom-2 text-[10px] text-muted-foreground/50">
-                    {prompt.length > 0 ? `${prompt.length}/500` : ''}
-                  </span>
-                </div>
-                {/* Upload + From My Pages buttons */}
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border-2",
-                      referenceImage
-                        ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]"
-                        : "border-dashed border-[#C8C0B4] text-muted-foreground/70 hover:border-[#FFB800] hover:text-[#FFB800]"
-                    )}
-                    title={refTrialUsed ? "Upload reference image (5 credits)" : "Upload reference image (Free trial!)"}
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    Upload
-                  </button>
-                  <button
-                    onClick={() => { if (history.length > 0) setShowDescribeMyPages(!showDescribeMyPages); }}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border-2",
-                      history.length > 0
-                        ? "border-[#FFB800] text-[#FFB800] bg-[#FFB800]/5 hover:bg-[#FFB800]/10"
-                        : "border-dashed border-[#C8C0B4] text-muted-foreground/40 cursor-not-allowed"
-                    )}
-                    title={history.length > 0 ? "Use image from your recent generations" : "Generate some pages first"}
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    My Pages
-                  </button>
-                </div>
-                {showDescribeMyPages && history.length > 0 && (
-                  <div className="mt-2">
-                    <div className="flex items-center gap-1 mb-1.5">
-                      <span className="text-[10px] text-muted-foreground font-medium">Select a page as reference:</span>
-                    </div>
-                    <div className="grid grid-cols-5 gap-1">
-                      {history.slice(0, 10).map((item, i) => (
-                        <button
-                          key={item.ts}
-                          onClick={() => {
-                            setDescribeMyPagesIdx(i);
-                            setReferenceImage(item.url);
-                            setReferenceFileName('From My Pages');
-                            setPrompt(REFERENCE_PROMPT.text);
-                            setSelectedStyle('simple');
-                          }}
-                          className={cn(
-                            "aspect-[3/4] rounded-md overflow-hidden border-2 transition-all",
-                            describeMyPagesIdx === i
-                              ? "border-[#FFB800] shadow-sm"
-                              : "border-[#E5E0D5] hover:border-[#FFB800]/50"
-                          )}
-                          title={item.prompt}
-                        >
-                          <img src={item.url} alt="" className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {referenceImage && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <img src={referenceImage} alt="Ref" className="w-8 h-8 object-cover rounded-lg border border-[#FFB800]" />
-                    <span className="text-[10px] text-muted-foreground truncate flex-1">{referenceFileName || 'Reference image'}</span>
-                    <button onClick={removeReference} className="text-[10px] text-red-400 hover:text-red-600">✕</button>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleFileSelect}
-                  className="hidden"
+                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#FFB800] text-white text-[10px] flex items-center justify-center font-bold">1</span>
+                  Describe
+                </h3>
+
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe your coloring page..."
+                  className="w-full p-3 rounded-xl border-2 border-[#E5E0D5] bg-white text-sm resize-none focus:outline-none focus:border-[#FFB800] transition-colors min-h-[80px]"
+                  rows={3}
                 />
+
                 {/* Example Prompts */}
-                {!generatedImageUrl && !isGenerating && (
-                  <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-[#E5E0D5]/50">
-                    {EXAMPLE_PROMPTS.map((ex, i) => (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {EXAMPLE_PROMPTS.slice(0, 4).map((ex) => (
+                    <button
+                      key={ex.text}
+                      onClick={() => setPrompt(ex.text)}
+                      className="text-[10px] px-2 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#FFB800] transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                      {ex.emoji} {ex.text.split(' ').slice(0, 3).join(' ')}...
+                    </button>
+                  ))}
+                </div>
+
+                {/* Reference Image */}
+                <div className="mt-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  {referenceImage ? (
+                    <div className="relative">
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-[#FFB800] bg-white">
+                        <img src={referenceImage} alt="Reference" className="w-full h-full object-contain" />
+                      </div>
                       <button
-                        key={i}
-                        onClick={() => setPrompt(ex.text)}
-                        className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] rounded-full border border-[#E5E0D5] bg-white hover:border-[#FFB800] hover:bg-[#FFB800]/5 transition-all text-muted-foreground hover:text-foreground"
+                        onClick={removeReference}
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center hover:bg-red-600"
                       >
-                        <span>{ex.emoji}</span>
-                        <span>{ex.text}</span>
+                        ✕
                       </button>
-                    ))}
-                  </div>
-                )}
+                      <p className="text-[10px] text-muted-foreground mt-1">{referenceFileName}</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-2 rounded-lg border-2 border-dashed border-[#E5E0D5] flex items-center justify-center gap-1.5 hover:border-[#FFB800]/50 transition-colors text-xs text-muted-foreground"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      Upload reference photo
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* 2. Line Style Selection - FIXED thumbnails */}
-              <div className="rounded-2xl p-3 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Palette className="w-3.5 h-3.5 text-[#FFB800]" />
-                  <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Line Style</span>
-                </div>
-                <div className="flex gap-2">
+              {/* Line Style Section */}
+              <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
+                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#FF6B6B] text-white text-[10px] flex items-center justify-center font-bold">2</span>
+                  Line Style
+                </h3>
+
+                <div className="grid grid-cols-3 gap-2">
                   {styles.map((style) => (
                     <button
                       key={style.id}
                       onClick={() => setSelectedStyle(style.id)}
-                      disabled={!!referenceImage}
                       className={cn(
-                        "flex-1 rounded-xl overflow-hidden transition-all border-2",
-                        selectedStyle === style.id && !referenceImage
-                          ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
-                          : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
-                        referenceImage && "opacity-40 cursor-not-allowed"
+                        "rounded-xl border-2 overflow-hidden transition-all",
+                        selectedStyle === style.id
+                          ? "border-[#FFB800] shadow-sm"
+                          : "border-[#E5E0D5] hover:border-[#FFB800]/50"
                       )}
-                      title={style.desc}
                     >
-                      <img
-                        src={style.thumbnail}
-                        alt={style.label}
-                        className="w-full h-16 object-cover object-top bg-[#f5f3ef]"
-                      />
-                      <div className="py-1 px-1 text-center bg-white/50">
-                        <span className="text-[10px] font-semibold text-foreground/80">{style.label}</span>
+                      <div className="aspect-[3/4] bg-gray-100">
+                        <img src={style.thumbnail} alt={style.label} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="p-1.5 text-center">
+                        <div className="text-[10px] font-semibold text-foreground">{style.emoji} {style.label}</div>
+                        <div className="text-[8px] text-muted-foreground">{style.desc}</div>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* 3. Generate Button + Usage */}
-              <div className="space-y-2">
+              {/* Generate Button */}
+              <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
+                <div className="text-[10px] text-muted-foreground mb-2">
+                  💰 Costs {referenceImage ? '6' : '1'} credit · {pageLimit - pagesUsed} remaining
+                </div>
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating || !prompt.trim()}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FFB800] to-[#FF6B6B] text-white font-semibold text-sm flex items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(255,107,107,0.3)] hover:shadow-[0_4px_16px_rgba(255,107,107,0.4)] transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  className="w-full py-3 rounded-xl font-semibold text-[#1A1A2E] flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 text-sm"
+                  style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                 >
                   {isGenerating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
                   ) : (
-                    <Sparkles className="w-4 h-4" />
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Generate
+                    </>
                   )}
-                  Generate
                 </button>
-                {/* Hint line */}
-                <div className="flex items-center justify-between px-1">
-                  <p className="text-[10px] text-muted-foreground">
-                    {referenceImage
-                      ? (refTrialUsed ? '📎 Ref mode (5 credits)' : '🎁 Ref mode (Free trial!)')
-                      : `${styles.find(s => s.id === selectedStyle)?.emoji} ${styles.find(s => s.id === selectedStyle)?.label} style`}
-                    {!isSignedIn && isLoaded && (
-                      <>
-                        {' · '}
-                        <button
-                          onClick={() => setShowSignIn(true)}
-                          className="text-[#FFB800] hover:underline font-semibold"
-                        >
-                          Sign in for 2 free
-                        </button>
-                      </>
-                    )}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">Enter ↵</p>
-                </div>
-                {/* Usage bar */}
-                {isSignedIn && (
-                  <div className="flex items-center gap-2 px-1">
-                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ${
-                      plan === 'business' ? 'bg-purple-100 text-purple-700' :
-                      plan === 'pro' ? 'bg-amber-100 text-amber-700' :
-                      plan === 'starter' ? 'bg-green-100 text-green-700' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {plan}
-                    </span>
-                    <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          pagesUsed >= pageLimit ? 'bg-red-400' :
-                          pagesUsed >= pageLimit * 0.8 ? 'bg-amber-400' :
-                          'bg-green-400'
-                        }`}
-                        style={{ width: `${Math.min(100, (pagesUsed / pageLimit) * 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                      {pagesUsed}/{pageLimit}
-                    </span>
-                    {pagesUsed >= pageLimit && (
-                      <Link href="/pricing" className="text-[10px] text-[#FFB800] font-semibold hover:underline">
-                        Upgrade
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* 4. Style It Section - UPGRADED with thumbnails + source tabs */}
-              <div className="rounded-2xl p-3 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Wand2 className="w-3.5 h-3.5 text-[#FFB800]" />
-                  <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Style It</span>
-                  <span className="text-[9px] text-muted-foreground/60">Transform into artwork</span>
-                </div>
-
-                {/* Source tabs */}
-                <div className="flex gap-1 mb-2">
-                  <button
-                    onClick={() => setStyleSource('current')}
-                    className={cn(
-                      "flex-1 py-1.5 rounded-lg text-[10px] font-semibold text-center transition-all border",
-                      styleSource === 'current'
-                        ? "border-[#FFB800] text-[#FFB800] bg-[#FFB800]/5"
-                        : "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800]/50"
-                    )}
-                  >
-                    🖼️ Preview
-                  </button>
-                  <button
-                    onClick={() => { if (history.length > 0) setStyleSource('mypages'); }}
-                    className={cn(
-                      "flex-1 py-1.5 rounded-lg text-[10px] font-semibold text-center transition-all border",
-                      styleSource === 'mypages'
-                        ? "border-[#FFB800] text-[#FFB800] bg-[#FFB800]/5"
-                        : history.length > 0
-                          ? "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800]/50"
-                          : "border-[#E5E0D5] text-muted-foreground/40 cursor-not-allowed"
-                    )}
-                  >
-                    🖼️ My Pages
-                  </button>
-                  <button
-                    onClick={() => styleFileInputRef.current?.click()}
-                    className={cn(
-                      "flex-1 py-1.5 rounded-lg text-[10px] font-semibold text-center transition-all border",
-                      styleSource === 'upload'
-                        ? "border-[#FFB800] text-[#FFB800] bg-[#FFB800]/5"
-                        : "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800]/50"
-                    )}
-                  >
-                    📁 Upload
-                  </button>
-                </div>
-                <input
-                  ref={styleFileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleStyleFileSelect}
-                  className="hidden"
-                />
-
-                {/* Source preview thumbnail */}
-                {styleSource === 'upload' && styleUploadImage && (
-                  <div className="mb-2 flex items-center gap-2 p-2 bg-[#FFB800]/5 rounded-lg">
-                    <img src={styleUploadImage} alt="Style source" className="w-10 h-10 object-cover rounded-md border border-[#FFB800]" />
-                    <span className="text-[10px] text-muted-foreground">Uploaded image</span>
-                    <button onClick={() => { setStyleUploadImage(null); setStyleSource('current'); }} className="ml-auto text-[10px] text-red-400 hover:text-red-600">✕</button>
-                  </div>
-                )}
-                {styleSource === 'mypages' && history.length > 0 && (
-                  <div className="mb-2">
-                    <div className="flex items-center gap-1 mb-1.5">
-                      <span className="text-[10px] text-muted-foreground font-medium">Select a page:</span>
-                    </div>
-                    <div className="grid grid-cols-5 gap-1">
-                      {history.slice(0, 10).map((item, i) => (
-                        <button
-                          key={item.ts}
-                          onClick={() => setSelectedMyPagesIdx(i)}
-                          className={cn(
-                            "aspect-[3/4] rounded-md overflow-hidden border-2 transition-all",
-                            selectedMyPagesIdx === i
-                              ? "border-[#FFB800] shadow-sm"
-                              : "border-[#E5E0D5] hover:border-[#FFB800]/50"
-                          )}
-                        >
-                          <img src={item.url} alt="" className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Line art warning */}
-                {getStyleSourceImage() && !isSourceColoredImage() && (
-                  <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-[9px] text-amber-700 leading-tight">⚠️ Line art detected. Style It works best with colored images. Try Auto Color first!</p>
-                  </div>
-                )}
-                {/* 5 Art Style Thumbnails - 3+2 grid */}
-                <div className="grid grid-cols-3 gap-1.5">
-                  {ARTISTIC_STYLES.map((art) => (
-                    <button
-                      key={art.id}
-                      onClick={() => handleStyleTransfer(art)}
-                      disabled={isStyling || !getStyleSourceImage() || !isSourceColoredImage()}
-                      className={cn(
-                        "rounded-xl overflow-hidden transition-all border-2",
-                        selectedArtStyle === art.id
-                          ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
-                          : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
-                        (isStyling && selectedArtStyle !== art.id) && "opacity-40",
-                        (!getStyleSourceImage() || !isSourceColoredImage()) && "opacity-40 cursor-not-allowed"
-                      )}
-                      title={art.desc}
-                    >
-                      <img
-                        src={art.thumbnail}
-                        alt={art.label}
-                        className="w-full aspect-[3/4] object-cover object-top bg-[#f5f3ef]"
-                      />
-                      <div className="py-1 px-0.5 text-center bg-white/50">
-                        <span className="text-[8px] font-semibold text-foreground/70 leading-tight block">{art.label}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                {isStyling && (
-                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FFB800]" />
-                    <span>Applying {ARTISTIC_STYLES.find(s => s.id === selectedArtStyle)?.label}...</span>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* ====== RIGHT PANEL: Image Display ====== */}
+            {/* RIGHT PANEL: Image Display */}
             <div className="flex-1 flex flex-col gap-3">
 
               {/* Main Image Area */}
               <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-border min-h-[400px] lg:min-h-[520px] flex items-center justify-center">
-                {displayImageUrl ? (
+                {generatedImageUrl ? (
                   <div className="w-full">
                     <img
-                      src={displayImageUrl}
+                      src={generatedImageUrl}
                       alt="Generated coloring page"
                       className="w-full h-auto max-h-[560px] object-contain rounded-xl"
                     />
-                    {styledImageUrl && (
-                      <div className="mt-2 text-center">
-                        <span className="text-[10px] text-muted-foreground">
-                          ✨ {ARTISTIC_STYLES.find(s => s.id === selectedArtStyle)?.label} style applied
-                        </span>
-                      </div>
-                    )}
                   </div>
                 ) : isGenerating ? (
                   <div className="text-center">
@@ -859,14 +465,16 @@ function GenerateContent() {
                     <RotateCcw className="w-4 h-4" />
                     Regenerate
                   </button>
+
                   <Link
-                    href={`/color?src=${encodeURIComponent(generatedImageUrl)}`}
+                    href={`/auto-color?src=${encodeURIComponent(generatedImageUrl)}`}
                     className="flex-1 py-2.5 rounded-xl text-[#1A1A2E] font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 text-sm"
                     style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                   >
-                    <Palette className="w-4 h-4" />
-                    Color It!
+                    <Paintbrush className="w-4 h-4" />
+                    Auto Color
                   </Link>
+
                   <div className="relative">
                     <button
                       onClick={() => { if (canExportPDF(plan)) { setDlOpen(!dlOpen); } else { handleDownload(); } }}
@@ -887,20 +495,6 @@ function GenerateContent() {
                       </div>
                     )}
                   </div>
-                  {styledImageUrl && (
-                    <button
-                      onClick={() => {
-                        const a = document.createElement('a');
-                        a.href = styledImageUrl;
-                        a.download = 'pixcraftx-styled-' + selectedArtStyle + '-' + Date.now() + '.png';
-                        a.click();
-                      }}
-                      className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      Save Styled
-                    </button>
-                  )}
                 </div>
               )}
 
@@ -918,10 +512,10 @@ function GenerateContent() {
                     {history.slice(0, 12).map((item, i) => (
                       <button
                         key={item.ts}
-                        onClick={() => { setGeneratedImageUrl(item.url); setSelectedStyle(item.style as any); setStyledImageUrl(null); setSelectedArtStyle(null); }}
+                        onClick={() => { setGeneratedImageUrl(item.url); setSelectedStyle(item.style as any); }}
                         className={cn(
                           "group relative rounded-lg overflow-hidden border-2 transition-all aspect-[3/4]",
-                          generatedImageUrl === item.url && !styledImageUrl
+                          generatedImageUrl === item.url
                             ? "border-[#FFB800] shadow-sm"
                             : "border-[#E5E0D5] hover:border-[#FFB800]/50"
                         )}
@@ -964,7 +558,7 @@ function GenerateContent() {
               href="mailto:support@pixcraftx.com?subject=PixCraftX%20Feedback"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-[#FFB800] transition-colors"
             >
-              💬 Have feedback? We&apos;d love to hear from you
+              💬 Have feedback? We'd love to hear from you
             </a>
           </div>
         </div>

@@ -237,13 +237,10 @@ export async function POST(req: NextRequest) {
       const startTime = Date.now();
       const maxWait = 50000; // 50 seconds max wait
       while (Date.now() - startTime < maxWait) {
-        const status = await fal.queue.status(falModel, { request_id });
+        const status = await fal.queue.status(falModel, { requestId: request_id });
         if (status.status === 'COMPLETED') {
-          result = await fal.queue.result(falModel, { request_id });
+          result = await fal.queue.result(falModel, { requestId: request_id });
           break;
-        }
-        if (status.status === 'FAILED') {
-          return NextResponse.json({ error: 'HD generation failed' }, { status: 500 });
         }
         await new Promise(r => setTimeout(r, 2000)); // poll every 2s
       }

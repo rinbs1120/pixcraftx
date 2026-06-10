@@ -7,20 +7,27 @@ import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
 
 // Style-specific prompt modifiers
+// Style-specific prompt modifiers
 const STYLE_PROMPTS = {
   simple: {
-    prefix: "vector line art coloring page, bold thick black outlines minimum 3pt weight, pure black ink on white paper, clean closed contours, complete line borders, simple shapes with large areas to color, isolated subject on plain white background,",
+    prefix: "vector line art coloring page, bold thick black outlines minimum 3pt weight, pure black ink on white paper, clean closed contours, complete line borders, simple shapes with large areas to color, isolated subject on plain white background,
+",
     suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, cartoon style outline only, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   },
   mandala: {
-    prefix: "vector line art coloring page, symmetrical mandala pattern, pure black ink on white paper, consistent medium line weight, clean closed contours, complete line borders, circular geometric design,",
+    prefix: "vector line art coloring page, symmetrical mandala pattern, pure black ink on white paper, consistent medium line weight, clean closed contours, complete line borders, circular geometric design,
+",
     suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   },
   intricate: {
-    prefix: "vector line art coloring page for adults, fine detailed black outlines, intricate patterns, pure black ink on white paper, professional illustration, clean closed contours, complete line borders, distinct separated elements,",
+    prefix: "vector line art coloring page for adults, fine detailed black outlines, intricate patterns, pure black ink on white paper, professional illustration, clean closed contours, complete line borders, distinct separated elements,
+",
     suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders including all background elements like trees mountains clouds, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   }
 };
+
+// Negative prompt to suppress color leakage in Kolors model
+const NEGATIVE_PROMPT = "color, colored, colorful, paint, painted, watercolor, filled, fill, shading, shadow, gradient, grayscale, grey, gray, tint, hue, saturation, pigment, watercolor wash, ink wash, tone, tonal, realistic, photograph, 3D render, illustration with color, dyed, stain, tinted, chromatic, polychrome, multicolor";
 
 // Credit costs - Kolors is cheaper than FLUX
 const GENERATE_CREDIT_COSTS = {
@@ -246,6 +253,7 @@ export async function POST(req: NextRequest) {
         batch_size: 1,
         num_inference_steps: inferenceSteps,
         guidance_scale: 7.5,
+        negative_prompt: NEGATIVE_PROMPT,
       }),
     });
 

@@ -76,11 +76,12 @@ export async function POST(req: NextRequest) {
         canny_preprocess: true,
         teed_image_url: imageUrl,
         teed_preprocess: true,
-        // Control parameters
+        // Control parameters - optimized for Vercel free tier (10s timeout)
+        // Reduced steps from 35→18, guidance from 7.5→6 to fit within timeout
         controlnet_conditioning_scale: 0.8,  // Strong constraint to keep outlines
-        strength: 0.7,                        // Preserve original structure
-        guidance_scale: 7.5,
-        num_inference_steps: 35,
+        strength: 0.65,                       // Slightly less to preserve structure with fewer steps
+        guidance_scale: 6,
+        num_inference_steps: 18,
         num_images: 1,
         format: 'png',
         enable_safety_checker: true,

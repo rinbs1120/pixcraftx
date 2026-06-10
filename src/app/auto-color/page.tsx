@@ -182,7 +182,7 @@ function AutoColorContent() {
             <div className="w-[340px] flex-shrink-0 space-y-4">
 
               {/* Step 1: Choose Image */}
-              <div className="rounded-2xl p-4 shadow-sm border border-border bg-white">
+              <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-[#FFB800] text-white text-[10px] flex items-center justify-center font-bold">1</span>
                   Choose a Coloring Page
@@ -273,7 +273,7 @@ function AutoColorContent() {
               </div>
 
               {/* Step 2: Choose Palette */}
-              <div className="rounded-2xl p-4 shadow-sm border border-border bg-white">
+              <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-[#FF6B6B] text-white text-[10px] flex items-center justify-center font-bold">2</span>
                   Pick a Color Palette
@@ -306,7 +306,7 @@ function AutoColorContent() {
               </div>
 
               {/* Step 3: Generate */}
-              <div className="rounded-2xl p-4 shadow-sm border border-border bg-white">
+              <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
                   <span className="w-5 h-5 rounded-full bg-gradient-to-r from-[#FFB800] to-[#FF6B6B] text-white text-[10px] flex items-center justify-center font-bold">3</span>
                   Generate

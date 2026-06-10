@@ -122,6 +122,8 @@ function GenerateContent() {
   const [styleSource, setStyleSource] = useState<StyleSource>('current');
   const [styleUploadImage, setStyleUploadImage] = useState<string | null>(null);
   const [selectedMyPagesIdx, setSelectedMyPagesIdx] = useState<number>(0);
+  const [showDescribeMyPages, setShowDescribeMyPages] = useState(false);
+  const [describeMyPagesIdx, setDescribeMyPagesIdx] = useState<number>(0);
 
   useEffect(() => {
     const p = searchParams.get('p');
@@ -141,6 +143,24 @@ function GenerateContent() {
         if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
         if (data.limit) setPageLimit(data.limit);
         if (data.refTrialUsed !== undefined) setRefTrialUsed(data.refTrialUsed);
+      })
+      .catch(() => {});
+  }, [isSignedIn]);
+
+  // Load history from DB (persistent across page navigations)
+  useEffect(() => {
+    if (!isSignedIn) return;
+    fetch('/api/history')
+      .then(res => res.json())
+      .then(data => {
+        if (data.records) {
+          setHistory(data.records.map((r: any) => ({
+            url: r.image_url,
+            style: r.style,
+            prompt: r.prompt,
+            ts: new Date(r.created_at).getTime(),
+          })));
+        }
       })
       .catch(() => {});
   }, [isSignedIn]);
@@ -462,7 +482,7 @@ function GenerateContent() {
                     Upload
                   </button>
                   <button
-                    onClick={() => { if (history.length > 0) setStyleSource('mypages'); }}
+                    onClick={() => { if (history.length > 0) setShowDescribeMyPages(!showDescribeMyPages); }}
                     className={cn(
                       "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border-2",
                       history.length > 0
@@ -475,6 +495,36 @@ function GenerateContent() {
                     My Pages
                   </button>
                 </div>
+                {showDescribeMyPages && history.length > 0 && (
+                  <div className="mt-2">
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <span className="text-[10px] text-muted-foreground font-medium">Select a page as reference:</span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1">
+                      {history.slice(0, 10).map((item, i) => (
+                        <button
+                          key={item.ts}
+                          onClick={() => {
+                            setDescribeMyPagesIdx(i);
+                            setReferenceImage(item.url);
+                            setReferenceFileName('From My Pages');
+                            setPrompt(REFERENCE_PROMPT.text);
+                            setSelectedStyle('simple');
+                          }}
+                          className={cn(
+                            "aspect-[3/4] rounded-md overflow-hidden border-2 transition-all",
+                            describeMyPagesIdx === i
+                              ? "border-[#FFB800] shadow-sm"
+                              : "border-[#E5E0D5] hover:border-[#FFB800]/50"
+                          )}
+                          title={item.prompt}
+                        >
+                          <img src={item.url} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {referenceImage && (
                   <div className="mt-2 flex items-center gap-2">
                     <img src={referenceImage} alt="Ref" className="w-8 h-8 object-cover rounded-lg border border-[#FFB800]" />
@@ -507,7 +557,7 @@ function GenerateContent() {
               </div>
 
               {/* 2. Line Style Selection - FIXED thumbnails */}
-              <div className="rounded-2xl p-3 shadow-sm border border-border bg-white">
+              <div className="rounded-2xl p-3 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <div className="flex items-center gap-1.5 mb-2">
                   <Palette className="w-3.5 h-3.5 text-[#FFB800]" />
                   <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Line Style</span>
@@ -532,7 +582,7 @@ function GenerateContent() {
                         alt={style.label}
                         className="w-full h-16 object-cover object-top bg-[#f5f3ef]"
                       />
-                      <div className="py-1 px-1 text-center bg-white">
+                      <div className="py-1 px-1 text-center bg-white/50">
                         <span className="text-[10px] font-semibold text-foreground/80">{style.label}</span>
                       </div>
                     </button>
@@ -608,7 +658,7 @@ function GenerateContent() {
               </div>
 
               {/* 4. Style It Section - UPGRADED with thumbnails + source tabs */}
-              <div className="rounded-2xl p-3 shadow-sm border border-border bg-white">
+              <div className="rounded-2xl p-3 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <div className="flex items-center gap-1.5 mb-2">
                   <Wand2 className="w-3.5 h-3.5 text-[#FFB800]" />
                   <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Style It</span>
@@ -710,18 +760,12 @@ function GenerateContent() {
                       )}
                       title={art.desc}
                     >
-                      <div className="w-full aspect-[3/4] flex items-center justify-center text-2xl"
-                        style={{
-                          background: art.id === 'chubby-doodle' ? 'linear-gradient(135deg, #fff5e6, #ffe0cc)' :
-                            art.id === 'pop-art' ? 'linear-gradient(135deg, #ffe6f0, #ffd6e8)' :
-                            art.id === 'city-pop' ? 'linear-gradient(135deg, #e6f0ff, #d6e8ff)' :
-                            art.id === 'fridge-magnet' ? 'linear-gradient(135deg, #f0ffe6, #e8ffd6)' :
-                            'linear-gradient(135deg, #f5e6ff, #edd6ff)'
-                        }}
-                      >
-                        {art.id === 'chubby-doodle' ? '🖍️' : art.id === 'pop-art' ? '💥' : art.id === 'city-pop' ? '🌆' : art.id === 'fridge-magnet' ? '🧲' : '✏️'}
-                      </div>
-                      <div className="py-1 px-0.5 text-center bg-white">
+                      <img
+                        src={art.thumbnail}
+                        alt={art.label}
+                        className="w-full aspect-[3/4] object-cover object-top bg-[#f5f3ef]"
+                      />
+                      <div className="py-1 px-0.5 text-center bg-white/50">
                         <span className="text-[8px] font-semibold text-foreground/70 leading-tight block">{art.label}</span>
                       </div>
                     </button>
@@ -837,7 +881,7 @@ function GenerateContent() {
                 </div>
               )}
 
-              {/* Generation History - ALWAYS VISIBLE */}
+              {/* Generation History - ALWAYS VISIBLE, loaded from DB */}
               <div className="rounded-2xl p-3 shadow-sm border border-border bg-white">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Clock className="w-3.5 h-3.5 text-muted-foreground" />
@@ -847,13 +891,13 @@ function GenerateContent() {
                   )}
                 </div>
                 {history.length > 0 ? (
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {history.map((item, i) => (
+                  <div className="grid grid-cols-4 gap-2">
+                    {history.slice(0, 12).map((item, i) => (
                       <button
                         key={item.ts}
                         onClick={() => { setGeneratedImageUrl(item.url); setSelectedStyle(item.style as any); setStyledImageUrl(null); setSelectedArtStyle(null); }}
                         className={cn(
-                          "flex-shrink-0 w-12 h-16 rounded-lg overflow-hidden border-2 transition-all",
+                          "group relative rounded-lg overflow-hidden border-2 transition-all aspect-[3/4]",
                           generatedImageUrl === item.url && !styledImageUrl
                             ? "border-[#FFB800] shadow-sm"
                             : "border-[#E5E0D5] hover:border-[#FFB800]/50"
@@ -861,12 +905,15 @@ function GenerateContent() {
                         title={item.prompt}
                       >
                         <img src={item.url} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-[8px] text-white truncate">{item.prompt}</p>
+                        </div>
                       </button>
                     ))}
                   </div>
                 ) : (
                   <p className="text-[10px] text-muted-foreground/50 text-center py-2">
-                    Generated pages will appear here
+                    {isSignedIn ? "Generated pages will appear here" : "Sign in to see your history"}
                   </p>
                 )}
               </div>

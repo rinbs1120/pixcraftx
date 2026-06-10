@@ -11,16 +11,16 @@ const SILICONFLOW_API = 'https://api.siliconflow.cn/v1/images/generations';
 
 const COLOR_PALETTES: Record<string, { prompt: string; negative: string }> = {
   pastel: {
-    prompt: 'Keep the same subject and composition as the original image. A beautifully colored Oriental fantasy illustration with soft pastel colors inspired by Chinese ink wash painting, macaron shades of cherry blossom pink jade green lavender imperial yellow and celadon blue, gentle pearlescent light tones, smooth gradients like flowing silk, dreamy Eastern atmosphere with golden particle dust, coloring book style, colors filled neatly within the outlines',
-    negative: 'dark colors, neon, harsh contrast, muddy, oversaturated, grayscale, black and white, blurry, distorted, low quality',
+    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A beautifully colored Oriental fantasy illustration with soft pastel colors inspired by Chinese ink wash painting, macaron shades of cherry blossom pink jade green lavender imperial yellow and celadon blue, gentle pearlescent light tones, smooth gradients like flowing silk, dreamy Eastern atmosphere with golden particle dust, coloring book style, colors filled neatly within the outlines',
+    negative: 'dark colors, neon, harsh contrast, muddy, oversaturated, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
   },
   vivid: {
-    prompt: 'Keep the same subject and composition as the original image. A vibrantly colored Oriental fantasy illustration with bold vivid colors inspired by Chinese silk embroidery and Dunhuang murals, saturated imperial red jade green sapphire blue and gold accents, rich traditional Caihui decorative palette, clean flat color fills with golden outline highlights, coloring book style, colors filled neatly within the outlines, Eastern palace aesthetic',
-    negative: 'muted, pastel, dull, grayscale, black and white, blurry, distorted, low quality, washed out',
+    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A vibrantly colored Oriental fantasy illustration with bold vivid colors inspired by Chinese silk embroidery and Dunhuang murals, saturated imperial red jade green sapphire blue and gold accents, rich traditional Caihui decorative palette, clean flat color fills with golden outline highlights, coloring book style, colors filled neatly within the outlines, Eastern palace aesthetic',
+    negative: 'muted, pastel, dull, grayscale, black and white, blurry, distorted, low quality, washed out, different subject, changed subject, new subject, extra subject, replaced subject',
   },
   muted: {
-    prompt: 'Keep the same subject and composition as the original image. A beautifully colored Oriental fantasy illustration with muted earthy tones inspired by Tang Dynasty sancai pottery and Song Dynasty celadon, desaturated warm colors of sage green terracotta indigo rice-paper white and aged bronze, soft wabi-sabi vintage aesthetic, subtle and sophisticated Eastern palette, coloring book style, colors filled neatly within the outlines',
-    negative: 'neon, bright, vivid, oversaturated, harsh, garish, grayscale, black and white, blurry, distorted, low quality',
+    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A beautifully colored Oriental fantasy illustration with muted earthy tones inspired by Tang Dynasty sancai pottery and Song Dynasty celadon, desaturated warm colors of sage green terracotta indigo rice-paper white and aged bronze, soft wabi-sabi vintage aesthetic, subtle and sophisticated Eastern palette, coloring book style, colors filled neatly within the outlines',
+    negative: 'neon, bright, vivid, oversaturated, harsh, garish, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
   },
 };
 
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         image_size: '960x1280',
         batch_size: 1,
         num_inference_steps: 30,
-        guidance_scale: 7.5,
+        guidance_scale: 10,
       }),
     });
 

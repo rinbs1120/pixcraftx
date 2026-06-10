@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
+import sharp from 'sharp';
 
 // Style-specific prompt modifiers
 // Style-specific prompt modifiers
@@ -24,13 +25,25 @@ const STYLE_PROMPTS = {
 };
 
 // Negative prompt to suppress color leakage in Kolors model
-const NEGATIVE_PROMPT = "color, colored, colorful, paint, painted, watercolor, filled, fill, shading, shadow, gradient, grayscale, grey, gray, tint, hue, saturation, pigment, watercolor wash, ink wash, tone, tonal, realistic, photograph, 3D render, illustration with color, dyed, stain, tinted, chromatic, polychrome, multicolor";
+const NEGATIVE_PROMPT = "color, colored, colorful, paint, painted, watercolor, filled, fill, shading, shadow, gradient, grayscale, grey, gray, tint, hue, saturation, pigment, watercolor wash, ink wash, tone, tonal, realistic, photograph, 3D render, illustration with color, dyed, stain, tinted, chromatic, polychrome, multicolor, any color, slightest color, color tint, color wash, pastel colors, bright colors, dark colors, warm colors, cool colors, green, blue, red, pink, yellow, orange, purple, brown, gold";
 
 // Credit costs - Kolors is cheaper than FLUX
 const GENERATE_CREDIT_COSTS = {
   fast: 1,   // Kolors 30 steps (currently free on SiliconFlow)
   hd: 2,     // Kolors 50 steps (cheaper than old FLUX HD)
 };
+
+
+
+// Post-process: ensure pure B&W line art (remove any color leakage from Kolors)
+async function toPureBWLineArt(imageBuffer: Buffer): Promise<Buffer> {
+  return sharp(imageBuffer)
+    .grayscale()      // Remove all color channels
+    .normalize()      // Auto-stretch contrast (darkest→0, lightest→255)
+    .threshold(180)   // Force pure B&W: pixels > 180 → white, ≤ 180 → black
+    .png()
+    .toBuffer();
+}
 
 const REFERENCE_COST = 5;  // AILabTools ~$0.02
 
@@ -252,7 +265,7 @@ export async function POST(req: NextRequest) {
         image_size: kolorsImageSize,
         batch_size: 1,
         num_inference_steps: inferenceSteps,
-        guidance_scale: 7.5,
+        guidance_scale: 12,
         negative_prompt: NEGATIVE_PROMPT,
       }),
     });
@@ -278,10 +291,18 @@ export async function POST(req: NextRequest) {
 
     try {
       const imageResponse = await fetch(tempImageUrl);
-      const imageBuffer = await imageResponse.arrayBuffer();
+      let imageBuffer: ArrayBuffer | Buffer = await imageResponse.arrayBuffer();
+      // Post-process: ensure pure B&W line art (Kolors often leaks color)
+      try {
+        const bwBuffer = await toPureBWLineArt(Buffer.from(imageBuffer));
+        imageBuffer = bwBuffer;
+        console.log('[Generate] B&W post-processing applied');
+      } catch (ppErr) {
+        console.error('[Generate] B&W post-processing failed, using raw:', ppErr);
+      }
       const timestamp = Date.now();
-      const responseContentType = imageResponse.headers.get('content-type') || 'image/png';
-      const fileExt = responseContentType.includes('webp') ? 'webp' : 'png';
+      const responseContentType = 'image/png'; // sharp outputs PNG after B&W processing
+      const fileExt = 'png';
       const filePath = `${userId}/${style}-${timestamp}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('coloring-pages').upload(filePath, imageBuffer, { contentType: responseContentType, upsert: false });
       if (uploadError) { console.error('[Storage] Upload failed:', uploadError); storageFailed = true; }

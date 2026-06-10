@@ -322,13 +322,13 @@ function GenerateContent() {
 
                 {/* Example Prompts */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  {EXAMPLE_PROMPTS.slice(0, 4).map((ex) => (
+                  {EXAMPLE_PROMPTS.map((ex) => (
                     <button
                       key={ex.text}
                       onClick={() => setPrompt(ex.text)}
                       className="text-[10px] px-2 py-1 rounded-full bg-white border border-[#E5E0D5] hover:border-[#FFB800] transition-colors text-muted-foreground hover:text-foreground"
                     >
-                      {ex.emoji} {ex.text.split(' ').slice(0, 3).join(' ')}...
+                      {ex.emoji} {ex.text.length > 20 ? ex.text.slice(0, 20) + '...' : ex.text}
                     </button>
                   ))}
                 </div>

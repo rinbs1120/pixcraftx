@@ -463,6 +463,18 @@ function GenerateContent() {
                       {referenceImage ? 'Transforming your reference image...' : 'This usually takes 10-30 seconds'}
                     </p>
                   </div>
+                ) : error ? (
+                  <div className="text-center px-4">
+                    <div className="relative mb-4">
+                      <AlertCircle className="w-12 h-12 mx-auto text-red-400" />
+                    </div>
+                    <p className="text-red-700 text-sm font-medium mb-2">{error}</p>
+                    {(error.includes('credit') || error.includes('limit')) && (
+                      <Link href="/pricing" className="text-red-600 underline text-xs hover:text-red-800">
+                        View pricing plans →
+                      </Link>
+                    )}
+                  </div>
                 ) : (
                   <div className="text-center text-muted-foreground">
                     <div className="relative mb-4">
@@ -560,20 +572,7 @@ function GenerateContent() {
             </div>
           </div>
 
-          {/* Error Display */}
-          {error && (
-            <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-red-700 text-sm font-medium">{error}</p>
-                {(error.includes('credit') || error.includes('limit')) && (
-                  <Link href="/pricing" className="text-red-600 underline text-xs hover:text-red-800">
-                    View pricing plans →
-                  </Link>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Error Display - now shown in preview area */}
 
           {/* Feedback */}
           <div className="text-center mt-6">

@@ -121,6 +121,7 @@ function GenerateContent() {
   const [isStyling, setIsStyling] = useState(false);
   const [styleSource, setStyleSource] = useState<StyleSource>('current');
   const [styleUploadImage, setStyleUploadImage] = useState<string | null>(null);
+  const [selectedMyPagesIdx, setSelectedMyPagesIdx] = useState<number>(0);
 
   useEffect(() => {
     const p = searchParams.get('p');
@@ -198,7 +199,7 @@ function GenerateContent() {
   const getStyleSourceImage = (): string | null => {
     if (styleSource === 'current') return generatedImageUrl;
     if (styleSource === 'upload') return styleUploadImage;
-    if (styleSource === 'mypages' && history.length > 0) return history[0].url;
+    if (styleSource === 'mypages' && history.length > 0) return history[selectedMyPagesIdx]?.url || history[0].url;
     return generatedImageUrl;
   };
 
@@ -669,9 +670,26 @@ function GenerateContent() {
                   </div>
                 )}
                 {styleSource === 'mypages' && history.length > 0 && (
-                  <div className="mb-2 flex items-center gap-2 p-2 bg-[#FFB800]/5 rounded-lg">
-                    <img src={history[0].url} alt="From history" className="w-10 h-10 object-cover rounded-md border border-[#FFB800]" />
-                    <span className="text-[10px] text-muted-foreground">Latest generation</span>
+                  <div className="mb-2">
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <span className="text-[10px] text-muted-foreground font-medium">Select a page:</span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1">
+                      {history.slice(0, 10).map((item, i) => (
+                        <button
+                          key={item.ts}
+                          onClick={() => setSelectedMyPagesIdx(i)}
+                          className={cn(
+                            "aspect-[3/4] rounded-md overflow-hidden border-2 transition-all",
+                            selectedMyPagesIdx === i
+                              ? "border-[#FFB800] shadow-sm"
+                              : "border-[#E5E0D5] hover:border-[#FFB800]/50"
+                          )}
+                        >
+                          <img src={item.url} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 

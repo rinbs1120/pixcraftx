@@ -38,14 +38,22 @@ const styles = [
 
 
 const EXAMPLE_PROMPTS = [
-  { emoji: '🐱', text: 'Cute cat sitting on a mushroom' },
-  { emoji: '🏰', text: 'Princess castle in the clouds' },
-  { emoji: '🦋', text: 'Butterfly garden' },
-  { emoji: '🐉', text: 'Friendly dragon' },
-  { emoji: '🌸', text: 'Cherry blossom flower garden' },
-  { emoji: '🦁', text: 'Lion in the savanna' },
-  { emoji: '🐟', text: 'Underwater coral reef' },
-  { emoji: '🎄', text: 'Cozy cabin in snowy forest' },
+  { emoji: '🐲', text: 'Chinese dragon soaring through clouds' },
+  { emoji: '🏯', text: 'Pagoda temple on misty mountain' },
+  { emoji: '🦋', text: 'Butterfly on peony flowers' },
+  { emoji: '🐾', text: 'Cute panda eating bamboo' },
+  { emoji: '🌊', text: 'Koi fish swimming in lotus pond' },
+  { emoji: '🌸', text: 'Cherry blossom branch with lanterns' },
+  { emoji: '🧑', text: 'Girl in hanfu under moonlight' },
+  { emoji: '🐱', text: 'Lucky cat with gold coins' },
+  { emoji: '🏔', text: 'Phoenix rising over volcano' },
+  { emoji: '🎠', text: 'Carp leaping over dragon gate' },
+  { emoji: '🧀', text: 'Jade rabbit on the moon' },
+  { emoji: '🏰', text: 'Floating island with fairy palace' },
+  { emoji: '🐟', text: 'Underwater dragon palace' },
+  { emoji: '🌻', text: 'Sunflower field with windmill' },
+  { emoji: '🐢', text: 'Baby turtle on tropical beach' },
+  { emoji: '🦉', text: 'Owl in enchanted forest' },
 ];
 
 const REFERENCE_PROMPT = { emoji: '📸', text: 'Transform this photo into a coloring page' };
@@ -307,7 +315,7 @@ function GenerateContent() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe your coloring page..."
+                  placeholder="e.g. Chinese dragon soaring through clouds..."
                   className="w-full p-3 rounded-xl border-2 border-[#E5E0D5] bg-white text-sm resize-none focus:outline-none focus:border-[#FFB800] transition-colors min-h-[80px]"
                   rows={3}
                 />

@@ -39,7 +39,7 @@ const ARTISTIC_STYLES = [
     label: 'Chubby Doodle',
     desc: 'Crayon marker scribble style, messy lines, distorted proportions',
     thumbnail: '/styles/art-chubby-doodle.jpg',
-    prompt: 'Transform this coloring page into a chubby doodle style illustration. Use crayon and marker scribble strokes, intentionally messy and wobbly lines, distorted proportions and perspective, colors slightly overflowing the outlines, playful meme-like expressions, hand-drawn spontaneous feel on white paper background',
+    prompt: 'Transform this coloring page into an Oriental chubby doodle style illustration. Use crayon and marker scribble strokes with Chinese calligraphy brush texture, intentionally messy and wobbly lines, distorted cute proportions with chibi-style round faces, warm red and gold accent colors slightly overflowing the outlines, playful lucky cat expressions, hand-drawn spontaneous feel on rice paper textured background, tiny seal stamp mark in corner',
     strength: 0.85,
   },
   {
@@ -47,7 +47,7 @@ const ARTISTIC_STYLES = [
     label: 'Pop Art',
     desc: 'Halftone dots, bold outlines, limited color palette, 1950s print art',
     thumbnail: '/styles/art-pop-art.jpg',
-    prompt: 'Transform this coloring page into a Pop Art style illustration. Use halftone dot printing texture, thick bold black outlines, limited flat color palette (no gradients), 1950s-60s commercial print aesthetic, Ben-Day dots pattern, grainy paper texture on white background',
+    prompt: 'Transform this coloring page into an Oriental Pop Art style illustration inspired by Chinese woodblock print aesthetics. Use halftone dot printing texture mixed with traditional woodcut grain patterns, thick bold black outlines like ink brush strokes, limited flat color palette of vermillion red indigo blue and gold (no gradients), vintage Chinese propaganda poster aesthetic, Ben-Day dots pattern with cloud and wave motifs, aged paper texture on cream background',
     strength: 0.85,
   },
   {
@@ -55,7 +55,7 @@ const ARTISTIC_STYLES = [
     label: 'City Pop',
     desc: '1980s Japanese anime aesthetic, flat vector, high saturation retro colors',
     thumbnail: '/styles/art-city-pop.jpg',
-    prompt: 'Transform this coloring page into a City Pop style illustration. Use 1980s Japanese anime aesthetic, flat vector art style, high saturation retro color palette, Showa-era nostalgic atmosphere, pastel sky gradient, add handwritten English text elements, dreamy vaporwave mood',
+    prompt: 'Transform this coloring page into an Oriental City Pop style illustration blending 1980s Hong Kong neon aesthetic with Japanese anime. Flat vector art style, high saturation retro color palette of neon pink cyan and gold, Showa-era nostalgic atmosphere with Chinese lantern glow, pastel sunset gradient sky over pagoda silhouettes, add handwritten bilingual text elements in brush calligraphy style, dreamy vaporwave mood with cherry blossom petals floating',
     strength: 0.85,
   },
   {
@@ -63,7 +63,7 @@ const ARTISTIC_STYLES = [
     label: 'Fridge Magnet',
     desc: 'Minimalist icon design, slight 3D shadow, white border outline',
     thumbnail: '/styles/art-fridge-magnet.jpg',
-    prompt: 'Transform this coloring page into a fridge magnet style illustration. Extract the main subject as a minimalist icon design, slight 3D depth with drop shadow, clean white border outline around the shape, add handwritten English text label below the icon, flat bold colors, white background, cute and clean aesthetic',
+    prompt: 'Transform this coloring page into an Oriental fridge magnet style illustration inspired by Chinese paper-cut art and lucky mascots. Extract the main subject as a minimalist icon design with paper-cut silhouette edges, slight 3D depth with embossed relief effect, clean red and gold border outline around the shape, add a small Chinese seal stamp below the icon, flat bold vermillion and gold colors, white background, auspicious and cute aesthetic',
     strength: 0.9,
   },
   {
@@ -71,7 +71,7 @@ const ARTISTIC_STYLES = [
     label: 'Handwritten Piog',
     desc: 'White hand-drawn annotations, Japanese lifestyle feel, Instagram story vibe',
     thumbnail: '/styles/art-piog.jpg',
-    prompt: 'Transform this coloring page into a Handwritten Piog style illustration. Add white hand-drawn annotation lines and text overlays, Japanese daily life aesthetic, low saturation soft lighting, Instagram story filter feel, light leaks and warm tones, casual lifestyle photography mood with hand-drawn decorative elements',
+    prompt: 'Transform this coloring page into an Oriental Handwritten Piog style illustration blending Chinese calligraphy annotations with lifestyle photography. Add white hand-drawn annotation lines and brush calligraphy text overlays in both Chinese and English, traditional Chinese daily life aesthetic with tea sets and scrolls, low saturation soft warm lighting like afternoon sun through paper windows, light leaks with golden dust particles, casual wabi-sabi lifestyle mood with hand-drawn cloud and flower decorative elements, small red seal stamp marks',
     strength: 0.8,
   },
 ];

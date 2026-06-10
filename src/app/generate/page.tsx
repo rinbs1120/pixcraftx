@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus, FileText, ChevronDown } from 'lucide-react';
+import { Sparkles, Loader2, Download, RotateCcw, AlertCircle, Palette, ImageIcon, Wand2, Plus, FileText, ChevronDown, Upload, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 import { downloadPDF, canExportPDF } from '@/lib/download-utils';
@@ -18,21 +18,21 @@ const styles = [
     label: 'Simple',
     emoji: '✏️',
     desc: 'Bold outlines, big areas',
-    thumbnail: '/styles/simple-preview.jpg',
+    thumbnail: '/styles/simple.jpg',
   },
   {
     id: 'mandala' as const,
     label: 'Mandala',
     emoji: '🔮',
     desc: 'Symmetrical patterns',
-    thumbnail: '/styles/mandala-preview.jpg',
+    thumbnail: '/styles/mandala.jpg',
   },
   {
     id: 'intricate' as const,
     label: 'Intricate',
     emoji: '🎨',
     desc: 'Fine details, rich scenes',
-    thumbnail: '/styles/intricate-preview.jpg',
+    thumbnail: '/styles/intricate.jpg',
   },
 ];
 
@@ -88,11 +88,14 @@ const EXAMPLE_PROMPTS = [
 
 const REFERENCE_PROMPT = { emoji: '📸', text: 'Transform this photo into a coloring page' };
 
+type StyleSource = 'current' | 'mypages' | 'upload';
+
 function GenerateContent() {
   const { isSignedIn, isLoaded } = useAuth();
   const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  const styleFileInputRef = useRef<HTMLInputElement>(null);
+
   const [selectedStyle, setSelectedStyle] = useState<'simple' | 'mandala' | 'intricate'>('simple');
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -100,7 +103,7 @@ function GenerateContent() {
   const [error, setError] = useState<string | null>(null);
   const [pagesUsed, setPagesUsed] = useState(0);
   const [pageLimit, setPageLimit] = useState(5);
-  const [dlOpen, setDlOpen] = useState(false)
+  const [dlOpen, setDlOpen] = useState(false);
   const [plan, setPlan] = useState('free');
   const [showSignIn, setShowSignIn] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -111,6 +114,8 @@ function GenerateContent() {
   const [styledImageUrl, setStyledImageUrl] = useState<string | null>(null);
   const [selectedArtStyle, setSelectedArtStyle] = useState<string | null>(null);
   const [isStyling, setIsStyling] = useState(false);
+  const [styleSource, setStyleSource] = useState<StyleSource>('current');
+  const [styleUploadImage, setStyleUploadImage] = useState<string | null>(null);
 
   useEffect(() => {
     const p = searchParams.get('p');
@@ -163,10 +168,41 @@ function GenerateContent() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // Style It: upload image handler
+  const handleStyleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file (PNG, JPG, WEBP)');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be under 10MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setStyleUploadImage(reader.result as string);
+      setStyleSource('upload');
+    };
+    reader.readAsDataURL(file);
+    setError(null);
+  };
 
+  // Get the image to use for style transfer based on source
+  const getStyleSourceImage = (): string | null => {
+    if (styleSource === 'current') return generatedImageUrl;
+    if (styleSource === 'upload') return styleUploadImage;
+    if (styleSource === 'mypages' && history.length > 0) return history[0].url;
+    return generatedImageUrl;
+  };
 
   const handleStyleTransfer = async (artStyle: typeof ARTISTIC_STYLES[0]) => {
-    if (!generatedImageUrl) return;
+    const sourceImage = getStyleSourceImage();
+    if (!sourceImage) {
+      setError('No image available. Generate a coloring page first or upload an image.');
+      return;
+    }
     if (!isSignedIn) { setShowSignIn(true); return; }
     setSelectedArtStyle(artStyle.id);
     setIsStyling(true);
@@ -216,9 +252,8 @@ function GenerateContent() {
     if (!prompt.trim()) return;
     if (!isSignedIn) { setShowSignIn(true); return; }
 
-    // Check if reference image needs credits and user has enough
     if (referenceImage && refTrialUsed) {
-      const totalNeeded = 1 + 5; // 1 base credit + 5 reference surcharge
+      const totalNeeded = 1 + 5;
       const remaining = pageLimit - pagesUsed;
       if (remaining < totalNeeded) {
         setShowUpgradeModal(true);
@@ -234,8 +269,8 @@ function GenerateContent() {
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          prompt: prompt.trim(), 
+        body: JSON.stringify({
+          prompt: prompt.trim(),
           style: selectedStyle,
           referenceImageUrl: referenceImage,
         }),
@@ -358,12 +393,15 @@ function GenerateContent() {
     }
   };
 
+  // The display image: styled result takes priority, then generated image
+  const displayImageUrl = styledImageUrl || generatedImageUrl;
+
   return (
     <>
       <Navbar />
       <main className="min-h-screen pt-20 pb-8 bg-background">
-        <div className="container mx-auto px-4 md:px-6 max-w-4xl">
-          
+        <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+
           {/* Page Title */}
           <div className="text-center mb-4">
             <h1 className="font-display text-2xl md:text-3xl text-foreground">
@@ -371,217 +409,368 @@ function GenerateContent() {
             </h1>
           </div>
 
-          {/* ====== TOP: Compact Input Area ====== */}
-          <div className="rounded-2xl p-4 md:p-5 shadow-sm border border-border mb-6" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
-            {/* Input row: Textarea only */}
-            <div className="relative">
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleGenerate();
-                  }
-                }}
-                placeholder="Describe your coloring page..."
-                rows={3}
-                className="w-full px-4 py-3 text-sm bg-white border-2 border-[#E5E0D5] rounded-xl focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20 outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground pr-12"
-              />
-              {/* Bottom-left: upload button inside textarea - larger and visible */}
-              <div className="absolute left-3 bottom-2.5 flex items-center gap-2">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center transition-all border-2",
-                    referenceImage 
-                      ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]" 
-                      : "border-dashed border-[#C8C0B4] text-muted-foreground/60 hover:border-[#FFB800] hover:text-[#FFB800] hover:bg-[#FFB800]/5"
-                  )}
-                  title={refTrialUsed ? "Upload reference image (5 credits)" : "Upload reference image (Free trial!)"}
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
+          {/* ====== LEFT-RIGHT SPLIT LAYOUT ====== */}
+          <div className="flex flex-col lg:flex-row gap-4">
+
+            {/* ====== LEFT PANEL: Tools ====== */}
+            <div className="w-full lg:w-[340px] lg:flex-shrink-0 flex flex-col gap-3">
+
+              {/* 1. Prompt Input */}
+              <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Sparkles className="w-3.5 h-3.5 text-[#FFB800]" />
+                  <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Describe</span>
+                </div>
+                <div className="relative">
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleGenerate();
+                      }
+                    }}
+                    placeholder="Describe your coloring page..."
+                    rows={3}
+                    className="w-full px-3 py-2.5 text-sm bg-white border-2 border-[#E5E0D5] rounded-xl focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20 outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground pr-10"
+                  />
+                  <span className="absolute right-2 bottom-2 text-[10px] text-muted-foreground/50">
+                    {prompt.length > 0 ? `${prompt.length}/500` : ''}
+                  </span>
+                </div>
+                {/* Upload + From My Pages buttons */}
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border-2",
+                      referenceImage
+                        ? "border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800]"
+                        : "border-dashed border-[#C8C0B4] text-muted-foreground/70 hover:border-[#FFB800] hover:text-[#FFB800]"
+                    )}
+                    title={refTrialUsed ? "Upload reference image (5 credits)" : "Upload reference image (Free trial!)"}
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload
+                  </button>
+                  <button
+                    onClick={() => { if (history.length > 0) setStyleSource('mypages'); }}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border-2",
+                      history.length > 0
+                        ? "border-[#FFB800] text-[#FFB800] bg-[#FFB800]/5 hover:bg-[#FFB800]/10"
+                        : "border-dashed border-[#C8C0B4] text-muted-foreground/40 cursor-not-allowed"
+                    )}
+                    title={history.length > 0 ? "Use image from your recent generations" : "Generate some pages first"}
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    My Pages
+                  </button>
+                </div>
                 {referenceImage && (
-                  <div className="relative">
-                    <img
-                      src={referenceImage}
-                      alt="Ref"
-                      className="w-9 h-9 object-cover rounded-lg border-2 border-[#FFB800]"
-                    />
-                    <button
-                      onClick={removeReference}
-                      className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[8px] hover:bg-red-600 shadow-sm"
-                    >
-                      ×
-                    </button>
+                  <div className="mt-2 flex items-center gap-2">
+                    <img src={referenceImage} alt="Ref" className="w-8 h-8 object-cover rounded-lg border border-[#FFB800]" />
+                    <span className="text-[10px] text-muted-foreground truncate flex-1">{referenceFileName || 'Reference image'}</span>
+                    <button onClick={removeReference} className="text-[10px] text-red-400 hover:text-red-600">✕</button>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                {/* Example Prompts */}
+                {!generatedImageUrl && !isGenerating && (
+                  <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-[#E5E0D5]/50">
+                    {EXAMPLE_PROMPTS.map((ex, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPrompt(ex.text)}
+                        className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] rounded-full border border-[#E5E0D5] bg-white hover:border-[#FFB800] hover:bg-[#FFB800]/5 transition-all text-muted-foreground hover:text-foreground"
+                      >
+                        <span>{ex.emoji}</span>
+                        <span>{ex.text}</span>
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
-              {/* Bottom-right: char count */}
-              <span className="absolute right-3 bottom-2 text-[10px] text-muted-foreground/50">
-                {prompt.length > 0 ? `${prompt.length}/500` : ''}
-              </span>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
 
-            {/* Example Prompts */}
-            {!generatedImageUrl && !isGenerating && (
-              <div className="mt-3 pt-3 border-t border-[#E5E0D5]/50">
-                <div className="flex flex-wrap gap-1.5">
-                  {EXAMPLE_PROMPTS.map((ex, i) => (
+              {/* 2. Line Style Selection - FIXED thumbnails */}
+              <div className="rounded-2xl p-3 shadow-sm border border-border bg-white">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Palette className="w-3.5 h-3.5 text-[#FFB800]" />
+                  <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Line Style</span>
+                </div>
+                <div className="flex gap-2">
+                  {styles.map((style) => (
                     <button
-                      key={i}
-                      onClick={() => setPrompt(ex.text)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-full border border-[#E5E0D5] bg-white hover:border-[#FFB800] hover:bg-[#FFB800]/5 transition-all text-muted-foreground hover:text-foreground"
+                      key={style.id}
+                      onClick={() => setSelectedStyle(style.id)}
+                      disabled={!!referenceImage}
+                      className={cn(
+                        "flex-1 rounded-xl overflow-hidden transition-all border-2",
+                        selectedStyle === style.id && !referenceImage
+                          ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
+                          : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
+                        referenceImage && "opacity-40 cursor-not-allowed"
+                      )}
+                      title={style.desc}
                     >
-                      <span>{ex.emoji}</span>
-                      <span>{ex.text}</span>
+                      <img
+                        src={style.thumbnail}
+                        alt={style.label}
+                        className="w-full h-16 object-cover object-top bg-[#f5f3ef]"
+                      />
+                      <div className="py-1 px-1 text-center bg-white">
+                        <span className="text-[10px] font-semibold text-foreground/80">{style.label}</span>
+                      </div>
                     </button>
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* Style toggle + Generate button */}
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E5E0D5]/50">
-              <div className="flex gap-2">
-                {styles.map((style) => (
-                  <button
-                    key={style.id}
-                    onClick={() => setSelectedStyle(style.id)}
-                    disabled={!!referenceImage}
-                    className={cn(
-                      "relative rounded-xl overflow-hidden transition-all border-2 flex flex-col items-center",
-                      selectedStyle === style.id && !referenceImage
-                        ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
-                        : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
-                      referenceImage && "opacity-40 cursor-not-allowed"
+              {/* 3. Generate Button + Usage */}
+              <div className="space-y-2">
+                <button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !prompt.trim()}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#FFB800] to-[#FF6B6B] text-white font-semibold text-sm flex items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(255,107,107,0.3)] hover:shadow-[0_4px_16px_rgba(255,107,107,0.4)] transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  Generate
+                </button>
+                {/* Hint line */}
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-[10px] text-muted-foreground">
+                    {referenceImage
+                      ? (refTrialUsed ? '📎 Ref mode (5 credits)' : '🎁 Ref mode (Free trial!)')
+                      : `${styles.find(s => s.id === selectedStyle)?.emoji} ${styles.find(s => s.id === selectedStyle)?.label} style`}
+                    {!isSignedIn && isLoaded && (
+                      <>
+                        {' · '}
+                        <button
+                          onClick={() => setShowSignIn(true)}
+                          className="text-[#FFB800] hover:underline font-semibold"
+                        >
+                          Sign in for 2 free
+                        </button>
+                      </>
                     )}
-                    title={style.desc}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Enter ↵</p>
+                </div>
+                {/* Usage bar */}
+                {isSignedIn && (
+                  <div className="flex items-center gap-2 px-1">
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ${
+                      plan === 'business' ? 'bg-purple-100 text-purple-700' :
+                      plan === 'pro' ? 'bg-amber-100 text-amber-700' :
+                      plan === 'starter' ? 'bg-green-100 text-green-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {plan}
+                    </span>
+                    <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          pagesUsed >= pageLimit ? 'bg-red-400' :
+                          pagesUsed >= pageLimit * 0.8 ? 'bg-amber-400' :
+                          'bg-green-400'
+                        }`}
+                        style={{ width: `${Math.min(100, (pagesUsed / pageLimit) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      {pagesUsed}/{pageLimit}
+                    </span>
+                    {pagesUsed >= pageLimit && (
+                      <Link href="/pricing" className="text-[10px] text-[#FFB800] font-semibold hover:underline">
+                        Upgrade
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Style It Section - UPGRADED with thumbnails + source tabs */}
+              <div className="rounded-2xl p-3 shadow-sm border border-border bg-white">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Wand2 className="w-3.5 h-3.5 text-[#FFB800]" />
+                  <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Style It</span>
+                  <span className="text-[9px] text-muted-foreground/60">Transform into artwork</span>
+                </div>
+
+                {/* Source tabs */}
+                <div className="flex gap-1 mb-2">
+                  <button
+                    onClick={() => setStyleSource('current')}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-lg text-[10px] font-semibold text-center transition-all border",
+                      styleSource === 'current'
+                        ? "border-[#FFB800] text-[#FFB800] bg-[#FFB800]/5"
+                        : "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800]/50"
+                    )}
                   >
-                    <img
-                      src={style.thumbnail}
-                      alt={style.label}
-                      className="w-14 h-[18px] object-cover object-top"
-                    />
-                    <span className="text-[10px] font-semibold py-0.5 px-1 whitespace-nowrap text-foreground/80">{style.label}</span>
+                    📷 Current
                   </button>
-                ))}
-              </div>
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim() || prompt.length > 500}
-                className="px-5 py-2 rounded-full bg-gradient-to-r from-[#FFB800] to-[#FF6B6B] text-white font-semibold text-sm flex items-center gap-1.5 shadow-[0_2px_8px_rgba(255,107,107,0.3)] hover:shadow-[0_4px_16px_rgba(255,107,107,0.4)] transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4" />
-                )}
-                Generate
-              </button>
-            </div>
+                  <button
+                    onClick={() => { if (history.length > 0) setStyleSource('mypages'); }}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-lg text-[10px] font-semibold text-center transition-all border",
+                      styleSource === 'mypages'
+                        ? "border-[#FFB800] text-[#FFB800] bg-[#FFB800]/5"
+                        : history.length > 0
+                          ? "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800]/50"
+                          : "border-[#E5E0D5] text-muted-foreground/40 cursor-not-allowed"
+                    )}
+                  >
+                    🖼️ My Pages
+                  </button>
+                  <button
+                    onClick={() => styleFileInputRef.current?.click()}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-lg text-[10px] font-semibold text-center transition-all border",
+                      styleSource === 'upload'
+                        ? "border-[#FFB800] text-[#FFB800] bg-[#FFB800]/5"
+                        : "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800]/50"
+                    )}
+                  >
+                    📁 Upload
+                  </button>
+                </div>
+                <input
+                  ref={styleFileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleStyleFileSelect}
+                  className="hidden"
+                />
 
-            {/* Hint line */}
-            <div className="flex items-center justify-between mt-2 px-0.5">
-              <p className="text-[10px] text-muted-foreground">
-                {referenceImage 
-                  ? (refTrialUsed ? '📎 Reference mode (5 credits)' : '🎁 Reference mode (Free trial!)')
-                  : `${styles.find(s => s.id === selectedStyle)?.emoji} ${styles.find(s => s.id === selectedStyle)?.label} style`}
-                {!isSignedIn && isLoaded && (
-                  <>
-                    {' · '}
-                    <button 
-                      onClick={() => setShowSignIn(true)}
-                      className="text-[#FFB800] hover:underline font-semibold"
+                {/* Source preview thumbnail */}
+                {styleSource === 'upload' && styleUploadImage && (
+                  <div className="mb-2 flex items-center gap-2 p-2 bg-[#FFB800]/5 rounded-lg">
+                    <img src={styleUploadImage} alt="Style source" className="w-10 h-10 object-cover rounded-md border border-[#FFB800]" />
+                    <span className="text-[10px] text-muted-foreground">Uploaded image</span>
+                    <button onClick={() => { setStyleUploadImage(null); setStyleSource('current'); }} className="ml-auto text-[10px] text-red-400 hover:text-red-600">✕</button>
+                  </div>
+                )}
+                {styleSource === 'mypages' && history.length > 0 && (
+                  <div className="mb-2 flex items-center gap-2 p-2 bg-[#FFB800]/5 rounded-lg">
+                    <img src={history[0].url} alt="From history" className="w-10 h-10 object-cover rounded-md border border-[#FFB800]" />
+                    <span className="text-[10px] text-muted-foreground">Latest generation</span>
+                  </div>
+                )}
+
+                {/* 5 Art Style Thumbnails - 3+2 grid */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {ARTISTIC_STYLES.map((art) => (
+                    <button
+                      key={art.id}
+                      onClick={() => handleStyleTransfer(art)}
+                      disabled={isStyling || !getStyleSourceImage()}
+                      className={cn(
+                        "rounded-xl overflow-hidden transition-all border-2",
+                        selectedArtStyle === art.id
+                          ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
+                          : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
+                        (isStyling && selectedArtStyle !== art.id) && "opacity-40",
+                        !getStyleSourceImage() && "opacity-40 cursor-not-allowed"
+                      )}
+                      title={art.desc}
                     >
-                      Sign in for 2 free credits
+                      <div className="w-full aspect-[3/4] flex items-center justify-center text-2xl"
+                        style={{
+                          background: art.id === 'chubby-doodle' ? 'linear-gradient(135deg, #fff5e6, #ffe0cc)' :
+                            art.id === 'pop-art' ? 'linear-gradient(135deg, #ffe6f0, #ffd6e8)' :
+                            art.id === 'city-pop' ? 'linear-gradient(135deg, #e6f0ff, #d6e8ff)' :
+                            art.id === 'fridge-magnet' ? 'linear-gradient(135deg, #f0ffe6, #e8ffd6)' :
+                            'linear-gradient(135deg, #f5e6ff, #edd6ff)'
+                        }}
+                      >
+                        {art.id === 'chubby-doodle' ? '🖍️' : art.id === 'pop-art' ? '💥' : art.id === 'city-pop' ? '🌆' : art.id === 'fridge-magnet' ? '🧲' : '✏️'}
+                      </div>
+                      <div className="py-1 px-0.5 text-center bg-white">
+                        <span className="text-[8px] font-semibold text-foreground/70 leading-tight block">{art.label}</span>
+                      </div>
                     </button>
-                  </>
-                )}
-              </p>
-              <p className="text-[10px] text-muted-foreground">Enter ↵ to generate</p>
-            </div>
-
-            {/* Usage bar (signed in) */}
-            {isSignedIn && (
-              <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#E5E0D5]/50">
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                  plan === 'business' ? 'bg-purple-100 text-purple-700' :
-                  plan === 'pro' ? 'bg-amber-100 text-amber-700' :
-                  plan === 'starter' ? 'bg-green-100 text-green-700' :
-                  'bg-gray-100 text-gray-600'
-                }`}>
-                  {plan}
-                </span>
-                <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full transition-all ${
-                      pagesUsed >= pageLimit ? 'bg-red-400' :
-                      pagesUsed >= pageLimit * 0.8 ? 'bg-amber-400' :
-                      'bg-green-400'
-                    }`}
-                    style={{ width: `${Math.min(100, (pagesUsed / pageLimit) * 100)}%` }}
-                  />
+                  ))}
                 </div>
-                <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                  {pagesUsed}/{pageLimit}
-                </span>
-                {pagesUsed >= pageLimit && (
-                  <Link href="/pricing" className="text-[11px] text-[#FFB800] font-semibold hover:underline">
-                    Upgrade →
-                  </Link>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Error Display */}
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-red-700 font-medium">{error}</p>
-                {(error.includes('credit') || error.includes('limit')) && (
-                  <Link href="/pricing" className="text-red-600 underline text-sm hover:text-red-800">
-                    View pricing plans →
-                  </Link>
+                {isStyling && (
+                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FFB800]" />
+                    <span>Applying {ARTISTIC_STYLES.find(s => s.id === selectedArtStyle)?.label}...</span>
+                  </div>
                 )}
               </div>
             </div>
-          )}
 
-          {/* ====== BOTTOM: Preview Area ====== */}
-          <div className="flex flex-col items-center justify-center">
-            {generatedImageUrl ? (
-              <div className="w-full max-w-2xl">
-                <div className="bg-card rounded-3xl p-4 md:p-6 shadow-lg border border-border">
-                  <img
-                    src={generatedImageUrl}
-                    alt="Generated coloring page"
-                    className="w-full h-auto object-contain rounded-xl"
-                  />
-                </div>
-                {/* Action Buttons */}
-                <div className="flex gap-3 mt-4">
+            {/* ====== RIGHT PANEL: Image Display ====== */}
+            <div className="flex-1 flex flex-col gap-3">
+
+              {/* Main Image Area */}
+              <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-border min-h-[400px] lg:min-h-[520px] flex items-center justify-center">
+                {displayImageUrl ? (
+                  <div className="w-full">
+                    <img
+                      src={displayImageUrl}
+                      alt="Generated coloring page"
+                      className="w-full h-auto max-h-[560px] object-contain rounded-xl"
+                    />
+                    {styledImageUrl && (
+                      <div className="mt-2 text-center">
+                        <span className="text-[10px] text-muted-foreground">
+                          ✨ {ARTISTIC_STYLES.find(s => s.id === selectedArtStyle)?.label} style applied
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : isGenerating ? (
+                  <div className="text-center">
+                    <div className="relative mb-6">
+                      <div className="w-20 h-20 mx-auto rounded-full border-4 border-[#FFB800]/20 border-t-[#FFB800] animate-spin" />
+                      <Sparkles className="w-7 h-7 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#FFB800]" />
+                    </div>
+                    <p className="text-lg font-semibold text-foreground mb-2">Creating your coloring page...</p>
+                    <p className="text-sm text-muted-foreground">
+                      {referenceImage ? 'Transforming your reference image...' : 'This usually takes 10-30 seconds'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <div className="relative mb-4">
+                      <Sparkles className="w-16 h-16 mx-auto text-[#FFB800]/20" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Wand2 className="w-6 h-6 text-[#FFB800]/40" />
+                      </div>
+                    </div>
+                    <p className="text-lg font-semibold mb-1 text-foreground/60">Your coloring page will appear here</p>
+                    <p className="text-sm">Type a description and hit Generate</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              {generatedImageUrl && (
+                <div className="flex gap-2">
                   <button
                     onClick={handleGenerate}
                     disabled={isGenerating}
-                    className="py-3 px-5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-2 hover:border-[#FFB800] transition-all disabled:opacity-50"
+                    className="py-2.5 px-4 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all disabled:opacity-50 text-sm"
                   >
                     <RotateCcw className="w-4 h-4" />
                     Regenerate
                   </button>
                   <Link
                     href={`/color?src=${encodeURIComponent(generatedImageUrl)}`}
-                    className="flex-1 py-3 rounded-xl text-[#1A1A2E] font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
+                    className="flex-1 py-2.5 rounded-xl text-[#1A1A2E] font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 text-sm"
                     style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                   >
                     <Palette className="w-4 h-4" />
@@ -590,147 +779,96 @@ function GenerateContent() {
                   <div className="relative">
                     <button
                       onClick={() => { if (canExportPDF(plan)) { setDlOpen(!dlOpen); } else { handleDownload(); } }}
-                      className="py-3 px-5 rounded-xl bg-[#1A1A2E] text-white font-semibold flex items-center justify-center gap-2 hover:bg-[#1A1A2E]/90 transition-all"
+                      className="py-2.5 px-4 rounded-xl bg-[#1A1A2E] text-white font-semibold flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90 transition-all text-sm"
                     >
                       <Download className="w-4 h-4" />
                       Download
-                      {canExportPDF(plan) && <ChevronDown className="w-3.5 h-3.5" />}
+                      {canExportPDF(plan) && <ChevronDown className="w-3 h-3" />}
                     </button>
                     {dlOpen && canExportPDF(plan) && (
                       <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[120px] z-50">
-                        <button onClick={() => { setDlOpen(false); handleDownload(); }} className="w-full px-4 py-2.5 text-sm text-left hover:bg-amber-50 flex items-center gap-2 text-[#1A1A2E]">
+                        <button onClick={() => { setDlOpen(false); handleDownload(); }} className="w-full px-4 py-2 text-sm text-left hover:bg-amber-50 flex items-center gap-2 text-[#1A1A2E]">
                           <Download className="w-3.5 h-3.5" /> PNG
                         </button>
-                        <button onClick={() => { setDlOpen(false); handleDownloadPDF(); }} className="w-full px-4 py-2.5 text-sm text-left hover:bg-amber-50 flex items-center gap-2 text-[#FFB800]">
+                        <button onClick={() => { setDlOpen(false); handleDownloadPDF(); }} className="w-full px-4 py-2 text-sm text-left hover:bg-amber-50 flex items-center gap-2 text-[#FFB800]">
                           <FileText className="w-3.5 h-3.5" /> PDF
                         </button>
                       </div>
                     )}
                   </div>
+                  {styledImageUrl && (
+                    <button
+                      onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = styledImageUrl;
+                        a.download = 'pixcraftx-styled-' + selectedArtStyle + '-' + Date.now() + '.png';
+                        a.click();
+                      }}
+                      className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Save Styled
+                    </button>
+                  )}
                 </div>
+              )}
 
-                {/* Style Transfer Section */}
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Wand2 className="w-4 h-4 text-[#FFB800]" />
-                    <span className="text-sm font-semibold text-foreground">Style It</span>
-                    <span className="text-[10px] text-muted-foreground">Transform into artwork</span>
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-2">
-                    {ARTISTIC_STYLES.map((art) => (
+              {/* Generation History - ALWAYS VISIBLE */}
+              <div className="rounded-2xl p-3 shadow-sm border border-border bg-white">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Recent</span>
+                  {history.length > 0 && (
+                    <span className="text-[9px] text-muted-foreground/60">{history.length} generation{history.length !== 1 ? 's' : ''}</span>
+                  )}
+                </div>
+                {history.length > 0 ? (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {history.map((item, i) => (
                       <button
-                        key={art.id}
-                        onClick={() => handleStyleTransfer(art)}
-                        disabled={isStyling}
+                        key={item.ts}
+                        onClick={() => { setGeneratedImageUrl(item.url); setSelectedStyle(item.style as any); setStyledImageUrl(null); setSelectedArtStyle(null); }}
                         className={cn(
-                          "flex-shrink-0 rounded-xl overflow-hidden transition-all border-2",
-                          selectedArtStyle === art.id
-                            ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
-                            : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
-                          isStyling && selectedArtStyle !== art.id && "opacity-40"
+                          "flex-shrink-0 w-12 h-16 rounded-lg overflow-hidden border-2 transition-all",
+                          generatedImageUrl === item.url && !styledImageUrl
+                            ? "border-[#FFB800] shadow-sm"
+                            : "border-[#E5E0D5] hover:border-[#FFB800]/50"
                         )}
-                        title={art.desc}
+                        title={item.prompt}
                       >
-                        <div className="w-16 h-10 bg-gradient-to-br from-purple-100 via-pink-100 to-amber-100 flex items-center justify-center text-lg">
-                          {art.id === 'chubby-doodle' ? '🖍️' : art.id === 'pop-art' ? '💥' : art.id === 'city-pop' ? '🌆' : art.id === 'fridge-magnet' ? '🧲' : '✏️'}
-                        </div>
-                        <div className="px-1.5 py-1 text-center">
-                          <span className="text-[9px] font-semibold text-foreground/80 leading-tight block">{art.label}</span>
-                        </div>
+                        <img src={item.url} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
-                  {isStyling && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="w-4 h-4 animate-spin text-[#FFB800]" />
-                      <span>Applying {ARTISTIC_STYLES.find(s => s.id === selectedArtStyle)?.label} style...</span>
-                    </div>
-                  )}
-                  {styledImageUrl && (
-                    <div className="mt-3 bg-card rounded-2xl p-3 border border-border">
-                      <img
-                        src={styledImageUrl}
-                        alt="Styled artwork"
-                        className="w-full h-auto object-contain rounded-xl"
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => {
-                            const a = document.createElement('a');
-                            a.href = styledImageUrl;
-                            a.download = 'pixcraftx-styled-' + selectedArtStyle + '-' + Date.now() + '.png';
-                            a.click();
-                          }}
-                          className="flex-1 py-2 rounded-xl bg-[#1A1A2E] text-white text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Download
-                        </button>
-                        <button
-                          onClick={() => { setStyledImageUrl(null); setSelectedArtStyle(null); }}
-                          className="py-2 px-4 rounded-xl border-2 border-[#E5E0D5] text-sm hover:border-[#FFB800]"
-                        >
-                          Reset
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground/50 text-center py-2">
+                    Generated pages will appear here
+                  </p>
+                )}
               </div>
-            ) : isGenerating ? (
-              <div className="text-center py-16">
-                <div className="relative mb-6">
-                  <div className="w-24 h-24 mx-auto rounded-full border-4 border-[#FFB800]/20 border-t-[#FFB800] animate-spin" />
-                  <Sparkles className="w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#FFB800]" />
-                </div>
-                <p className="text-xl font-semibold text-foreground mb-2">Creating your coloring page...</p>
-                <p className="text-sm text-muted-foreground">
-                  {referenceImage ? 'Transforming your reference image...' : 'This usually takes 10-30 seconds'}
-                </p>
-              </div>
-            ) : (
-              <div className="text-center text-muted-foreground py-16">
-                <div className="relative mb-6">
-                  <Sparkles className="w-20 h-20 mx-auto text-[#FFB800]/20" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Wand2 className="w-8 h-8 text-[#FFB800]/40" />
-                  </div>
-                </div>
-                <p className="text-xl font-semibold mb-2 text-foreground/60">Your coloring page will appear here</p>
-                <p className="text-sm max-w-xs mx-auto">
-                  Type a description and hit Generate
-                </p>
-              </div>
-            )}
+            </div>
           </div>
 
-          {/* Generation History */}
-          {history.length > 1 && (
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-3">
-                <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">Recent Generations</span>
-              </div>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {history.slice(1).map((item, i) => (
-                  <button
-                    key={item.ts}
-                    onClick={() => { setGeneratedImageUrl(item.url); setSelectedStyle(item.style as any); }}
-                    className="flex-shrink-0 w-16 h-[86px] rounded-lg overflow-hidden border-2 border-[#E5E0D5] hover:border-[#FFB800] transition-all"
-                    title={item.prompt}
-                  >
-                    <img src={item.url} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
+          {/* Error Display */}
+          {error && (
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-700 text-sm font-medium">{error}</p>
+                {(error.includes('credit') || error.includes('limit')) && (
+                  <Link href="/pricing" className="text-red-600 underline text-xs hover:text-red-800">
+                    View pricing plans →
+                  </Link>
+                )}
               </div>
             </div>
           )}
 
           {/* Feedback */}
-          <div className="text-center mt-8">
+          <div className="text-center mt-6">
             <a
               href="mailto:support@pixcraftx.com?subject=PixCraftX%20Feedback"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-[#FFB800] transition-colors"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-[#FFB800] transition-colors"
             >
               💬 Have feedback? We&apos;d love to hear from you
             </a>

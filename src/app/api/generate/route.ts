@@ -102,7 +102,10 @@ export async function POST(req: NextRequest) {
     }
 
     const moderationDecision = await moderatePrompt(prompt, `user_${userId}`);
-    if (moderationDecision === 'deny' || moderationDecision === 'flag') {
+    if (moderationDecision === 'flag') {
+      console.warn('[Moderation] Flagged but allowing:', prompt.slice(0, 50));
+    }
+    if (moderationDecision === 'deny') {
       return NextResponse.json({ error: 'Your prompt could not be processed. Please revise and try again.' }, { status: 400 });
     }
 

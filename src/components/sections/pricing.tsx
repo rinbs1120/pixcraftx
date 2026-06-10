@@ -295,7 +295,7 @@ export function Pricing() {
 
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            💡 Text generation: <strong>1 credit</strong>. Reference image: <strong>5 credits</strong>. Auto Color & Style It: <strong>1 credit</strong> each.
+            💡 Generate Fast: <strong>1 cr</strong> · Generate HD: <strong>3 cr</strong> · Auto Color: <strong>2 cr</strong> · Style It: <strong>3 cr</strong> · Reference image: <strong>5 cr</strong>
           </p>
         </div>
       </div>

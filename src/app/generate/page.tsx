@@ -65,6 +65,7 @@ function GenerateContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedStyle, setSelectedStyle] = useState<'simple' | 'mandala' | 'intricate'>('simple');
+  const [quality, setQuality] = useState<'fast' | 'hd'>('hd');  // default HD for quality
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
@@ -154,7 +155,8 @@ function GenerateContent() {
     if (!isSignedIn) { setShowSignIn(true); return; }
 
     if (referenceImage && refTrialUsed) {
-      const totalNeeded = 1 + 5;
+      const baseCost = quality === 'hd' ? 3 : 1;
+      const totalNeeded = baseCost + 5;
       const remaining = pageLimit - pagesUsed;
       if (remaining < totalNeeded) {
         setShowUpgradeModal(true);
@@ -173,6 +175,7 @@ function GenerateContent() {
         body: JSON.stringify({
           prompt: prompt.trim(),
           style: selectedStyle,
+          quality,
           referenceImageUrl: referenceImage,
         }),
       });
@@ -401,7 +404,19 @@ function GenerateContent() {
               {/* Generate Button */}
               <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <div className="text-[10px] text-muted-foreground mb-2">
-                  💰 Costs {referenceImage ? '6' : '1'} credit · {pageLimit - pagesUsed} remaining
+                  {/* Quality Toggle */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs text-muted-foreground font-medium">Quality:</span>
+                  <button
+                    onClick={() => setQuality('fast')}
+                    className={"text-xs px-3 py-1.5 rounded-full border transition-all " + (quality === 'fast' ? 'border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800] font-semibold' : 'border-gray-200 text-muted-foreground hover:border-gray-300')}
+                  >⚡ Fast · 1 cr</button>
+                  <button
+                    onClick={() => setQuality('hd')}
+                    className={"text-xs px-3 py-1.5 rounded-full border transition-all " + (quality === 'hd' ? 'border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800] font-semibold' : 'border-gray-200 text-muted-foreground hover:border-gray-300')}
+                  >✨ HD · 3 cr</button>
+                </div>
+                💰 Costs {referenceImage ? '5' : quality === 'hd' ? '3' : '1'} credit{referenceImage || quality === 'hd' ? 's' : ''} · {pageLimit - pagesUsed} remaining
                 </div>
                 <button
                   onClick={handleGenerate}
@@ -605,8 +620,8 @@ function GenerateContent() {
               </div>
               <h3 className="font-display text-xl mb-2 text-foreground">More Credits Needed</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                Reference image mode uses 5 extra credits on top of 1 base credit.
-                You have <strong>{pageLimit - pagesUsed}</strong> credit{pageLimit - pagesUsed !== 1 ? 's' : ''} remaining, but need <strong>6</strong>.
+                Reference image mode uses 5 extra credits on top of {quality === 'hd' ? '3' : '1'} base credit{(quality === 'hd' || referenceImage) ? 's' : ''}.
+                You have <strong>{pageLimit - pagesUsed}</strong> credit{pageLimit - pagesUsed !== 1 ? 's' : ''} remaining, but need <strong>{(quality === 'hd' ? 3 : 1) + 5}</strong>.
               </p>
               <Link
                 href="/pricing"

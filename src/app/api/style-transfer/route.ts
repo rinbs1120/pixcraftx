@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing imageUrl - a source image is required for style transfer' }, { status: 400 });
     }
 
-    // Check usage limits (style transfer costs 1 credit)
+    // Check usage limits (style transfer costs 3 credits - flux/dev img2img ~$0.03)
     const { data: subData } = await supabase.from('subscriptions').select('plan, status').eq('user_id', userId).single();
     let plan = 'free';
     if (subData && subData.status === 'active') { plan = subData.plan || 'free'; }
@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
     const bonusCredits = usageData?.bonus_credits || 0;
     const limit = (PLAN_LIMITS[plan] || 2) + bonusCredits;
 
-    if (pagesUsed + 1 > limit) {
-      return NextResponse.json({ error: 'Not enough credits for style transfer', limit, used: pagesUsed, needed: 1 }, { status: 429 });
+    if (pagesUsed + 3 > limit) {
+      return NextResponse.json({ error: 'Not enough credits for style transfer', limit, used: pagesUsed, needed: 3 }, { status: 429 });
     }
 
     // Use fal queue mode to avoid Vercel 10s function timeout
@@ -87,10 +87,10 @@ export async function POST(req: NextRequest) {
       console.error('[StyleTransfer] Storage upload failed:', storageErr);
     }
 
-    // Deduct credit
+    // Deduct 3 credits (flux/dev img2img cost)
     if (usageData) {
       await supabase.from('user_usage').update({
-        pages_used: pagesUsed + 1,
+        pages_used: pagesUsed + 3,
         plan,
         updated_at: new Date().toISOString(),
       }).eq('user_id', userId).eq('month', currentMonth);
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       await supabase.from('user_usage').insert({
         user_id: userId,
         month: currentMonth,
-        pages_used: 1,
+        pages_used: 3,
         plan,
         bonus_credits: 0,
       });
@@ -111,14 +111,14 @@ export async function POST(req: NextRequest) {
       style: styleId,
       image_url: permanentUrl,
       storage_path: storagePath,
-      credit_cost: 1,
+      credit_cost: 3,
       has_reference: true,
     });
 
     return NextResponse.json({
       imageUrl: permanentUrl,
       styleId,
-      pagesUsed: pagesUsed + 1,
+      pagesUsed: pagesUsed + 3,
       limit,
       plan,
     });

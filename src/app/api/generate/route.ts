@@ -23,6 +23,14 @@ const STYLE_PROMPTS = {
   }
 };
 
+// Credit costs proportional to backend model cost
+const GENERATE_CREDIT_COSTS = {
+  fast: 1,   // flux/schnell ~$0.003
+  hd: 3,     // flux/dev ~$0.025
+};
+
+const REFERENCE_COST = 5;  // AILabTools ~$0.02
+
 const PLAN_LIMITS = {
   free: 2,
   starter: 60,
@@ -30,11 +38,7 @@ const PLAN_LIMITS = {
   business: 1000,
 };
 
-// Reference image: 5 credits flat
-const REFERENCE_COST = 5;
-function getReferenceCost(): number {
-  return REFERENCE_COST;
-}
+
 
 async function moderatePrompt(prompt: string, externalId?: string): Promise<'allow' | 'flag' | 'deny'> {
   const apiKey = process.env.CREEM_API_KEY;
@@ -72,12 +76,14 @@ export async function POST(req: NextRequest) {
 
     let prompt = '';
     let style = 'simple';
+    let quality = 'hd';  // default to HD for quality
     let referenceImageUrl: string | null = null;
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
       prompt = (formData.get('prompt') as string || '').trim();
       style = (formData.get('style') as string || 'simple');
+      quality = (formData.get('quality') as string || 'hd');
       referenceImageUrl = formData.get('referenceImageUrl') as string || null;
     } else {
       const body = await req.json();
@@ -108,7 +114,7 @@ export async function POST(req: NextRequest) {
     const bonusCredits = usageData?.bonus_credits || 0;
     const baseLimit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 2;
     const limit = baseLimit + bonusCredits;
-    let creditCost = referenceImageUrl ? getReferenceCost() : 1;
+    let creditCost = referenceImageUrl ? REFERENCE_COST : (GENERATE_CREDIT_COSTS[quality as keyof typeof GENERATE_CREDIT_COSTS] || GENERATE_CREDIT_COSTS.hd);
 
     // Reference image free trial: first reference image is free
     let refTrialUsed = false;
@@ -216,10 +222,40 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ===== Text-to-image: flux/schnell (fast, under 10s) =====
-    const result = await fal.subscribe('fal-ai/flux/schnell', {
-      input: { prompt: fullPrompt, image_size: 'portrait_4_3', num_images: 1 },
-    });
+    // ===== Text-to-image: quality-based model selection =====
+    const isHD = quality === 'hd';
+    const falModel = isHD ? 'fal-ai/flux/dev' : 'fal-ai/flux/schnell';
+    console.log(`[Generate] Quality: ${quality}, Model: ${falModel}, Credit cost: ${creditCost}`);
+
+    let result;
+    if (isHD) {
+      // HD mode: use queue to avoid Vercel timeout
+      const { request_id } = await fal.queue.submit(falModel, {
+        input: { prompt: fullPrompt, image_size: 'portrait_4_3', num_images: 1 },
+      });
+      // Poll for result with timeout
+      const startTime = Date.now();
+      const maxWait = 50000; // 50 seconds max wait
+      while (Date.now() - startTime < maxWait) {
+        const status = await fal.queue.status(falModel, { request_id });
+        if (status.status === 'COMPLETED') {
+          result = await fal.queue.result(falModel, { request_id });
+          break;
+        }
+        if (status.status === 'FAILED') {
+          return NextResponse.json({ error: 'HD generation failed' }, { status: 500 });
+        }
+        await new Promise(r => setTimeout(r, 2000)); // poll every 2s
+      }
+      if (!result) {
+        return NextResponse.json({ error: 'HD generation timed out' }, { status: 504 });
+      }
+    } else {
+      // Fast mode: flux/schnell is quick enough for sync
+      result = await fal.subscribe(falModel, {
+        input: { prompt: fullPrompt, image_size: 'portrait_4_3', num_images: 1 },
+      });
+    }
 
     const tempImageUrl = result.data?.images?.[0]?.url;
     if (!tempImageUrl) {
@@ -262,7 +298,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      imageUrl: permanentUrl, style,
+      imageUrl: permanentUrl, style, quality,
       pagesUsed: pagesUsed + creditCost, limit, plan, creditCost,
       hasReference: false,
       ...(storageFailed ? { storageWarning: 'Image stored temporarily, may expire' } : {}),

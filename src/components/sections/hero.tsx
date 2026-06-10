@@ -62,7 +62,7 @@ const steps = [
   {
     number: 4,
     title: 'Auto Color & Style',
-    description: 'Auto-color it, or transform with 5 art styles',
+    description: 'Auto-color with 3 palettes, or transform with 5 Oriental art styles',
     icon: Palette,
   },
 ];

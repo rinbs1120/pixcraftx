@@ -475,7 +475,7 @@ function AutoColorContent() {
                 </h3>
 
                 <div className="text-[10px] text-muted-foreground mb-2">
-                  💰 Costs 1 credit · {creditsLeft} remaining
+                  💰 Costs {mode === 'palette' ? '2' : '3'} credits · {creditsLeft} remaining
                 </div>
 
                 <button

@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid or missing palette (pastel, vivid, muted)' }, { status: 400 });
     }
 
-    // Check usage limits (auto color costs 1 credit)
+    // Check usage limits (auto color costs 2 credits - SDXL ControlNet ~$0.015)
     const { data: subData } = await supabase.from('subscriptions').select('plan, status').eq('user_id', userId).single();
     let plan = 'free';
     if (subData && subData.status === 'active') { plan = subData.plan || 'free'; }
@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
     const bonusCredits = usageData?.bonus_credits || 0;
     const limit = (PLAN_LIMITS[plan] || 2) + bonusCredits;
 
-    if (pagesUsed + 1 > limit) {
-      return NextResponse.json({ error: 'Not enough credits for auto color', limit, used: pagesUsed, needed: 1 }, { status: 429 });
+    if (pagesUsed + 2 > limit) {
+      return NextResponse.json({ error: 'Not enough credits for auto color', limit, used: pagesUsed, needed: 2 }, { status: 429 });
     }
 
     const paletteConfig = COLOR_PALETTES[palette];
@@ -115,10 +115,10 @@ export async function POST(req: NextRequest) {
       console.error('[AutoColor] Storage upload failed:', storageErr);
     }
 
-    // Deduct credit
+    // Deduct 2 credits (SDXL ControlNet cost)
     if (usageData) {
       await supabase.from('user_usage').update({
-        pages_used: pagesUsed + 1,
+        pages_used: pagesUsed + 2,
         plan,
         updated_at: new Date().toISOString(),
       }).eq('user_id', userId).eq('month', currentMonth);
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
       await supabase.from('user_usage').insert({
         user_id: userId,
         month: currentMonth,
-        pages_used: 1,
+        pages_used: 2,
         plan,
         bonus_credits: 0,
       });
@@ -139,14 +139,14 @@ export async function POST(req: NextRequest) {
       style: `autocolor-${palette}`,
       image_url: permanentUrl,
       storage_path: storagePath,
-      credit_cost: 1,
+      credit_cost: 2,
       has_reference: true,
     });
 
     return NextResponse.json({
       imageUrl: permanentUrl,
       palette,
-      pagesUsed: pagesUsed + 1,
+      pagesUsed: pagesUsed + 2,
       limit,
       plan,
     });

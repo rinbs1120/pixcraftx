@@ -217,16 +217,33 @@ function GenerateContent() {
 
   // Get the image to use for style transfer based on source
   const getStyleSourceImage = (): string | null => {
-    if (styleSource === 'current') return generatedImageUrl;
+    if (styleSource === 'current') {
+      // If there's a styled result, use that (it's colored); otherwise it's line art
+      return styledImageUrl || generatedImageUrl;
+    }
     if (styleSource === 'upload') return styleUploadImage;
     if (styleSource === 'mypages' && history.length > 0) return history[selectedMyPagesIdx]?.url || history[0].url;
     return generatedImageUrl;
+  };
+
+  // Check if the style source image has color (not just B&W line art)
+  // Line art can't produce good style transfer results
+  const isSourceColoredImage = (): boolean => {
+    if (styleSource === 'current') return !!styledImageUrl;
+    if (styleSource === 'upload') return !!styleUploadImage;
+    // For mypages, assume colored (user chose it intentionally)
+    if (styleSource === 'mypages') return history.length > 0;
+    return false;
   };
 
   const handleStyleTransfer = async (artStyle: typeof ARTISTIC_STYLES[0]) => {
     const sourceImage = getStyleSourceImage();
     if (!sourceImage) {
       setError('No image available. Generate a coloring page first or upload an image.');
+      return;
+    }
+    if (!isSourceColoredImage()) {
+      setError('Style It works best with colored images. Please use Auto Color first or upload a colored image. Line art produces unpredictable results.');
       return;
     }
     if (!isSignedIn) { setShowSignIn(true); return; }
@@ -676,7 +693,7 @@ function GenerateContent() {
                         : "border-[#E5E0D5] text-muted-foreground hover:border-[#FFB800]/50"
                     )}
                   >
-                    📷 Current
+                    🖼️ Preview
                   </button>
                   <button
                     onClick={() => { if (history.length > 0) setStyleSource('mypages'); }}
@@ -743,20 +760,26 @@ function GenerateContent() {
                   </div>
                 )}
 
+                {/* Line art warning */}
+                {getStyleSourceImage() && !isSourceColoredImage() && (
+                  <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-[9px] text-amber-700 leading-tight">⚠️ Line art detected. Style It works best with colored images. Try Auto Color first!</p>
+                  </div>
+                )}
                 {/* 5 Art Style Thumbnails - 3+2 grid */}
                 <div className="grid grid-cols-3 gap-1.5">
                   {ARTISTIC_STYLES.map((art) => (
                     <button
                       key={art.id}
                       onClick={() => handleStyleTransfer(art)}
-                      disabled={isStyling || !getStyleSourceImage()}
+                      disabled={isStyling || !getStyleSourceImage() || !isSourceColoredImage()}
                       className={cn(
                         "rounded-xl overflow-hidden transition-all border-2",
                         selectedArtStyle === art.id
                           ? "border-[#FFB800] ring-2 ring-[#FFB800]/20 shadow-md"
                           : "border-[#E5E0D5] hover:border-[#FFB800]/50 hover:shadow-sm",
                         (isStyling && selectedArtStyle !== art.id) && "opacity-40",
-                        !getStyleSourceImage() && "opacity-40 cursor-not-allowed"
+                        (!getStyleSourceImage() || !isSourceColoredImage()) && "opacity-40 cursor-not-allowed"
                       )}
                       title={art.desc}
                     >

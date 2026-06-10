@@ -24,7 +24,7 @@ const STYLE_PROMPTS = {
 
 // Credit costs - Kolors is cheaper than FLUX
 const GENERATE_CREDIT_COSTS = {
-  fast: 1,   // Kolors 20 steps (currently free on SiliconFlow)
+  fast: 1,   // Kolors 30 steps (currently free on SiliconFlow)
   hd: 2,     // Kolors 50 steps (cheaper than old FLUX HD)
 };
 
@@ -228,7 +228,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isHD = quality === 'hd';
-    const inferenceSteps = isHD ? 50 : 20;
+    const inferenceSteps = isHD ? 50 : 30;
     const kolorsImageSize = '960x1280'; // 3:4 vertical, closest to our 1200x1600 requirement
 
     console.log(`[Generate] Quality: ${quality}, Model: SiliconFlow Kolors, Steps: ${inferenceSteps}, Credit cost: ${creditCost}`);

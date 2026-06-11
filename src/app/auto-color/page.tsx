@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Loader2, Download, AlertCircle, Palette, ImageIcon, Upload, Paintbrush, Sparkles, ArrowRight, Check, ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react';
+import { Loader2, Download, AlertCircle, Palette, ImageIcon, Upload, Paintbrush, Sparkles, ArrowRight, Check, ChevronDown, ChevronUp, ShoppingBag, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 
@@ -924,11 +924,12 @@ function AutoColorContent() {
               {/* Recent Creations */}
               {isSignedIn && history.length > 0 && (
                 <div className="rounded-2xl p-3 shadow-sm border border-border bg-white">
-                  <h4 className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                    Recent Creations
-                  </h4>
-                  <div className="grid grid-cols-4 gap-1.5 max-h-[160px] overflow-y-auto">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-[11px] font-bold text-foreground/70 uppercase tracking-wide">Recent</span>
+                    <span className="text-[9px] text-muted-foreground/60">{history.length} creation{history.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
                     {history.slice(0, 12).map((h, i) => (
                       <button
                         key={i}
@@ -942,9 +943,12 @@ function AutoColorContent() {
                             setImageSource('upload');
                           }
                         }}
-                        className="aspect-square rounded-lg overflow-hidden border border-[#E5E0D5] hover:border-[#FFB800] transition-all"
+                        className="group relative rounded-lg overflow-hidden border-2 transition-all aspect-[3/4] border-[#E5E0D5] hover:border-[#FFB800]/50"
                       >
                         <img src={h.url} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-[8px] text-white truncate">{h.style}</p>
+                        </div>
                       </button>
                     ))}
                   </div>

@@ -81,7 +81,7 @@ const PRODUCTS = [
   {
     id: 'canvas-print',
     label: 'Canvas Print',
-    emoji: '🖼️',
+    thumbnail: '/styles/product-canvas-print.jpg',
     desc: 'Ready-to-hang wall art',
     credits: 0,
     available: true,
@@ -89,18 +89,18 @@ const PRODUCTS = [
   {
     id: 'fridge-magnet',
     label: 'Fridge Magnet',
-    emoji: '🧲',
+    thumbnail: '/styles/product-fridge-magnet.jpg',
     desc: 'Cute icon with white border & label',
     credits: 2,
-    available: false,
+    available: true,
   },
   {
     id: 'sticker',
     label: 'Sticker',
-    emoji: '📒',
+    thumbnail: '/styles/product-sticker.jpg',
     desc: 'Die-cut sticker with white edge',
     credits: 2,
-    available: false,
+    available: true,
   },
 ];
 
@@ -168,6 +168,8 @@ function AutoColorContent() {
 
   /* Step 3 state */
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [productResult, setProductResult] = useState<string | null>(null);
+  const [isProductProcessing, setIsProductProcessing] = useState(false);
 
   /* Auth / usage */
   const [pagesUsed, setPagesUsed] = useState(0);
@@ -382,12 +384,44 @@ function AutoColorContent() {
     document.body.removeChild(a);
   };
 
+  const handleCreateProduct = async () => {
+    if (!selectedProduct || selectedProduct === 'canvas-print') return;
+    const img = styleResult || autoColorResult;
+    if (!img) return;
+
+    setIsProductProcessing(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/product-format', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: img, productType: selectedProduct }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Product creation failed');
+        if (data.limit) setPageLimit(data.limit);
+        if (data.used !== undefined) setPagesUsed(data.used);
+        return;
+      }
+      setProductResult(data.imageUrl);
+      if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
+      if (data.limit) setPageLimit(data.limit);
+      if (data.plan) setPlan(data.plan);
+    } catch {
+      setError('Network error creating product. Please try again.');
+    } finally {
+      setIsProductProcessing(false);
+    }
+  };
+
   const handleReset = () => {
     setSelectedStyle(null);
     setSelectedStyleType(null);
     setAutoColorResult(null);
     setStyleResult(null);
     setSelectedProduct(null);
+    setProductResult(null);
     setError(null);
     setStepOpen({ 1: true, 2: false, 3: false });
   };
@@ -405,7 +439,7 @@ function AutoColorContent() {
   };
 
   /* ──────── Derived display image ──────── */
-  const displayImage = styleResult || autoColorResult || sourceImage;
+  const displayImage = productResult || styleResult || autoColorResult || sourceImage;
 
   const selectedStyleLabel = (() => {
     if (!selectedStyle) return '';
@@ -695,7 +729,9 @@ function AutoColorContent() {
                                 : 'border-[#E5E0D5] opacity-60 cursor-not-allowed'
                             )}
                           >
-                            <span className="text-2xl">{p.emoji}</span>
+                            <div className="w-11 h-11 rounded-lg flex-shrink-0 overflow-hidden bg-gray-50">
+                              <img src={p.thumbnail} alt={p.label} className="w-full h-full object-cover" />
+                            </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-xs font-semibold text-foreground flex items-center gap-1">
                                 {p.label}
@@ -714,7 +750,7 @@ function AutoColorContent() {
                         ))}
                       </div>
 
-                      {/* Download / Action button for product */}
+                      {/* Canvas Print: direct download */}
                       {selectedProduct === 'canvas-print' && (
                         <button
                           onClick={handleDownload}
@@ -727,9 +763,48 @@ function AutoColorContent() {
                           <Download className="w-4 h-4" /> Download Canvas Print
                         </button>
                       )}
-                      {selectedProduct && !PRODUCTS.find(p => p.id === selectedProduct)?.available && (
-                        <div className="text-center py-2 text-xs text-muted-foreground">
-                          🚧 This product is coming soon!
+
+                      {/* Fridge Magnet / Sticker: call product-format API */}
+                      {selectedProduct && selectedProduct !== 'canvas-print' && !productResult && (
+                        <button
+                          onClick={handleCreateProduct}
+                          disabled={isProductProcessing}
+                          className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm"
+                          style={{
+                            background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+                            boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                          }}
+                        >
+                          {isProductProcessing ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Creating {PRODUCTS.find(p => p.id === selectedProduct)?.label}...</>
+                          ) : (
+                            <><Sparkles className="w-4 h-4" /> Create {PRODUCTS.find(p => p.id === selectedProduct)?.label} (2 cr)</>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Product result: show download */}
+                      {selectedProduct && selectedProduct !== 'canvas-print' && productResult && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] text-center text-green-600 font-medium">✨ Product ready!</p>
+                          <button
+                            onClick={() => {
+                              const a = document.createElement('a');
+                              a.href = productResult;
+                              a.download = `pixcraftx-${selectedProduct}-${Date.now()}.png`;
+                              a.target = '_blank';
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                            }}
+                            className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 text-sm"
+                            style={{
+                              background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+                              boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                            }}
+                          >
+                            <Download className="w-4 h-4" /> Download {PRODUCTS.find(p => p.id === selectedProduct)?.label}
+                          </button>
                         </div>
                       )}
                     </div>
@@ -783,7 +858,7 @@ function AutoColorContent() {
                     </div>
                     <div className="mt-2 text-center">
                       <span className="text-[10px] text-muted-foreground">
-                        {selectedStyleLabel} style applied ✨
+                        {productResult ? `${PRODUCTS.find(p => p.id === selectedProduct)?.label || 'Product'} ready ✨` : `${selectedStyleLabel} style applied ✨`}
                       </span>
                     </div>
                   </div>

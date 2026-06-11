@@ -52,17 +52,22 @@ export async function POST(req: NextRequest) {
     if (pagesUsed + 2 > limit) return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: 2 }, { status: 429 });
 
     const prompt = PRODUCT_PROMPTS[productType];
-    // Convert image URL to base64 (SiliconFlow APIs require base64 for img2img)
-    console.log('[ProductFormat] Converting image to base64, product:', productType);
+    // Download and resize image before base64 conversion (reduce payload size)
+    console.log('[ProductFormat] Downloading image, product:', productType);
     let imageBase64: string;
     try {
       const imgResp = await fetch(imageUrl);
-      if (!imgResp.ok) throw new Error('Failed to fetch image for base64 conversion');
+      if (!imgResp.ok) throw new Error('Failed to fetch image');
       const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
-      const contentType = imgResp.headers.get('content-type') || 'image/png';
-      imageBase64 = `data:${contentType};base64,${imgBuffer.toString('base64')}`;
+      // Resize: max 1536px on longest side, maintain aspect ratio
+      const resized = await sharp(imgBuffer)
+        .resize(1536, 1536, { fit: 'inside', withoutEnlargement: true })
+        .png({ quality: 90 })
+        .toBuffer();
+      imageBase64 = `data:image/png;base64,${resized.toString('base64')}`;
+      console.log('[ProductFormat] Image resized, base64 length:', imageBase64.length);
     } catch (e) {
-      console.error('[ProductFormat] Base64 conversion failed:', e);
+      console.error('[ProductFormat] Image processing failed:', e);
       return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });
     }
 

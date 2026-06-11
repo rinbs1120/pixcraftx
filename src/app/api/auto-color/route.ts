@@ -82,17 +82,22 @@ export async function POST(req: NextRequest) {
 
     if (pagesUsed + CREDITS_PER_USE > limit) return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: CREDITS_PER_USE }, { status: 429 });
 
-    // Convert image URL to base64
-    console.log('[AutoColor] Converting image to base64, style:', styleKey);
+    // Download and resize image before base64 conversion (reduce payload size)
+    console.log('[AutoColor] Downloading image, style:', styleKey);
     let imageBase64: string;
     try {
       const imgResp = await fetch(imageUrl);
-      if (!imgResp.ok) throw new Error('Failed to fetch image for base64 conversion');
+      if (!imgResp.ok) throw new Error('Failed to fetch image');
       const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
-      const contentType = imgResp.headers.get('content-type') || 'image/png';
-      imageBase64 = `data:${contentType};base64,${imgBuffer.toString('base64')}`;
+      // Resize: max 1536px on longest side, maintain aspect ratio
+      const resized = await sharp(imgBuffer)
+        .resize(1536, 1536, { fit: 'inside', withoutEnlargement: true })
+        .png({ quality: 90 })
+        .toBuffer();
+      imageBase64 = `data:image/png;base64,${resized.toString('base64')}`;
+      console.log('[AutoColor] Image resized, base64 length:', imageBase64.length);
     } catch (e) {
-      console.error('[AutoColor] Base64 conversion failed:', e);
+      console.error('[AutoColor] Image processing failed:', e);
       return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });
     }
 

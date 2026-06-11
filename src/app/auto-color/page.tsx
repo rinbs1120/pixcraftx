@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
-import { Loader2, Download, AlertCircle, Palette, ImageIcon, Upload, Paintbrush, Sparkles, ArrowRight, Check, ChevronDown, ChevronUp, ShoppingBag, Clock } from 'lucide-react';
+import { Loader2, Download, AlertCircle, Palette, ImageIcon, Upload, Paintbrush, Sparkles, ArrowRight, Check, ChevronDown, ChevronUp, ShoppingBag, Clock, Eraser } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, SignIn } from '@clerk/nextjs';
 
@@ -157,6 +157,8 @@ function AutoColorContent() {
   /* Step 3 state */
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [productResult, setProductResult] = useState<string | null>(null);
+  const [transparentResult, setTransparentResult] = useState<string | null>(null);
+  const [isRemovingBg, setIsRemovingBg] = useState(false);
   const [isProductProcessing, setIsProductProcessing] = useState(false);
 
   /* Auth / usage */
@@ -320,6 +322,30 @@ function AutoColorContent() {
     }
   };
 
+  const handleRemoveBackground = async () => {
+    const img = productResult;
+    if (!img) return;
+    setIsRemovingBg(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/remove-background', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: img }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Background removal failed');
+        return;
+      }
+      setTransparentResult(data.imageUrl);
+    } catch {
+      setError('Network error removing background. Please try again.');
+    } finally {
+      setIsRemovingBg(false);
+    }
+  };
+
   const handleReset = () => {
     setSelectedStyle(null);
     setSelectedStyleType(null);
@@ -327,6 +353,8 @@ function AutoColorContent() {
     setStyleResult(null);
     setSelectedProduct(null);
     setProductResult(null);
+    setTransparentResult(null);
+    setIsRemovingBg(false);
     setError(null);
     setStepOpen({ 1: true, 2: false, 3: false });
   };
@@ -341,10 +369,12 @@ function AutoColorContent() {
 
   const handleSelectProduct = (id: string) => {
     setSelectedProduct(id);
+    setProductResult(null);
+    setTransparentResult(null);
   };
 
   /* ──────── Derived display image ──────── */
-  const displayImage = productResult || styleResult || autoColorResult || sourceImage;
+  const displayImage = transparentResult || productResult || styleResult || autoColorResult || sourceImage;
 
   const selectedStyleLabel = (() => {
     if (!selectedStyle) return '';
@@ -684,15 +714,16 @@ function AutoColorContent() {
                         </button>
                       )}
 
-                      {/* Product result: show download */}
+                      {/* Product result: show download + remove background */}
                       {selectedProduct && selectedProduct !== 'canvas-print' && productResult && (
                         <div className="space-y-2">
                           <p className="text-[10px] text-center text-green-600 font-medium">✨ Product ready!</p>
                           <button
                             onClick={() => {
+                              const url = transparentResult || productResult;
                               const a = document.createElement('a');
-                              a.href = productResult;
-                              a.download = `pixcraftx-${selectedProduct}-${Date.now()}.png`;
+                              a.href = url;
+                              a.download = `pixcraftx-${selectedProduct}-${transparentResult ? 'transparent' : ''}-${Date.now()}.png`;
                               a.target = '_blank';
                               document.body.appendChild(a);
                               a.click();
@@ -700,12 +731,31 @@ function AutoColorContent() {
                             }}
                             className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 text-sm"
                             style={{
-                              background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
-                              boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                              background: transparentResult
+                                ? 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)'
+                                : 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+                              boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
                             }}
                           >
-                            <Download className="w-4 h-4" /> Download {PRODUCTS.find(p => p.id === selectedProduct)?.label}
+                            <Download className="w-4 h-4" /> {transparentResult ? 'Download Transparent PNG' : `Download ${PRODUCTS.find(p => p.id === selectedProduct)?.label}`}
                           </button>
+                          {/* Remove Background button - only show if not already done */}
+                          {!transparentResult && (
+                            <button
+                              onClick={handleRemoveBackground}
+                              disabled={isRemovingBg}
+                              className="w-full py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm border-2 border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6]/5"
+                            >
+                              {isRemovingBg ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" /> Removing background...</>
+                              ) : (
+                                <><Eraser className="w-4 h-4" /> Remove Background (Free)</>
+                              )}
+                            </button>
+                          )}
+                          {transparentResult && (
+                            <p className="text-[10px] text-center text-purple-600 font-medium">✨ Background removed! Download transparent PNG above.</p>
+                          )}
                         </div>
                       )}
                     </div>

@@ -1,6 +1,7 @@
-// Product Format API - V1: Transform colored/styled image into product-ready format
+// Product Format API - V2: Transform colored/styled image into product-ready format
 // Supported products: fridge-magnet, sticker (canvas-print needs no processing)
-// Uses Qwen-Image-Edit-2509 for subject extraction + product formatting
+// Uses Qwen-Image-Edit-2509 for product formatting
+// Background removal is a separate step via /api/remove-background
 // Cost: ~$0.04/image ≈ ¥0.29, charged 2 credits
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -52,14 +53,13 @@ export async function POST(req: NextRequest) {
     if (pagesUsed + 2 > limit) return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: 2 }, { status: 429 });
 
     const prompt = PRODUCT_PROMPTS[productType];
-    // Download and resize image before base64 conversion (reduce payload size)
+    // Download and resize image before base64 conversion
     console.log('[ProductFormat] Downloading image, product:', productType);
     let imageBase64: string;
     try {
       const imgResp = await fetch(imageUrl);
       if (!imgResp.ok) throw new Error('Failed to fetch image');
       const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
-      // Resize: max 1536px on longest side, maintain aspect ratio
       const resized = await sharp(imgBuffer)
         .resize(1536, 1536, { fit: 'inside', withoutEnlargement: true })
         .png({ quality: 90 })
@@ -71,6 +71,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });
     }
 
+    // Call Qwen to generate product
+    console.log('[ProductFormat] Calling Qwen for', productType);
     const qwenResp = await fetch(SILICONFLOW_API, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -95,67 +97,17 @@ export async function POST(req: NextRequest) {
     const genUrl = qwenData?.images?.[0]?.url;
     if (!genUrl) return NextResponse.json({ error: 'No image generated' }, { status: 500 });
 
-    // Download result for storage upload
+    // Download result and upload to Supabase (no background removal here)
     const resultResp = await fetch(genUrl);
     if (!resultResp.ok) return NextResponse.json({ error: 'Failed to download result' }, { status: 500 });
     const resultBuffer = Buffer.from(await resultResp.arrayBuffer());
 
-    // Remove white background for fridge magnet and sticker products
-    let processedBuffer: Buffer = resultBuffer;
-    try {
-      console.log('[ProductFormat] Removing white background for', productType);
-      // Get image metadata for dimensions
-      const meta = await sharp(resultBuffer).metadata();
-      const w = meta.width || 960;
-      const h = meta.height || 1280;
-
-      // Extract original RGB (3 channels, no alpha)
-      const rgbOnly = await sharp(resultBuffer).removeAlpha().raw().toBuffer();
-      // Create alpha mask directly from pipeline (force 1 channel grayscale)
-      // White bg (brightness > 242) → transparent (0), colored → opaque (255)
-      const maskRaw = await sharp(resultBuffer)
-        .grayscale()
-        .threshold(242)    // pixels > 242 → white (255)
-        .negate()           // invert: white bg → black (0=transparent), colored → white (255=opaque)
-        .raw()
-        .toBuffer();
-
-      // Verify pixel counts match
-      const expectedPixels = w * h;
-      const rgbPixels = rgbOnly.length / 3;
-      const maskPixels = maskRaw.length;
-      console.log('[ProductFormat] Dimensions:', w, 'x', h, 'RGB pixels:', rgbPixels, 'Mask pixels:', maskPixels);
-
-      if (rgbPixels !== expectedPixels || maskPixels !== expectedPixels) {
-        console.warn('[ProductFormat] Pixel count mismatch, skipping background removal. Expected:', expectedPixels, 'RGB:', rgbPixels, 'Mask:', maskPixels);
-      } else {
-        // Interleave RGB + Alpha into RGBA buffer
-        const rgba = new Uint8Array(expectedPixels * 4);
-        const rgbArr = new Uint8Array(rgbOnly);
-        const maskArr = new Uint8Array(maskRaw);
-        for (let i = 0; i < expectedPixels; i++) {
-          rgba[i * 4]     = rgbArr[i * 3];     // R
-          rgba[i * 4 + 1] = rgbArr[i * 3 + 1]; // G
-          rgba[i * 4 + 2] = rgbArr[i * 3 + 2]; // B
-          rgba[i * 4 + 3] = maskArr[i];          // A (from mask)
-        }
-
-        processedBuffer = await sharp(Buffer.from(rgba.buffer as ArrayBuffer) as any, { raw: { width: w, height: h, channels: 4 } })
-          .png()
-          .toBuffer();
-        console.log('[ProductFormat] Background removed, transparent PNG created');
-      }
-    } catch (e) {
-      console.warn('[ProductFormat] Background removal failed, keeping original:', e);
-    }
-
-    // Upload to Supabase Storage
     let permanentUrl = genUrl;
     let storagePath: string | null = null;
     try {
       const ts = Date.now();
       const fp = `${userId}/product-${productType}-${ts}.png`;
-      const { error: upErr } = await supabase.storage.from('coloring-pages').upload(fp, processedBuffer, { contentType: 'image/png', upsert: false });
+      const { error: upErr } = await supabase.storage.from('coloring-pages').upload(fp, resultBuffer, { contentType: 'image/png', upsert: false });
       if (!upErr) {
         const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(fp);
         permanentUrl = urlData.publicUrl;

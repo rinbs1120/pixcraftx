@@ -739,23 +739,7 @@ function AutoColorContent() {
                           >
                             <Download className="w-4 h-4" /> {transparentResult ? 'Download Transparent PNG' : `Download ${PRODUCTS.find(p => p.id === selectedProduct)?.label}`}
                           </button>
-                          {/* Remove Background button - only show if not already done */}
-                          {!transparentResult && (
-                            <button
-                              onClick={handleRemoveBackground}
-                              disabled={isRemovingBg}
-                              className="w-full py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm border-2 border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6]/5"
-                            >
-                              {isRemovingBg ? (
-                                <><Loader2 className="w-4 h-4 animate-spin" /> Removing background...</>
-                              ) : (
-                                <><Eraser className="w-4 h-4" /> Remove Background (Free)</>
-                              )}
-                            </button>
-                          )}
-                          {transparentResult && (
-                            <p className="text-[10px] text-center text-purple-600 font-medium">✨ Background removed! Download transparent PNG above.</p>
-                          )}
+
                         </div>
                       )}
                     </div>
@@ -842,22 +826,49 @@ function AutoColorContent() {
 
               {/* Quick actions below preview */}
               {(autoColorResult || styleResult) && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleDownload}
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-sm"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </button>
-                  <Link
-                    href={`/color?src=${encodeURIComponent(styleResult || autoColorResult || '')}`}
-                    className="py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-[#1A1A2E] transition-all hover:-translate-y-0.5 text-sm"
-                    style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
-                  >
-                    <Palette className="w-4 h-4" />
-                    Color It!
-                  </Link>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDownload}
+                      className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all text-sm text-white"
+                      style={{
+                        background: transparentResult
+                          ? 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)'
+                          : 'linear-gradient(to right, #FF6B6B, #FF8E53)',
+                        boxShadow: transparentResult
+                          ? '0 4px 12px rgba(139,92,246,0.3)'
+                          : 'none',
+                      }}
+                    >
+                      <Download className="w-4 h-4" />
+                      {transparentResult ? 'Download Transparent' : 'Download'}
+                    </button>
+                    <Link
+                      href={`/color?src=${encodeURIComponent(styleResult || autoColorResult || '')}`}
+                      className="py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-[#1A1A2E] transition-all hover:-translate-y-0.5 text-sm"
+                      style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
+                    >
+                      <Palette className="w-4 h-4" />
+                      Color It!
+                    </Link>
+                  </div>
+                  {/* Remove Background button - only for fridge magnet / sticker */}
+                  {productResult && selectedProduct && selectedProduct !== 'canvas-print' && !transparentResult && (
+                    <button
+                      onClick={handleRemoveBackground}
+                      disabled={isRemovingBg}
+                      className="w-full py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm border-2 border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6]/5"
+                    >
+                      {isRemovingBg ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Removing background...</>
+                      ) : (
+                        <><Eraser className="w-4 h-4" /> Remove Background (Free)</>
+                      )}
+                    </button>
+                  )}
+                  {transparentResult && (
+                    <p className="text-[10px] text-center text-purple-600 font-medium">✨ Background removed! Download transparent PNG above.</p>
+                  )}
                 </div>
               )}
 

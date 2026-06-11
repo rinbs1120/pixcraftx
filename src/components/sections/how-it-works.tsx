@@ -1,4 +1,4 @@
-import { Pencil, Upload, Sparkles, Palette, Printer, ArrowRight } from 'lucide-react';
+import { Pencil, Upload, Sparkles, Palette, Package, ArrowRight } from 'lucide-react';
 
 const steps = [
   {
@@ -10,22 +10,22 @@ const steps = [
   },
   {
     number: 2,
-    title: 'Choose Style',
-    description: 'Pick Simple, Mandala, or Intricate to match your vision',
+    title: 'Generate Line Art',
+    description: 'AI creates clean line art from your description',
     icon: Sparkles,
   },
   {
     number: 3,
-    title: 'Generate',
-    description: 'AI creates a clean, printable line art coloring page',
+    title: 'Color & Style',
+    description: 'Apply colors and art styles with one click',
     icon: Sparkles,
   },
   {
     number: 4,
-    title: 'Color or Print',
-    description: 'Color it online in your browser, or download and print',
+    title: 'Turn into Merch',
+    description: 'Make fridge magnets, stickers, or canvas prints',
     icon: Palette,
-    subIcon: Printer,
+    subIcon: Package,
   },
 ];
 

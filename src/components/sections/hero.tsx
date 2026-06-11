@@ -49,20 +49,20 @@ const steps = [
   },
   {
     number: 2,
-    title: 'Choose Line Style',
-    description: 'Pick Simple, Mandala, or Intricate line art',
+    title: 'Generate Line Art',
+    description: 'AI creates a clean line art from your idea',
     icon: Sparkles,
   },
   {
     number: 3,
-    title: 'Generate',
-    description: 'AI creates a clean, printable line art',
+    title: 'Color & Style',
+    description: 'Apply colors and art styles with one click',
     icon: Sparkles,
   },
   {
     number: 4,
-    title: 'Auto Color & Style',
-    description: 'Auto-color with 3 palettes, or transform with 5 Oriental art styles',
+    title: 'Turn into Merch',
+    description: 'Make fridge magnets, stickers, or canvas prints',
     icon: Palette,
   },
 ];
@@ -78,10 +78,10 @@ export function Hero() {
           {/* Left: Text Content */}
           <div className="text-center lg:text-left">
             <h1 className="font-display text-4xl md:text-5xl lg:text-[56px] text-foreground leading-tight mb-6">
-              Create Any Coloring Page in Seconds
+              Color It, Then Make It Yours
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-              Describe your idea or upload a photo — get print-ready coloring pages in seconds.
+              Generate stunning line art, color it with AI styles, then turn it into fridge magnets, stickers, and canvas prints.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">

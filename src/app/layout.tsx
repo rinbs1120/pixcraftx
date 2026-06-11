@@ -7,26 +7,26 @@ import './globals.css';
 export const metadata: Metadata = {
   verification: { other: { "p:domain_verify": "88a5b8cbaf6eb49fa1682d7ee76f0525" } },
   title: {
-    default: 'PixCraftX — Create Any Coloring Page in Seconds',
+    default: 'PixCraftX — Color It, Then Make It Yours',
     template: '%s | PixCraftX',
   },
   description:
-    'AI-powered coloring page generator that creates printable coloring pages in seconds. For parents, teachers, and KDP sellers.',
+    'AI-powered coloring page and merch creator. Generate line art, color with AI styles, then turn it into fridge magnets, stickers, and canvas prints.',
   keywords: [
     'coloring pages',
     'AI coloring',
+    'fridge magnet maker',
+    'sticker maker',
     'printable coloring pages',
-    'kids coloring',
-    'mandala coloring',
-    'KDP coloring books',
     'coloring page generator',
+    'merch creator',
   ],
   authors: [{ name: 'PixCraftX Team', url: 'https://pixcraftx.com' }],
   generator: 'PixCraftX',
   openGraph: {
-    title: 'PixCraftX — Create Any Coloring Page in Seconds',
+    title: 'PixCraftX — Color It, Then Make It Yours',
     description:
-      'AI-powered coloring page generator. Describe your idea or upload a photo, get print-ready coloring pages.',
+      'AI-powered coloring page and merch creator. Generate line art, color it, then turn it into fridge magnets, stickers, and canvas prints.',
     url: 'https://pixcraftx.com',
     siteName: 'PixCraftX',
     locale: 'en_US',
@@ -34,9 +34,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PixCraftX — Create Any Coloring Page in Seconds',
+    title: 'PixCraftX — Color It, Then Make It Yours',
     description:
-      'AI-powered coloring page generator. Describe your idea or upload a photo, get print-ready coloring pages.',
+      'AI-powered coloring page and merch creator. Generate line art, color it, then turn it into fridge magnets, stickers, and canvas prints.',
   },
   robots: {
     index: true,

@@ -10,32 +10,37 @@ const faqs = [
   {
     question: 'What is PixCraftX?',
     answer:
-      'PixCraftX is an AI-powered coloring page generator. Simply enter a text description of what you want, and PixCraftX will create a printable coloring page based on your prompt. It is designed for kids, parents, teachers, and anyone who loves coloring.',
+      'PixCraftX is an AI-powered coloring page and merch creator. Generate stunning line art from any idea, color it with AI styles, then turn it into fridge magnets, stickers, and canvas prints. Designed for kids, parents, teachers, and creators.',
   },
   {
     question: 'How does it work?',
     answer:
-      'Type a text prompt (e.g., "a cute cat on a windowsill") and our AI generates a line art coloring page. Then you can: color it online with our built-in tool, use Auto Color to fill colors automatically, or apply art styles (Chubby Doodle, Pop Art, etc.) for a creative twist. Download as PNG or print directly.',
+      'Three simple steps: (1) Generate — type a description and AI creates clean line art. (2) Color & Style — apply color palettes or art styles like Pop Art and City Pop with one click. (3) Turn into Merch — transform your colored art into fridge magnets, stickers, or canvas prints, ready to download.',
   },
   {
     question: 'Is it free?',
     answer:
-      'Yes! PixCraftX offers a free plan that includes 2 coloring pages per month, plus your first reference image generation is free. If you need more, our Starter, Pro and Business plans provide additional monthly generation quotas and exclusive features. Visit our pricing page for details.',
+      'Yes! PixCraftX offers a free plan that includes 2 credits per month. If you need more, our Starter, Pro and Business plans provide additional monthly credits and exclusive features like transparent PNG downloads and merch products. Visit our pricing page for details.',
   },
   {
     question: 'What styles are available?',
     answer:
-      'PixCraftX offers three line art styles: Simple (bold lines for kids), Mandala (symmetrical patterns for relaxation), and Intricate (fine details for adults). After generating, use Auto Color to fill colors automatically with Pastel, Vivid, or Muted palettes, or apply one of 4 art styles (Chubby Doodle, Pop Art, City Pop, Fridge Magnet) to transform your page.',
+      'Three color palettes (Pastel, Vivid, Muted) for natural coloring, plus four art styles (Chubby Doodle, Pop Art, City Pop, Fridge Magnet) for creative transformations. Each style transforms your line art with a unique visual personality.',
+  },
+  {
+    question: 'What merch products can I make?',
+    answer:
+      'Currently we support three products: Canvas Prints (direct download, free), Fridge Magnets (2 credits, with white background removed), and Stickers (2 credits, transparent PNG). All product images are high-resolution and ready for production.',
   },
   {
     question: 'Can I use generated images commercially?',
     answer:
-      'Pro and Business plan subscribers are granted a commercial license to use generated coloring pages for commercial purposes. Starter plan and Free plan users are limited to personal, non-commercial use only. Please review our Terms of Service for full details.',
+      'Pro and Business plan subscribers are granted a commercial license to use generated images for commercial purposes. Starter plan and Free plan users are limited to personal, non-commercial use only. Please review our Terms of Service for full details.',
   },
   {
     question: 'Is it safe for children?',
     answer:
-      'Yes. All prompts are filtered through our content moderation API powered by Creem to block inappropriate or harmful content. We take child safety seriously and continuously improve our moderation systems. However, parental supervision is always recommended.',
+      'Yes. All prompts are filtered through our content moderation system to block inappropriate or harmful content. We take child safety seriously and continuously improve our moderation. However, parental supervision is always recommended.',
   },
   {
     question: 'How do I cancel my subscription?',

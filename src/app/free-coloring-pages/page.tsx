@@ -5,10 +5,10 @@ import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
   title: 'Free Coloring Pages',
-  description: 'Browse and download free printable coloring pages for kids and adults. Dinosaurs, unicorns, mandalas, and more!',
+  description: 'Browse and download free printable coloring pages featuring Oriental themes — dragons, koi fish, pagodas, and more!',
   openGraph: {
     title: 'Free Coloring Pages - PixCraftX',
-    description: 'Browse and download free printable coloring pages for kids and adults.',
+    description: 'Browse and download free printable coloring pages featuring Oriental and fantasy themes.',
     url: 'https://pixcraftx.com/free-coloring-pages',
     siteName: 'PixCraftX',
     type: 'website',
@@ -29,7 +29,7 @@ export default function FreeColoringPages() {
             Browse Free Coloring Pages
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-            Explore hundreds of free printable coloring pages across popular themes — from dinosaurs to mandalas.
+            Explore free printable coloring pages featuring Oriental themes — from soaring dragons to moonlit pagodas. Color them, then turn into merch!
           </p>
           <a
             href="/generate"

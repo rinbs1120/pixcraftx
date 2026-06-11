@@ -88,7 +88,7 @@ export function Footer() {
             <span className="text-[#FF6B6B]">❤</span> for creators.
           </p>
           <p className="text-center text-xs text-[#808090] mt-2">
-            Powered by Fal.ai & AILabTools. All generated content is AI-created.
+            Powered by AI. All generated content is AI-created.
           </p>
         </div>
       </div>

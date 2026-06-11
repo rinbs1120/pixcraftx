@@ -3,8 +3,8 @@ import { Sparkles, Upload, Palette, Zap } from 'lucide-react';
 const highlights = [
   {
     icon: Sparkles,
-    tag: 'Any Theme',
-    text: 'Describe anything — from "sleepy koala" to "fire-breathing dragon" — and get clean line art instantly.',
+    tag: 'Oriental Fantasy',
+    text: 'From soaring dragons to moonlit pagodas — create stunning Oriental-themed line art with AI.',
   },
   {
     icon: Upload,
@@ -13,13 +13,13 @@ const highlights = [
   },
   {
     icon: Palette,
-    tag: 'Color Online',
-    text: "Don't just generate — color it right in your browser with our built-in digital coloring tool.",
+    tag: 'Color & Style',
+    text: 'Apply 3 color palettes or 4 art styles with one click. Pastel, Pop Art, City Pop, and more.',
   },
   {
     icon: Zap,
-    tag: 'Free to Start',
-    text: 'Get 2 free credits per month. Auto-color your pages or transform them with 5 art styles. No credit card required.',
+    tag: 'Turn into Merch',
+    text: 'Transform your colored art into fridge magnets, stickers, and canvas prints. Download transparent PNGs ready for production.',
   },
 ] as const;
 

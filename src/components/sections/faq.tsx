@@ -8,12 +8,17 @@ const faqs = [
   {
     question: 'How do I create a coloring page?',
     answer:
-      'Simply type a description of what you want — like "a cute dinosaur eating ice cream" — select a style (Simple, Mandala, or Intricate), and click Generate. Our AI will create a clean line art coloring page in seconds.',
+      'Simply type a description of what you want — like "a Chinese dragon soaring through clouds" — and click Generate. Our AI will create a clean line art coloring page in seconds.',
   },
   {
     question: 'What styles are available?',
     answer:
-      'Three line art styles: Simple (bold lines for kids), Mandala (symmetrical patterns for relaxation), and Intricate (fine details for adults). Plus, 4 art transformation styles: Chubby Doodle, Pop Art, City Pop, and Fridge Magnet.',
+      'Three color palettes (Pastel, Vivid, Muted) for natural coloring, plus four art styles (Chubby Doodle, Pop Art, City Pop, Fridge Magnet) for creative transformations.',
+  },
+  {
+    question: 'What merch can I make?',
+    answer:
+      'After coloring your line art, turn it into fridge magnets (2 cr), stickers (2 cr, transparent PNG), or canvas prints (free). Each product is generated as a high-resolution image ready for production.',
   },
   {
     question: 'Can I upload a reference image?',
@@ -21,14 +26,9 @@ const faqs = [
       'Yes! Upload any photo and our AI will transform it into a coloring page while preserving the composition and subject. This costs 5 credits per generation.',
   },
   {
-    question: 'Can I color the pages online?',
-    answer:
-      'Yes! Three ways: (1) Use our built-in digital coloring tool to color by hand, (2) Use Auto Color to fill colors automatically with Pastel, Vivid, or Muted palettes, or (3) Apply an art style like Chubby Doodle or City Pop for a creative transformation.',
-  },
-  {
     question: 'Can I use the images commercially?',
     answer:
-      'Pro and Business plans include a commercial license, so you can use generated pages for KDP books, Etsy products, and other commercial projects. Free and Starter plans are for personal, non-commercial use only.',
+      'Pro and Business plans include a commercial license, so you can use generated images for products, prints, and other commercial projects. Free and Starter plans are for personal, non-commercial use only.',
   },
   {
     question: 'How many pages can I generate for free?',
@@ -38,7 +38,7 @@ const faqs = [
   {
     question: 'What image formats are available for download?',
     answer:
-      'All pages can be downloaded as high-resolution PNG files. Pro and Business plans also support PDF export for easy printing.',
+      'All pages can be downloaded as high-resolution PNG files. Pro and Business plans also support PDF export and transparent PNG downloads for merch products.',
   },
   {
     question: 'Do free downloads have a watermark?',
@@ -48,7 +48,7 @@ const faqs = [
   {
     question: 'What AI technology powers PixCraftX?',
     answer:
-      'PixCraftX uses advanced AI image generation models powered by Fal.ai (including the Flux model family) and AILabTools. Our AI transforms your text descriptions and reference images into clean, printable coloring pages. All generated content is AI-created and should be reviewed before use.',
+      'PixCraftX uses advanced AI image generation and editing models to transform your text descriptions into clean line art, apply colors and art styles, and generate merch product images. All generated content is AI-created and should be reviewed before use.',
   },
 ];
 

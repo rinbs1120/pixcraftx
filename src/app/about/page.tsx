@@ -18,8 +18,8 @@ export default function AboutPage() {
 
           <div className="prose prose-lg max-w-none">
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              PixCraftX is an AI-powered coloring page generator that helps parents, teachers,
-              and creators bring their imagination to life in seconds.
+              PixCraftX is an AI-powered coloring page and merch creator that helps parents, teachers,
+              and creators bring their imagination to life — then turn it into real products.
             </p>
 
             <h2 className="font-display text-2xl mt-8 mb-4">Our Mission</h2>
@@ -32,7 +32,7 @@ export default function AboutPage() {
 
             <h2 className="font-display text-2xl mt-8 mb-4">How It Works</h2>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Using advanced AI image generation, PixCraftX transforms your text descriptions into clean, print-ready line art. Go further with Auto Color to fill colors automatically, or apply art styles like Chubby Doodle and City Pop for creative transformations. Our models are specifically trained to create coloring pages — with clear outlines, appropriate detail levels, and print-quality resolution.
+              Using advanced AI, PixCraftX transforms your text descriptions into clean line art, applies colors and art styles with one click, then turns your colored art into real products — fridge magnets, stickers, and canvas prints. Our models are optimized for coloring pages with clear outlines and print-quality resolution, and our merch generator produces transparent PNGs ready for production.
             </p>
 
             <h2 className="font-display text-2xl mt-8 mb-4">Made With Love</h2>

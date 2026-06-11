@@ -35,6 +35,8 @@ const allFeatures = [
   { key: 'pdf', label: 'PDF export' },
   { key: 'watermark', label: 'No watermark' },
   { key: 'commercial', label: 'Commercial license' },
+  { key: 'merch', label: 'Merch products (magnet, sticker, print)' },
+  { key: 'transparent', label: 'Transparent PNG download' },
 ] as const;
 
 type FeatureKey = typeof allFeatures[number]['key'];
@@ -49,7 +51,7 @@ const plans = [
     originalPrice: null,
     priceNote: '/mo',
     pageLabel: '2 credits',
-    features: { pages: true, styles: true, reference: false, png: true, pdf: false, watermark: false, commercial: false } as Record<FeatureKey, boolean>,
+    features: { pages: true, styles: true, reference: false, png: true, pdf: false, watermark: false, commercial: false, merch: false, transparent: false } as Record<FeatureKey, boolean>,
     buttonText: 'Get Started',
     buttonStyle: 'outline' as const,
     href: '/generate',
@@ -62,7 +64,7 @@ const plans = [
     originalPrice: isLaunchPromo ? 6.99 : null,
     priceNote: '/mo',
     pageLabel: '60 credits',
-    features: { pages: true, styles: true, reference: true, png: true, pdf: false, watermark: true, commercial: false } as Record<FeatureKey, boolean>,
+    features: { pages: true, styles: true, reference: true, png: true, pdf: false, watermark: true, commercial: false, merch: true, transparent: false } as Record<FeatureKey, boolean>,
     buttonText: 'Subscribe',
     buttonStyle: 'filled' as const,
     href: null,
@@ -76,7 +78,7 @@ const plans = [
     priceNote: '/mo',
     popular: true,
     pageLabel: '300 credits',
-    features: { pages: true, styles: true, reference: true, png: true, pdf: true, watermark: true, commercial: true } as Record<FeatureKey, boolean>,
+    features: { pages: true, styles: true, reference: true, png: true, pdf: true, watermark: true, commercial: true, merch: true, transparent: true } as Record<FeatureKey, boolean>,
     buttonText: 'Subscribe',
     buttonStyle: 'gradient' as const,
     href: null,
@@ -89,7 +91,7 @@ const plans = [
     originalPrice: isLaunchPromo ? 24.99 : null,
     priceNote: '/mo',
     pageLabel: '1000 credits',
-    features: { pages: true, styles: true, reference: true, png: true, pdf: true, watermark: true, commercial: true } as Record<FeatureKey, boolean>,
+    features: { pages: true, styles: true, reference: true, png: true, pdf: true, watermark: true, commercial: true, merch: true, transparent: true } as Record<FeatureKey, boolean>,
     buttonText: 'Subscribe',
     buttonStyle: 'filled' as const,
     href: null,
@@ -295,7 +297,7 @@ export function Pricing() {
 
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            💡 Generate Fast: <strong>1 cr</strong> · Generate HD: <strong>3 cr</strong> · Auto Color: <strong>2 cr</strong> · Style It: <strong>3 cr</strong> · Reference image: <strong>5 cr</strong>
+            💡 Generate: <strong>1 cr</strong> · Color & Style: <strong>3 cr</strong> · Fridge Magnet: <strong>2 cr</strong> · Sticker: <strong>2 cr</strong> · Canvas Print: <strong>0 cr</strong> · Reference: <strong>5 cr</strong>
           </p>
         </div>
       </div>

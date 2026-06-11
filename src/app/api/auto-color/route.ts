@@ -11,7 +11,7 @@ const SILICONFLOW_API = 'https://api.siliconflow.cn/v1/images/generations';
 
 const COLOR_PALETTES: Record<string, { prompt: string; negative: string }> = {
   pastel: {
-    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A beautifully colored illustration with soft pastel colors, macaron shades of soft pink pale green lavender butter yellow and sky blue, gentle pearlescent light tones, smooth soft gradients, coloring book style, colors filled neatly within the outlines',
+    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A beautifully colored illustration with soft pastel colors, delicate shades of soft pink pale green lavender butter yellow and sky blue, gentle pearlescent light tones, smooth soft gradients, coloring book style, colors filled neatly within the outlines',
     negative: 'dark colors, neon, harsh contrast, muddy, oversaturated, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
   },
   vivid: {

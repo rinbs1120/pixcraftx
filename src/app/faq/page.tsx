@@ -25,7 +25,7 @@ const faqs = [
   {
     question: 'What styles are available?',
     answer:
-      'PixCraftX offers three line art styles: Simple (bold lines for kids), Mandala (symmetrical patterns for relaxation), and Intricate (fine details for adults). After generating, use Auto Color to fill colors automatically with Pastel, Vivid, or Muted palettes, or apply one of 5 art styles (Chubby Doodle, Pop Art, City Pop, Fridge Magnet, Handwritten Piog) to transform your page.',
+      'PixCraftX offers three line art styles: Simple (bold lines for kids), Mandala (symmetrical patterns for relaxation), and Intricate (fine details for adults). After generating, use Auto Color to fill colors automatically with Pastel, Vivid, or Muted palettes, or apply one of 4 art styles (Chubby Doodle, Pop Art, City Pop, Fridge Magnet) to transform your page.',
   },
   {
     question: 'Can I use generated images commercially?',

@@ -13,7 +13,7 @@ const faqs = [
   {
     question: 'What styles are available?',
     answer:
-      'Three line art styles: Simple (bold lines for kids), Mandala (symmetrical patterns for relaxation), and Intricate (fine details for adults). Plus, 5 art transformation styles: Chubby Doodle, Pop Art, City Pop, Fridge Magnet, and Handwritten Piog.',
+      'Three line art styles: Simple (bold lines for kids), Mandala (symmetrical patterns for relaxation), and Intricate (fine details for adults). Plus, 4 art transformation styles: Chubby Doodle, Pop Art, City Pop, and Fridge Magnet.',
   },
   {
     question: 'Can I upload a reference image?',

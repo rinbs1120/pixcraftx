@@ -66,15 +66,6 @@ const ART_STYLES = [
     prompt: 'Transform this colored illustration into a City Pop style illustration. Use 1980s Japanese anime aesthetic, flat vector art style, high saturation retro color palette, Showa-era nostalgic atmosphere, pastel sky gradient, add handwritten English text elements, dreamy vaporwave mood',
     credits: 4,
   },
-  {
-    id: 'handwritten-piog',
-    label: 'Handwritten Piog',
-    emoji: '✍️',
-    desc: 'Hand-drawn annotations, Japanese lifestyle, Instagram story vibe',
-    thumbnail: '/styles/art-piog.jpg',
-    prompt: 'Transform this colored illustration into a Handwritten Piog style illustration. Add white hand-drawn annotation lines and text overlays, Japanese daily life aesthetic, low saturation soft lighting, Instagram story filter feel, light leaks and warm tones, casual lifestyle photography mood with hand-drawn decorative elements',
-    credits: 4,
-  },
 ];
 
 const PRODUCTS = [

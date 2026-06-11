@@ -552,61 +552,41 @@ function AutoColorContent() {
                       </div>
                     )}
                     <div className={sourceImage ? '' : 'opacity-40 pointer-events-none'}>
-                    {/* Basic Coloring */}
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                      Basic Coloring · 2 credits
-                    </p>
-                    <div className="space-y-1.5 mb-4">
-                      {BASIC_PALETTES.map(p => (
+                    {/* Credits info */}
+                    {isSignedIn && (
+                      <p className="text-[10px] text-muted-foreground mb-2">
+                        💰 Costs {selectedStyleType === 'art' ? '4' : '2'} credits · {creditsLeft} remaining
+                      </p>
+                    )}
+
+                    {/* Unified style list - all 7 styles in same card layout */}
+                    <div className="space-y-1.5 mb-3">
+                      {[...BASIC_PALETTES.map(p => ({...p, type: 'basic' as const})), ...ART_STYLES.map(s => ({...s, type: 'art' as const}))].map(item => (
                         <button
-                          key={p.id}
-                          onClick={() => handleSelectStyle(p.id, 'basic')}
+                          key={item.id}
+                          onClick={() => handleSelectStyle(item.id, item.type)}
                           className={cn(
-                            'w-full flex items-center gap-3 p-2 rounded-xl border-2 transition-all text-left',
-                            selectedStyle === p.id && selectedStyleType === 'basic'
-                              ? 'border-[#FFB800] bg-[#FFB800]/5 shadow-sm'
+                            'w-full flex items-center gap-2.5 p-2 rounded-xl border-2 transition-all text-left',
+                            selectedStyle === item.id && selectedStyleType === item.type
+                              ? item.type === 'art'
+                                ? 'border-[#8B5CF6] bg-[#8B5CF6]/5 shadow-sm'
+                                : 'border-[#FFB800] bg-[#FFB800]/5 shadow-sm'
                               : 'border-[#E5E0D5] hover:border-[#FFB800]/50'
                           )}
                         >
-                          <div className="w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden">
-                            <img src={p.thumbnail} alt={p.label} className="w-full h-full object-cover" />
+                          <div className="w-11 h-11 rounded-lg flex-shrink-0 overflow-hidden bg-gray-50">
+                            <img src={item.thumbnail} alt={item.label} className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-semibold text-foreground flex items-center gap-1">
-                              {p.emoji} {p.label}
+                              {item.emoji} {item.label}
+                              {item.type === 'art' && (
+                                <span className="text-[8px] bg-[#8B5CF6]/10 text-[#8B5CF6] px-1 py-0.5 rounded-full">ART</span>
+                              )}
                             </div>
-                            <div className="text-[10px] text-muted-foreground truncate">{p.desc}</div>
+                            <div className="text-[10px] text-muted-foreground truncate">{item.desc}</div>
                           </div>
-                          <span className="text-[10px] text-muted-foreground flex-shrink-0">{p.credits} cr</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Art Styles */}
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                      Art Styles · 4 credits
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5 mb-3">
-                      {ART_STYLES.map(s => (
-                        <button
-                          key={s.id}
-                          onClick={() => handleSelectStyle(s.id, 'art')}
-                          className={cn(
-                            'rounded-xl border-2 overflow-hidden transition-all text-left',
-                            selectedStyle === s.id && selectedStyleType === 'art'
-                              ? 'border-[#8B5CF6] shadow-sm'
-                              : 'border-[#E5E0D5] hover:border-[#8B5CF6]/50'
-                          )}
-                        >
-                          <div className="aspect-square bg-gray-100">
-                            <img src={s.thumbnail} alt={s.label} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="p-1.5">
-                            <div className="text-[9px] font-semibold text-foreground truncate">
-                              {s.emoji} {s.label}
-                            </div>
-                            <div className="text-[8px] text-muted-foreground truncate">{s.desc}</div>
-                          </div>
+                          <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.credits} cr</span>
                         </button>
                       ))}
                     </div>

@@ -176,7 +176,7 @@ function AutoColorContent() {
   const [showSignIn, setShowSignIn] = useState(false);
 
   /* Collapsible step panels */
-  const [stepOpen, setStepOpen] = useState<Record<number, boolean>>({ 1: true, 2: false, 3: false });
+  const [stepOpen, setStepOpen] = useState<Record<number, boolean>>({ 1: true, 2: true, 3: false });
 
   // Support ?src= URL parameter
   useEffect(() => {
@@ -521,10 +521,7 @@ function AutoColorContent() {
               >
                 <button
                   className="w-full p-4 flex items-center justify-between"
-                  onClick={() => {
-                    if (!sourceImage) return;
-                    setStepOpen(prev => ({ ...prev, 2: !prev[2] }));
-                  }}
+                  onClick={() => setStepOpen(prev => ({ ...prev, 2: !prev[2] }))}
                 >
                   <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <span
@@ -547,8 +544,14 @@ function AutoColorContent() {
                   {stepOpen[2] ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 </button>
 
-                {stepOpen[2] && sourceImage && (
+                {stepOpen[2] && (
                   <div className="px-4 pb-4">
+                    {!sourceImage && (
+                      <div className="text-center py-3 mb-3 bg-white/40 rounded-xl">
+                        <p className="text-xs text-muted-foreground">Select a line art above first ✨</p>
+                      </div>
+                    )}
+                    <div className={sourceImage ? '' : 'opacity-40 pointer-events-none'}>
                     {/* Basic Coloring */}
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                       Basic Coloring · 2 credits
@@ -608,6 +611,7 @@ function AutoColorContent() {
                       ))}
                     </div>
 
+                    </div>
                     {/* Apply button */}
                     <button
                       onClick={handleApplyStyle}
@@ -816,13 +820,43 @@ function AutoColorContent() {
                     Download
                   </button>
                   <Link
-                    href={`/color?src=${encodeURIComponent(styleResult || autoColorResult || '')}`}
+                    href={`/color?src=\${encodeURIComponent(styleResult || autoColorResult || '')}`}
                     className="py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-[#1A1A2E] transition-all hover:-translate-y-0.5 text-sm"
                     style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                   >
                     <Palette className="w-4 h-4" />
                     Color It!
                   </Link>
+                </div>
+              )}
+
+              {/* Recent Creations */}
+              {isSignedIn && history.length > 0 && (
+                <div className="rounded-2xl p-3 shadow-sm border border-border bg-white">
+                  <h4 className="text-xs font-bold text-foreground mb-2 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    Recent Creations
+                  </h4>
+                  <div className="grid grid-cols-4 gap-1.5 max-h-[160px] overflow-y-auto">
+                    {history.slice(0, 12).map((h, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (h.style === 'style-transfer' || h.style === 'product-format') {
+                            setStyleResult(h.url);
+                          } else if (h.style === 'autocolor') {
+                            setAutoColorResult(h.url);
+                          } else {
+                            setUploadImage(h.url);
+                            setImageSource('upload');
+                          }
+                        }}
+                        className="aspect-square rounded-lg overflow-hidden border border-[#E5E0D5] hover:border-[#FFB800] transition-all"
+                      >
+                        <img src={h.url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

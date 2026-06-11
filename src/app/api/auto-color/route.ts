@@ -1,50 +1,49 @@
-// Auto Color API - V5: Kolors img2img + line art overlay (multiply blend)
+// Auto Color API - V6: Unified Qwen-Image-Edit-2509 for ALL styles (basic + art)
+// One-step from line art → styled result. No more Kolors intermediate step.
+// Cost: ~¥0.29/image, charged 3 credits
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
-import sharp from 'sharp';
 
 const SILICONFLOW_API = 'https://api.siliconflow.cn/v1/images/generations';
 
-const COLOR_PALETTES: Record<string, { prompt: string; negative: string }> = {
+const STYLE_PROMPTS: Record<string, { prompt: string; type: string }> = {
+  // Basic palettes
   pastel: {
-    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A beautifully colored illustration with soft pastel colors, delicate shades of soft pink pale green lavender butter yellow and sky blue, gentle pearlescent light tones, smooth soft gradients, coloring book style, colors filled neatly within the outlines',
-    negative: 'dark colors, neon, harsh contrast, muddy, oversaturated, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
+    prompt: 'Color this black and white line art coloring page with soft pastel colors. Use delicate shades of soft pink pale green lavender butter yellow and sky blue, gentle pearlescent light tones, smooth soft gradients, coloring book style, colors filled neatly within the outlines',
+    type: 'basic',
   },
   vivid: {
-    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A vibrantly colored illustration with bold vivid colors, saturated bright red emerald green sapphire blue and gold yellow accents, clean flat color fills, coloring book style, colors filled neatly within the outlines',
-    negative: 'muted, pastel, dull, grayscale, black and white, blurry, distorted, low quality, washed out, different subject, changed subject, new subject, extra subject, replaced subject',
+    prompt: 'Color this black and white line art coloring page with bold vivid colors. Use saturated bright red emerald green sapphire blue and gold yellow accents, clean flat color fills, coloring book style, colors filled neatly within the outlines',
+    type: 'basic',
   },
   muted: {
-    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A beautifully colored illustration with muted earthy tones, desaturated warm colors of sage green terracotta soft indigo cream white and dusty bronze, subtle and sophisticated palette, coloring book style, colors filled neatly within the outlines',
-    negative: 'neon, bright, vivid, oversaturated, harsh, garish, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
+    prompt: 'Color this black and white line art coloring page with muted earthy tones. Use desaturated warm colors of sage green terracotta soft indigo cream white and dusty bronze, subtle and sophisticated palette, coloring book style, colors filled neatly within the outlines',
+    type: 'basic',
+  },
+  // Art styles
+  'chubby-doodle': {
+    prompt: 'Transform this black and white line art coloring page into a chubby doodle style colored illustration. Use crayon and marker scribble strokes, intentionally messy and wobbly lines, distorted proportions and perspective, colors slightly overflowing the outlines, playful meme-like expressions, hand-drawn spontaneous feel on white paper background',
+    type: 'art',
+  },
+  'pop-art': {
+    prompt: 'Transform this black and white line art coloring page into a Pop Art style colored illustration. Use halftone dots, bold outlines, 1950s print art aesthetic, primary colors of red yellow blue with black, Ben-Day dots pattern, comic book color fills, colors filled within the outlines',
+    type: 'art',
+  },
+  'city-pop': {
+    prompt: 'Transform this black and white line art coloring page into a City Pop style colored illustration. Use 1980s Japanese anime aesthetic, flat vector art style, high saturation retro color palette, Showa-era nostalgic atmosphere, pastel sky gradient, dreamy vaporwave mood',
+    type: 'art',
+  },
+  'fridge-magnet': {
+    prompt: 'Transform this black and white line art coloring page into a fridge magnet style colored illustration. Create a cute chibi icon design with bold outlines, rounded simplified shapes, thick white border around the subject, soft lighting, pastel gradient background, cute kawaii aesthetic',
+    type: 'art',
   },
 };
 
-async function overlayLineArt(coloredBuffer: Buffer, lineArtBuffer: Buffer): Promise<Buffer> {
-  const coloredMeta = await sharp(coloredBuffer).metadata();
-  const width = coloredMeta.width || 960;
-  const height = coloredMeta.height || 1280;
-
-  const resizedLineArt = await sharp(lineArtBuffer)
-    .resize(width, height, { fit: 'fill' })
-    .ensureAlpha()
-    .toBuffer();
-
-  const resizedColored = await sharp(coloredBuffer)
-    .resize(width, height, { fit: 'fill' })
-    .ensureAlpha()
-    .toBuffer();
-
-  // Multiply blend: black lines stay black, white areas let colors show through
-  return sharp(resizedColored)
-    .composite([{ input: resizedLineArt, blend: 'multiply' }])
-    .png()
-    .toBuffer();
-}
+const CREDITS_PER_USE = 3;
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,10 +59,14 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ error: 'Please sign in to use auto color' }, { status: 401 });
 
     const body = await req.json();
-    const { imageUrl, palette } = body;
+    const { imageUrl, palette, styleId } = body;
 
+    // Support both palette (basic) and styleId (art) params
+    const styleKey = styleId || palette;
     if (!imageUrl) return NextResponse.json({ error: 'Missing imageUrl' }, { status: 400 });
-    if (!palette || !COLOR_PALETTES[palette]) return NextResponse.json({ error: 'Invalid or missing palette' }, { status: 400 });
+    if (!styleKey || !STYLE_PROMPTS[styleKey]) return NextResponse.json({ error: 'Invalid or missing style' }, { status: 400 });
+
+    const styleConfig = STYLE_PROMPTS[styleKey];
 
     const { data: subData } = await supabase.from('subscriptions').select('plan, status').eq('user_id', userId).single();
     let plan = 'free';
@@ -76,18 +79,10 @@ export async function POST(req: NextRequest) {
     const bonusCredits = usageData?.bonus_credits || 0;
     const limit = (PLAN_LIMITS[plan] || 2) + bonusCredits;
 
-    if (pagesUsed + 2 > limit) return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: 2 }, { status: 429 });
+    if (pagesUsed + CREDITS_PER_USE > limit) return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: CREDITS_PER_USE }, { status: 429 });
 
-    const paletteConfig = COLOR_PALETTES[palette];
-
-    // Step 1: Download original line art
-    console.log('[AutoColor] Downloading original line art...');
-    const lineArtResp = await fetch(imageUrl);
-    if (!lineArtResp.ok) return NextResponse.json({ error: 'Failed to download original image' }, { status: 500 });
-    const lineArtBuffer = Buffer.from(await lineArtResp.arrayBuffer());
-
-    // Step 2: Convert image URL to base64 (Kolors img2img requires base64, not URL)
-    console.log('[AutoColor] Converting image to base64...');
+    // Convert image URL to base64
+    console.log('[AutoColor] Converting image to base64, style:', styleKey);
     let imageBase64: string;
     try {
       const imgResp = await fetch(imageUrl);
@@ -100,55 +95,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });
     }
 
-    // Step 3: Call Kolors img2img with base64
-    console.log('[AutoColor] Calling Kolors img2img, palette:', palette);
-    const kolorsResp = await fetch(SILICONFLOW_API, {
+    // Call Qwen-Image-Edit-2509 (one-step from line art to styled result)
+    console.log('[AutoColor] Calling Qwen, style:', styleKey, 'type:', styleConfig.type);
+    const qwenResp = await fetch(SILICONFLOW_API, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'Kwai-Kolors/Kolors',
-        prompt: paletteConfig.prompt,
-        negative_prompt: paletteConfig.negative,
+        model: 'Qwen/Qwen-Image-Edit-2509',
+        prompt: styleConfig.prompt,
         image: imageBase64,
         image_size: '960x1280',
         batch_size: 1,
         num_inference_steps: 30,
-        guidance_scale: 10,
+        cfg: 4.0,
       }),
     });
 
-    if (!kolorsResp.ok) {
-      const err = await kolorsResp.text();
-      console.error('[AutoColor] Kolors error:', kolorsResp.status, err);
-      return NextResponse.json({ error: 'Color generation failed' }, { status: 500 });
+    if (!qwenResp.ok) {
+      const err = await qwenResp.text();
+      console.error('[AutoColor] Qwen error:', qwenResp.status, err);
+      return NextResponse.json({ error: 'Style generation failed' }, { status: 500 });
     }
 
-    const kolorsData = await kolorsResp.json();
-    const genUrl = kolorsData?.images?.[0]?.url;
+    const qwenData = await qwenResp.json();
+    const genUrl = qwenData?.images?.[0]?.url;
     if (!genUrl) return NextResponse.json({ error: 'No image generated' }, { status: 500 });
 
-    // Step 4: Download colored result
-    const coloredResp = await fetch(genUrl);
-    if (!coloredResp.ok) return NextResponse.json({ error: 'Failed to download result' }, { status: 500 });
-    const coloredBuffer = Buffer.from(await coloredResp.arrayBuffer());
+    // Download result for storage upload
+    const resultResp = await fetch(genUrl);
+    if (!resultResp.ok) return NextResponse.json({ error: 'Failed to download result' }, { status: 500 });
+    const resultBuffer = Buffer.from(await resultResp.arrayBuffer());
 
-    // Step 5: Overlay line art (multiply blend)
-    let finalBuffer: Buffer;
-    try {
-      finalBuffer = await overlayLineArt(coloredBuffer, lineArtBuffer);
-      console.log('[AutoColor] Line art overlay done');
-    } catch (e) {
-      console.error('[AutoColor] Overlay failed, using raw:', e);
-      finalBuffer = coloredBuffer;
-    }
-
-    // Step 6: Upload to Supabase Storage
+    // Upload to Supabase Storage
     let permanentUrl = genUrl;
     let storagePath: string | null = null;
     try {
       const ts = Date.now();
-      const fp = `${userId}/autocolor-${ts}.png`;
-      const { error: upErr } = await supabase.storage.from('coloring-pages').upload(fp, finalBuffer, { contentType: 'image/png', upsert: false });
+      const fp = `${userId}/styled-${ts}.png`;
+      const { error: upErr } = await supabase.storage.from('coloring-pages').upload(fp, resultBuffer, { contentType: 'image/png', upsert: false });
       if (!upErr) {
         const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(fp);
         permanentUrl = urlData.publicUrl;
@@ -158,17 +142,17 @@ export async function POST(req: NextRequest) {
 
     // Deduct credits
     if (usageData) {
-      await supabase.from('user_usage').update({ pages_used: pagesUsed + 2, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
+      await supabase.from('user_usage').update({ pages_used: pagesUsed + CREDITS_PER_USE, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
     } else {
-      await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: 2, plan, bonus_credits: 0 });
+      await supabase.from('user_usage').insert({ user_id: userId, month: currentMonth, pages_used: CREDITS_PER_USE, plan, bonus_credits: 0 });
     }
 
     await supabase.from('generation_history').insert({
-      user_id: userId, prompt: `[AutoColor] ${palette} palette`, style: 'autocolor',
-      image_url: permanentUrl, storage_path: storagePath, credit_cost: 2, has_reference: true,
+      user_id: userId, prompt: `[AutoColor] ${styleKey}`, style: 'autocolor',
+      image_url: permanentUrl, storage_path: storagePath, credit_cost: CREDITS_PER_USE, has_reference: true,
     });
 
-    return NextResponse.json({ status: 'completed', imageUrl: permanentUrl, pagesUsed: pagesUsed + 2, limit, plan });
+    return NextResponse.json({ status: 'completed', imageUrl: permanentUrl, pagesUsed: pagesUsed + CREDITS_PER_USE, limit, plan });
   } catch (error) {
     console.error('[AutoColor] Error:', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });

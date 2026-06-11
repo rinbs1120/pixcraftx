@@ -18,7 +18,7 @@ const BASIC_PALETTES = [
     emoji: '🩷',
     desc: 'Soft pink, lavender & sky blue',
     thumbnail: '/styles/palette-pastel.jpg',
-    credits: 2,
+    credits: 3,
   },
   {
     id: 'vivid',
@@ -26,7 +26,7 @@ const BASIC_PALETTES = [
     emoji: '🎨',
     desc: 'Bold red, emerald & royal blue',
     thumbnail: '/styles/palette-vivid.jpg',
-    credits: 2,
+    credits: 3,
   },
   {
     id: 'muted',
@@ -34,7 +34,7 @@ const BASIC_PALETTES = [
     emoji: '🌿',
     desc: 'Sage green, terracotta & cream',
     thumbnail: '/styles/palette-muted.jpg',
-    credits: 2,
+    credits: 3,
   },
 ];
 
@@ -45,8 +45,7 @@ const ART_STYLES = [
     emoji: '✏️',
     desc: 'Crayon scribble, messy lines, meme-fun vibe',
     thumbnail: '/styles/art-chubby-doodle.jpg',
-    prompt: 'Transform this colored illustration into a chubby doodle style illustration. Use crayon and marker scribble strokes, intentionally messy and wobbly lines, distorted proportions and perspective, colors slightly overflowing the outlines, playful meme-like expressions, hand-drawn spontaneous feel on white paper background',
-    credits: 4,
+    credits: 3,
   },
   {
     id: 'pop-art',
@@ -54,8 +53,7 @@ const ART_STYLES = [
     emoji: '🎯',
     desc: 'Halftone dots, bold outlines, 1950s print art',
     thumbnail: '/styles/art-pop-art.jpg',
-    prompt: 'Transform this colored illustration into a Pop Art style illustration. Use halftone dot printing texture, thick bold black outlines, limited flat color palette (no gradients), 1950s-60s commercial print aesthetic, Ben-Day dots pattern, grainy paper texture on white background',
-    credits: 4,
+    credits: 3,
   },
   {
     id: 'city-pop',
@@ -63,8 +61,7 @@ const ART_STYLES = [
     emoji: '🌃',
     desc: '1980s Japanese anime, retro colors, vaporwave',
     thumbnail: '/styles/art-city-pop.jpg',
-    prompt: 'Transform this colored illustration into a City Pop style illustration. Use 1980s Japanese anime aesthetic, flat vector art style, high saturation retro color palette, Showa-era nostalgic atmosphere, pastel sky gradient, add handwritten English text elements, dreamy vaporwave mood',
-    credits: 4,
+    credits: 3,
   },
 ];
 
@@ -256,107 +253,24 @@ function AutoColorContent() {
     setStyleResult(null);
 
     try {
-      if (selectedStyleType === 'basic') {
-        // Basic palette: single auto-color call
-        const res = await fetch('/api/auto-color', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: img, palette: selectedStyle }),
-        });
-        const data = await res.json();
-        if (!res.ok || data.status === 'failed') {
-          setError(data.error || 'Auto color failed');
-          if (data.limit) setPageLimit(data.limit);
-          if (data.used !== undefined) setPagesUsed(data.used);
-          return;
-        }
-        if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
+      // All styles: one-step Qwen API call (basic + art unified)
+      const res = await fetch('/api/auto-color', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: img, palette: selectedStyleType === 'basic' ? selectedStyle : undefined, styleId: selectedStyleType === 'art' ? selectedStyle : undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.status === 'failed') {
+        setError(data.error || 'Style generation failed');
         if (data.limit) setPageLimit(data.limit);
-        if (data.plan) setPlan(data.plan);
-        setAutoColorResult(data.imageUrl);
-      } else if (selectedStyleType === 'art') {
-        // Art style: two-step (auto-color with vivid → style-transfer)
-        const artStyle = ART_STYLES.find(s => s.id === selectedStyle);
-        if (!artStyle) { setError('Invalid style selected'); return; }
-
-        // Step A: auto-color with vivid
-        const colorRes = await fetch('/api/auto-color', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: img, palette: 'vivid' }),
-        });
-        const colorData = await colorRes.json();
-        if (!colorRes.ok || colorData.status === 'failed') {
-          setError(colorData.error || 'Auto color failed');
-          if (colorData.limit) setPageLimit(colorData.limit);
-          if (colorData.used !== undefined) setPagesUsed(colorData.used);
-          return;
-        }
-        if (colorData.pagesUsed !== undefined) setPagesUsed(colorData.pagesUsed);
-        if (colorData.limit) setPageLimit(colorData.limit);
-        if (colorData.plan) setPlan(colorData.plan);
-
-        const coloredUrl = colorData.imageUrl;
-
-        // Step B: style-transfer (with CRITICAL prefix to prevent adding characters/text)
-        const preservedPrompt = `CRITICAL: Keep the EXACT same subjects and composition as the original image. DO NOT add any new characters, people, animals, or text that was not in the original. DO NOT add handwritten text or labels. ${artStyle.prompt}`;
-        const styleRes = await fetch('/api/style-transfer', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: coloredUrl, stylePrompt: preservedPrompt, styleId: artStyle.id }),
-        });
-        const styleData = await styleRes.json();
-        if (!styleRes.ok || styleData.status === 'failed') {
-          // Still show the colored result even if style fails
-          setAutoColorResult(coloredUrl);
-          setError(styleData.error || 'Style transfer failed — but your colored version is saved above!');
-          if (styleData.limit) setPageLimit(styleData.limit);
-          if (styleData.used !== undefined) setPagesUsed(styleData.used);
-          return;
-        }
-        if (styleData.pagesUsed !== undefined) setPagesUsed(styleData.pagesUsed);
-        if (styleData.limit) setPageLimit(styleData.limit);
-        if (styleData.plan) setPlan(styleData.plan);
-
-        setAutoColorResult(coloredUrl);
-        setStyleResult(styleData.imageUrl);
-      }
-    } catch (err) {
-      // Art style: two API calls may exceed Vercel Hobby 10s timeout
-      // The server likely completed — wait a moment then check history
-      if (selectedStyleType === 'art') {
-        setError('Style is still processing... Checking for results in a few seconds.');
-        setIsProcessing(false);
-        // Wait 5s then refresh history to find the result
-        setTimeout(async () => {
-          try {
-            const res = await fetch('/api/history');
-            const data = await res.json();
-            if (data.records && data.records.length > 0) {
-              const latest = data.records[0]; // Most recent
-              if (latest.style === 'style-transfer') {
-                setStyleResult(latest.image_url);
-                setError(null);
-                // Also update credits
-                const usageRes = await fetch('/api/usage');
-                const usageData = await usageRes.json();
-                if (usageData.pagesUsed !== undefined) setPagesUsed(usageData.pagesUsed);
-                if (usageData.limit) setPageLimit(usageData.limit);
-                if (usageData.plan) setPlan(usageData.plan);
-                return;
-              } else if (latest.style === 'autocolor') {
-                setAutoColorResult(latest.image_url);
-                setError('Style transfer may still be processing. Your colored version is ready above!');
-                return;
-              }
-            }
-            setError('Style took too long. Please refresh the page — your result should appear in Recent Creations.');
-          } catch {
-            setError('Style took too long. Please refresh the page — your result should appear in Recent Creations.');
-          }
-        }, 5000);
+        if (data.used !== undefined) setPagesUsed(data.used);
         return;
       }
+      if (data.pagesUsed !== undefined) setPagesUsed(data.pagesUsed);
+      if (data.limit) setPageLimit(data.limit);
+      if (data.plan) setPlan(data.plan);
+      setAutoColorResult(data.imageUrl);
+    } catch (err) {
       setError('Network error. Please try again.');
     } finally {
       setIsProcessing(false);
@@ -616,7 +530,7 @@ function AutoColorContent() {
                     {/* Credits info */}
                     {isSignedIn && (
                       <p className="text-[10px] text-muted-foreground mb-2">
-                        💰 Costs {selectedStyleType === 'art' ? '4' : '2'} credits · {creditsLeft} remaining
+                        💰 Costs 3 credits · {creditsLeft} remaining
                       </p>
                     )}
 
@@ -659,16 +573,12 @@ function AutoColorContent() {
                       disabled={isProcessing || !selectedStyle || !sourceImage}
                       className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 text-sm"
                       style={{
-                        background: selectedStyleType === 'art'
-                          ? 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)'
-                          : 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
-                        boxShadow: selectedStyleType === 'art'
-                          ? '0 4px 12px rgba(139,92,246,0.3)'
-                          : '0 4px 12px rgba(255,107,107,0.3)',
+                        background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+                        boxShadow: '0 4px 12px rgba(255,107,107,0.3)',
                       }}
                     >
                       {isProcessing ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> {selectedStyleType === 'art' ? 'Creating art...' : 'Coloring...'} </>
+                        <><Loader2 className="w-4 h-4 animate-spin" /> 'Styling...' </>
                       ) : (
                         <>{selectedStyleType === 'art' ? <><Sparkles className="w-4 h-4" /> Apply Style</> : <><Paintbrush className="w-4 h-4" /> Color It</>}</>
                       )}
@@ -824,10 +734,10 @@ function AutoColorContent() {
                       <Sparkles className="w-7 h-7 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#8B5CF6]" />
                     </div>
                     <p className="text-lg font-semibold text-foreground mb-2">
-                      {selectedStyleType === 'art' ? 'AI is creating your artwork...' : 'AI is coloring your page...'}
+                      'AI is styling your page...'
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {selectedStyleType === 'art' ? 'Two steps: coloring + style — about 10-30s' : 'This usually takes 5-15 seconds'}
+                      'This usually takes 10-20 seconds'
                     </p>
                   </div>
                 ) : error ? (
@@ -849,7 +759,7 @@ function AutoColorContent() {
                     </div>
                     <div className="mt-2 text-center">
                       <span className="text-[10px] text-muted-foreground">
-                        {productResult ? `${PRODUCTS.find(p => p.id === selectedProduct)?.label || 'Product'} ready ✨` : styleResult ? `${selectedStyleLabel} style applied ✨` : autoColorResult ? `${selectedStyleLabel} coloring done — pick a product below! ↓` : 'Select a style to start'}
+                        {productResult ? `${PRODUCTS.find(p => p.id === selectedProduct)?.label || 'Product'} ready ✨` : autoColorResult ? `${selectedStyleLabel} applied ✨ Pick a product below! ↓` : 'Select a style to start'}
                       </span>
                     </div>
                   </div>
@@ -914,7 +824,7 @@ function AutoColorContent() {
                       <button
                         key={i}
                         onClick={() => {
-                          if (h.style === 'style-transfer' || h.style === 'product-format') {
+                          if (h.style === 'style-transfer' || h.style === 'autocolor' || h.style === 'product-format') {
                             setStyleResult(h.url);
                           } else if (h.style === 'autocolor') {
                             setAutoColorResult(h.url);

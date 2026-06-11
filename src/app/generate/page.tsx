@@ -47,10 +47,10 @@ const EXAMPLE_PROMPTS = [
   { emoji: '🧑', text: 'Girl in hanfu under moonlight' },
   { emoji: '🐱', text: 'Lucky cat with gold coins' },
   { emoji: '🏔', text: 'Phoenix rising over volcano' },
-  { emoji: '🎠', text: 'Carp leaping over dragon gate' },
+  { emoji: '🎠', text: 'Koi carp leaping upward through waterfall waves with traditional ornamental gate arch' },
   { emoji: '🧀', text: 'Jade rabbit on the moon' },
   { emoji: '🏰', text: 'Floating island with fairy palace' },
-  { emoji: '🐟', text: 'Underwater dragon palace' },
+  { emoji: '🐟', text: 'Underwater palace with coral towers and sea creatures' },
   { emoji: '🌻', text: 'Sunflower field with windmill' },
   { emoji: '🐢', text: 'Baby turtle on tropical beach' },
   { emoji: '🦉', text: 'Owl in enchanted forest' },
@@ -65,7 +65,7 @@ function GenerateContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedStyle, setSelectedStyle] = useState<'simple' | 'mandala' | 'intricate'>('simple');
-  const [quality, setQuality] = useState<'fast' | 'hd'>('hd');  // default HD for quality
+  // Quality selector removed - always 50 steps (1 credit)
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
@@ -155,7 +155,7 @@ function GenerateContent() {
     if (!isSignedIn) { setShowSignIn(true); return; }
 
     if (referenceImage && refTrialUsed) {
-      const baseCost = quality === 'hd' ? 2 : 1;
+      const baseCost = 1;  // Unified: 1 credit
       const totalNeeded = baseCost + 5;
       const remaining = pageLimit - pagesUsed;
       if (remaining < totalNeeded) {
@@ -175,7 +175,7 @@ function GenerateContent() {
         body: JSON.stringify({
           prompt: prompt.trim(),
           style: selectedStyle,
-          quality,
+          // quality removed - unified 50 steps
           referenceImageUrl: referenceImage,
         }),
       });
@@ -405,18 +405,7 @@ function GenerateContent() {
               <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <div className="text-[10px] text-muted-foreground mb-2">
                   {/* Quality Toggle */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs text-muted-foreground font-medium">Quality:</span>
-                  <button
-                    onClick={() => setQuality('fast')}
-                    className={"text-xs px-3 py-1.5 rounded-full border transition-all " + (quality === 'fast' ? 'border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800] font-semibold' : 'border-gray-200 text-muted-foreground hover:border-gray-300')}
-                  >⚡ Fast · 1 cr</button>
-                  <button
-                    onClick={() => setQuality('hd')}
-                    className={"text-xs px-3 py-1.5 rounded-full border transition-all " + (quality === 'hd' ? 'border-[#FFB800] bg-[#FFB800]/10 text-[#FFB800] font-semibold' : 'border-gray-200 text-muted-foreground hover:border-gray-300')}
-                  >✨ HD · 2 cr</button>
-                </div>
-                💰 Costs {referenceImage ? '5' : quality === 'hd' ? '2' : '1'} credit{referenceImage || quality === 'hd' ? 's' : ''} · {pageLimit - pagesUsed} remaining
+                💰 Costs {referenceImage ? '5' : '1'} credit{referenceImage ? 's' : ''} · {pageLimit - pagesUsed} remaining
                 </div>
                 <button
                   onClick={handleGenerate}
@@ -627,8 +616,8 @@ function GenerateContent() {
               </div>
               <h3 className="font-display text-xl mb-2 text-foreground">More Credits Needed</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                Reference image mode uses 5 extra credits on top of {quality === 'hd' ? '2' : '1'} base credit{(quality === 'hd' || referenceImage) ? 's' : ''}.
-                You have <strong>{pageLimit - pagesUsed}</strong> credit{pageLimit - pagesUsed !== 1 ? 's' : ''} remaining, but need <strong>{(quality === 'hd' ? 2 : 1) + 5}</strong>.
+                Reference image mode uses 5 extra credits on top of 1 base credit.
+                You have <strong>{pageLimit - pagesUsed}</strong> credit{pageLimit - pagesUsed !== 1 ? 's' : ''} remaining, but need <strong>6</strong>.
               </p>
               <Link
                 href="/pricing"

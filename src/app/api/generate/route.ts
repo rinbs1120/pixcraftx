@@ -11,16 +11,16 @@ import sharp from 'sharp';
 // Style-specific prompt modifiers
 const STYLE_PROMPTS = {
   simple: {
-    prefix: "vector line art coloring page, bold thick black outlines minimum 3pt weight, pure black ink on white paper, clean closed contours, complete line borders, simple shapes with large areas to color, isolated subject on plain white background,",
+    prefix: "vector line art coloring page for kids, bold thick black outlines minimum 3pt weight, pure black ink on white paper, clean closed contours, complete line borders, simple shapes with large areas to color, isolated subject on plain white background, no background details, no decorative patterns, no texture fills, minimal elements,",
     suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, cartoon style outline only, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   },
   mandala: {
-    prefix: "vector line art coloring page, symmetrical mandala pattern, pure black ink on white paper, consistent medium line weight, clean closed contours, complete line borders, circular geometric design,",
-    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
+    prefix: "circular mandala coloring page, fully radially symmetric pattern with 8-fold rotational symmetry, repeating geometric motifs radiating from center, pure black ink on white paper, consistent 1.5pt line weight, every element is mirrored and repeated around the center axis forming a complete circular design, concentric rings of ornamental patterns, decorative borders within the circle, circular frame,",
+    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no gradients, white background outside the circle, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   },
   intricate: {
-    prefix: "vector line art coloring page for adults, fine detailed black outlines, intricate patterns, pure black ink on white paper, professional illustration, clean closed contours, complete line borders, distinct separated elements,",
-    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders including all background elements like trees mountains clouds, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
+    prefix: "extremely detailed adult coloring page, ultra-fine hair-thin black outlines 0.5pt weight, maximum detail density, every area filled with intricate patterns like crosshatching stippling filigree micro-ornaments zentangle patterns, pure black ink on white paper, professional illustration, highly decorated subject with elaborate surface textures and background filled with ornamental details,",
+    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders including all background elements, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
   }
 };
 
@@ -28,10 +28,7 @@ const STYLE_PROMPTS = {
 const NEGATIVE_PROMPT = "color, colored, colorful, paint, painted, watercolor, filled, fill, shading, shadow, gradient, grayscale, grey, gray, tint, hue, saturation, pigment, watercolor wash, ink wash, tone, tonal, realistic, photograph, 3D render, illustration with color, dyed, stain, tinted, chromatic, polychrome, multicolor, any color, slightest color, color tint, color wash, pastel colors, bright colors, dark colors, warm colors, cool colors, green, blue, red, pink, yellow, orange, purple, brown, gold";
 
 // Credit costs - Kolors is cheaper than FLUX
-const GENERATE_CREDIT_COSTS = {
-  fast: 1,   // Kolors 30 steps (currently free on SiliconFlow)
-  hd: 2,     // Kolors 50 steps (cheaper than old FLUX HD)
-};
+const GENERATE_CREDIT_COST = 1;  // Unified: 50 steps, 1 credit (Kolors is free on SiliconFlow)
 
 
 
@@ -91,20 +88,21 @@ export async function POST(req: NextRequest) {
 
     let prompt = '';
     let style = 'simple';
-    let quality = 'hd';  // default to HD for quality
+    // Quality selector removed - always use 50 steps (1 credit)
     let referenceImageUrl: string | null = null;
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
       prompt = (formData.get('prompt') as string || '').trim();
       style = (formData.get('style') as string || 'simple');
-      quality = (formData.get('quality') as string || 'hd');
+      // quality parameter no longer used
       referenceImageUrl = formData.get('referenceImageUrl') as string || null;
     } else {
       const body = await req.json();
       prompt = (body.prompt || '').trim();
       style = body.style || 'simple';
       referenceImageUrl = body.referenceImageUrl || null;
+      // quality parameter removed - unified 50 steps
     }
 
     if (!prompt || prompt.length === 0) {
@@ -132,7 +130,7 @@ export async function POST(req: NextRequest) {
     const bonusCredits = usageData?.bonus_credits || 0;
     const baseLimit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 2;
     const limit = baseLimit + bonusCredits;
-    let creditCost = referenceImageUrl ? REFERENCE_COST : (GENERATE_CREDIT_COSTS[quality as keyof typeof GENERATE_CREDIT_COSTS] || GENERATE_CREDIT_COSTS.hd);
+    let creditCost = referenceImageUrl ? REFERENCE_COST : GENERATE_CREDIT_COST;
 
     // Reference image free trial: first reference image is free
     let refTrialUsed = false;
@@ -247,11 +245,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Image generation service not configured' }, { status: 500 });
     }
 
-    const isHD = quality === 'hd';
-    const inferenceSteps = isHD ? 50 : 30;
+    const inferenceSteps = 50;  // Unified: always 50 steps for best quality
     const kolorsImageSize = '960x1280'; // 3:4 vertical, closest to our 1200x1600 requirement
 
-    console.log(`[Generate] Quality: ${quality}, Model: SiliconFlow Kolors, Steps: ${inferenceSteps}, Credit cost: ${creditCost}`);
+    console.log(`[Generate] Model: SiliconFlow Kolors, Steps: ${inferenceSteps}, Credit cost: ${creditCost}`);
 
     const sfResponse = await fetch('https://api.siliconflow.cn/v1/images/generations', {
       method: 'POST',
@@ -328,7 +325,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      imageUrl: permanentUrl, style, quality,
+      imageUrl: permanentUrl, style,
       pagesUsed: pagesUsed + creditCost, limit, plan, creditCost,
       hasReference: false,
       ...(storageFailed ? { storageWarning: 'Image stored temporarily, may expire' } : {}),

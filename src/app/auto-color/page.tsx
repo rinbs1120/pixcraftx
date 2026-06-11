@@ -305,17 +305,18 @@ function AutoColorContent() {
 
         const coloredUrl = colorData.imageUrl;
 
-        // Step B: style-transfer
+        // Step B: style-transfer (with CRITICAL prefix to prevent adding characters/text)
+        const preservedPrompt = `CRITICAL: Keep the EXACT same subjects and composition as the original image. DO NOT add any new characters, people, animals, or text that was not in the original. DO NOT add handwritten text or labels. ${artStyle.prompt}`;
         const styleRes = await fetch('/api/style-transfer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: coloredUrl, stylePrompt: artStyle.prompt, styleId: artStyle.id }),
+          body: JSON.stringify({ imageUrl: coloredUrl, stylePrompt: preservedPrompt, styleId: artStyle.id }),
         });
         const styleData = await styleRes.json();
         if (!styleRes.ok || styleData.status === 'failed') {
           // Still show the colored result even if style fails
           setAutoColorResult(coloredUrl);
-          setError(styleData.error || 'Style transfer failed');
+          setError(styleData.error || 'Style transfer failed — but your colored version is saved above!');
           if (styleData.limit) setPageLimit(styleData.limit);
           if (styleData.used !== undefined) setPagesUsed(styleData.used);
           return;
@@ -328,6 +329,41 @@ function AutoColorContent() {
         setStyleResult(styleData.imageUrl);
       }
     } catch (err) {
+      // Art style: two API calls may exceed Vercel Hobby 10s timeout
+      // The server likely completed — wait a moment then check history
+      if (selectedStyleType === 'art') {
+        setError('Style is still processing... Checking for results in a few seconds.');
+        setIsProcessing(false);
+        // Wait 5s then refresh history to find the result
+        setTimeout(async () => {
+          try {
+            const res = await fetch('/api/history');
+            const data = await res.json();
+            if (data.records && data.records.length > 0) {
+              const latest = data.records[0]; // Most recent
+              if (latest.style === 'style-transfer') {
+                setStyleResult(latest.image_url);
+                setError(null);
+                // Also update credits
+                const usageRes = await fetch('/api/usage');
+                const usageData = await usageRes.json();
+                if (usageData.pagesUsed !== undefined) setPagesUsed(usageData.pagesUsed);
+                if (usageData.limit) setPageLimit(usageData.limit);
+                if (usageData.plan) setPlan(usageData.plan);
+                return;
+              } else if (latest.style === 'autocolor') {
+                setAutoColorResult(latest.image_url);
+                setError('Style transfer may still be processing. Your colored version is ready above!');
+                return;
+              }
+            }
+            setError('Style took too long. Please refresh the page — your result should appear in Recent Creations.');
+          } catch {
+            setError('Style took too long. Please refresh the page — your result should appear in Recent Creations.');
+          }
+        }, 5000);
+        return;
+      }
       setError('Network error. Please try again.');
     } finally {
       setIsProcessing(false);
@@ -800,7 +836,7 @@ function AutoColorContent() {
                     Download
                   </button>
                   <Link
-                    href={`/color?src=\${encodeURIComponent(styleResult || autoColorResult || '')}`}
+                    href={`/color?src=${encodeURIComponent(styleResult || autoColorResult || '')}`}
                     className="py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-[#1A1A2E] transition-all hover:-translate-y-0.5 text-sm"
                     style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                   >

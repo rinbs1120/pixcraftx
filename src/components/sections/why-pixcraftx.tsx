@@ -26,7 +26,7 @@ const highlights = [
 export function WhyPixCraftX() {
   return (
     <section className="py-16 md:py-24 bg-background">
-      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+      <div className="container mx-auto px-4 md:px-6 max-w-[1440px]">
         <h2 className="font-display text-2xl md:text-3xl text-center mb-12 font-semibold text-foreground">
           Why PixCraftX?
         </h2>

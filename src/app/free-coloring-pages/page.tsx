@@ -24,7 +24,7 @@ export default function FreeColoringPages() {
       <Navbar />
       <main className="min-h-screen bg-background">
         {/* Hero - centered */}
-        <section className="container mx-auto px-4 md:px-6 max-w-6xl pt-24 pb-4 text-center">
+        <section className="container mx-auto px-4 md:px-6 max-w-[1300px] pt-24 pb-4 text-center">
           <h1 className="font-display text-3xl md:text-4xl lg:text-5xl text-foreground mb-4">
             Browse Free Coloring Pages
           </h1>

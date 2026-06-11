@@ -104,39 +104,47 @@ export async function POST(req: NextRequest) {
     let processedBuffer: Buffer = resultBuffer;
     try {
       console.log('[ProductFormat] Removing white background for', productType);
-      // Create alpha mask: white bg → transparent, colored → opaque
-      // 1. Get image metadata
+      // Get image metadata for dimensions
       const meta = await sharp(resultBuffer).metadata();
       const w = meta.width || 960;
       const h = meta.height || 1280;
 
-      // 2. Create mask: grayscale → threshold → negate (white areas become black=transparent)
-      const maskPng = await sharp(resultBuffer)
-        .grayscale()
-        .threshold(242)    // pixels > 242 brightness → white (background)
-        .negate()           // invert: white bg → black (transparent), colored → white (opaque)
-        .png()
-        .toBuffer();
-
-      // 3. Extract original RGB (3 channels) and combine with mask as alpha
+      // Extract original RGB (3 channels, no alpha)
       const rgbOnly = await sharp(resultBuffer).removeAlpha().raw().toBuffer();
-      const maskRaw = await sharp(maskPng).raw().toBuffer();
-
-      // 4. Interleave RGB + Alpha into RGBA buffer
-      const rgba = new Uint8Array(w * h * 4);
-      const rgbArr = new Uint8Array(rgbOnly);
-      const maskArr = new Uint8Array(maskRaw);
-      for (let i = 0; i < w * h; i++) {
-        rgba[i * 4]     = rgbArr[i * 3];     // R
-        rgba[i * 4 + 1] = rgbArr[i * 3 + 1]; // G
-        rgba[i * 4 + 2] = rgbArr[i * 3 + 2]; // B
-        rgba[i * 4 + 3] = maskArr[i];          // A (from mask)
-      }
-
-      processedBuffer = await sharp(Buffer.from(rgba.buffer as ArrayBuffer) as any, { raw: { width: w, height: h, channels: 4 } })
-        .png()
+      // Create alpha mask directly from pipeline (force 1 channel grayscale)
+      // White bg (brightness > 242) → transparent (0), colored → opaque (255)
+      const maskRaw = await sharp(resultBuffer)
+        .grayscale()
+        .threshold(242)    // pixels > 242 → white (255)
+        .negate()           // invert: white bg → black (0=transparent), colored → white (255=opaque)
+        .raw()
         .toBuffer();
-      console.log('[ProductFormat] Background removed, transparent PNG created');
+
+      // Verify pixel counts match
+      const expectedPixels = w * h;
+      const rgbPixels = rgbOnly.length / 3;
+      const maskPixels = maskRaw.length;
+      console.log('[ProductFormat] Dimensions:', w, 'x', h, 'RGB pixels:', rgbPixels, 'Mask pixels:', maskPixels);
+
+      if (rgbPixels !== expectedPixels || maskPixels !== expectedPixels) {
+        console.warn('[ProductFormat] Pixel count mismatch, skipping background removal. Expected:', expectedPixels, 'RGB:', rgbPixels, 'Mask:', maskPixels);
+      } else {
+        // Interleave RGB + Alpha into RGBA buffer
+        const rgba = new Uint8Array(expectedPixels * 4);
+        const rgbArr = new Uint8Array(rgbOnly);
+        const maskArr = new Uint8Array(maskRaw);
+        for (let i = 0; i < expectedPixels; i++) {
+          rgba[i * 4]     = rgbArr[i * 3];     // R
+          rgba[i * 4 + 1] = rgbArr[i * 3 + 1]; // G
+          rgba[i * 4 + 2] = rgbArr[i * 3 + 2]; // B
+          rgba[i * 4 + 3] = maskArr[i];          // A (from mask)
+        }
+
+        processedBuffer = await sharp(Buffer.from(rgba.buffer as ArrayBuffer) as any, { raw: { width: w, height: h, channels: 4 } })
+          .png()
+          .toBuffer();
+        console.log('[ProductFormat] Background removed, transparent PNG created');
+      }
     } catch (e) {
       console.warn('[ProductFormat] Background removal failed, keeping original:', e);
     }

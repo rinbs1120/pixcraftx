@@ -360,7 +360,7 @@ function AutoColorContent() {
     <>
       <Navbar />
       <main className="min-h-screen pt-20 pb-8 px-4 bg-background">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-[1440px] mx-auto">
           {/* Header */}
           <div className="text-center mb-6">
             <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-1">

@@ -49,7 +49,7 @@ export function Navbar() {
         )}
         style={{ backgroundColor: 'rgba(255,251,240,0.92)' }}
       >
-        <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between max-w-7xl"
+        <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between max-w-[1440px]"
         >
           <Link href="/" className="flex items-center gap-2">
             <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="PixCraftX logo">

@@ -48,7 +48,7 @@ export function PerfectFor() {
       className="py-16 md:py-24"
       style={{ background: 'linear-gradient(180deg, #1A1A2E 0%, #24243E 100%)' }}
     >
-      <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
         <div className="text-center mb-12">
           <h2 className="font-display text-3xl md:text-[40px] text-white mb-4">
             Perfect For

@@ -119,7 +119,7 @@ export function Pricing() {
 
   return (
     <section id="pricing" className="py-16 md:py-24 bg-background">
-      <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+      <div className="container mx-auto px-4 md:px-6 max-w-[1300px]">
         <div className="text-center mb-6">
           <h2 className="font-display text-[32px] md:text-[40px] text-foreground mb-4">
             Simple Pricing

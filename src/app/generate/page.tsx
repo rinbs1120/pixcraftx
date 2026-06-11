@@ -502,11 +502,19 @@ function GenerateContent() {
                   </button>
 
                   <Link
+                    href={`/color?src=${encodeURIComponent(generatedImageUrl)}`}
+                    className="flex-1 py-2.5 rounded-xl text-foreground font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 text-sm border-2 border-[#E5E0D5] hover:border-[#FFB800]"
+                  >
+                    <Palette className="w-4 h-4" />
+                    Manual Color
+                  </Link>
+
+                  <Link
                     href={`/auto-color?src=${encodeURIComponent(generatedImageUrl)}`}
                     className="flex-1 py-2.5 rounded-xl text-[#1A1A2E] font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 text-sm"
                     style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
                   >
-                    <Paintbrush className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" />
                     Auto Color
                   </Link>
 

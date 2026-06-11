@@ -51,7 +51,19 @@ export async function POST(req: NextRequest) {
     if (pagesUsed + 2 > limit) return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: 2 }, { status: 429 });
 
     const prompt = PRODUCT_PROMPTS[productType];
-    console.log('[ProductFormat] Calling Qwen-Image-Edit-2509, product:', productType);
+    // Convert image URL to base64 (SiliconFlow APIs require base64 for img2img)
+    console.log('[ProductFormat] Converting image to base64, product:', productType);
+    let imageBase64: string;
+    try {
+      const imgResp = await fetch(imageUrl);
+      if (!imgResp.ok) throw new Error('Failed to fetch image for base64 conversion');
+      const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
+      const contentType = imgResp.headers.get('content-type') || 'image/png';
+      imageBase64 = `data:${contentType};base64,${imgBuffer.toString('base64')}`;
+    } catch (e) {
+      console.error('[ProductFormat] Base64 conversion failed:', e);
+      return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });
+    }
 
     const qwenResp = await fetch(SILICONFLOW_API, {
       method: 'POST',
@@ -59,7 +71,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'Qwen/Qwen-Image-Edit-2509',
         prompt,
-        image: imageUrl,
+        image: imageBase64,
         image_size: '960x1280',
         batch_size: 1,
         num_inference_steps: 30,

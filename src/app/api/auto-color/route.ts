@@ -86,7 +86,21 @@ export async function POST(req: NextRequest) {
     if (!lineArtResp.ok) return NextResponse.json({ error: 'Failed to download original image' }, { status: 500 });
     const lineArtBuffer = Buffer.from(await lineArtResp.arrayBuffer());
 
-    // Step 2: Call Kolors img2img
+    // Step 2: Convert image URL to base64 (Kolors img2img requires base64, not URL)
+    console.log('[AutoColor] Converting image to base64...');
+    let imageBase64: string;
+    try {
+      const imgResp = await fetch(imageUrl);
+      if (!imgResp.ok) throw new Error('Failed to fetch image for base64 conversion');
+      const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
+      const contentType = imgResp.headers.get('content-type') || 'image/png';
+      imageBase64 = `data:${contentType};base64,${imgBuffer.toString('base64')}`;
+    } catch (e) {
+      console.error('[AutoColor] Base64 conversion failed:', e);
+      return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });
+    }
+
+    // Step 3: Call Kolors img2img with base64
     console.log('[AutoColor] Calling Kolors img2img, palette:', palette);
     const kolorsResp = await fetch(SILICONFLOW_API, {
       method: 'POST',
@@ -95,7 +109,7 @@ export async function POST(req: NextRequest) {
         model: 'Kwai-Kolors/Kolors',
         prompt: paletteConfig.prompt,
         negative_prompt: paletteConfig.negative,
-        image: imageUrl,
+        image: imageBase64,
         image_size: '960x1280',
         batch_size: 1,
         num_inference_steps: 30,
@@ -113,12 +127,12 @@ export async function POST(req: NextRequest) {
     const genUrl = kolorsData?.images?.[0]?.url;
     if (!genUrl) return NextResponse.json({ error: 'No image generated' }, { status: 500 });
 
-    // Step 3: Download colored result
+    // Step 4: Download colored result
     const coloredResp = await fetch(genUrl);
     if (!coloredResp.ok) return NextResponse.json({ error: 'Failed to download result' }, { status: 500 });
     const coloredBuffer = Buffer.from(await coloredResp.arrayBuffer());
 
-    // Step 4: Overlay line art (multiply blend)
+    // Step 5: Overlay line art (multiply blend)
     let finalBuffer: Buffer;
     try {
       finalBuffer = await overlayLineArt(coloredBuffer, lineArtBuffer);
@@ -128,7 +142,7 @@ export async function POST(req: NextRequest) {
       finalBuffer = coloredBuffer;
     }
 
-    // Step 5: Upload to Supabase Storage
+    // Step 6: Upload to Supabase Storage
     let permanentUrl = genUrl;
     let storagePath: string | null = null;
     try {

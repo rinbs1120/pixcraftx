@@ -43,7 +43,19 @@ export async function POST(req: NextRequest) {
     if (pagesUsed + 3 > limit) return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: 3 }, { status: 429 });
 
     // Qwen-Image-Edit-2509 understands style transfer natively, no CRITICAL prefix needed
-    console.log('[StyleTransfer] Calling Qwen-Image-Edit-2509, style:', styleId);
+    // Convert image URL to base64 (SiliconFlow APIs require base64 for img2img)
+    console.log('[StyleTransfer] Converting image to base64, style:', styleId);
+    let imageBase64: string;
+    try {
+      const imgResp = await fetch(imageUrl);
+      if (!imgResp.ok) throw new Error('Failed to fetch image for base64 conversion');
+      const imgBuffer = Buffer.from(await imgResp.arrayBuffer());
+      const contentType = imgResp.headers.get('content-type') || 'image/png';
+      imageBase64 = `data:${contentType};base64,${imgBuffer.toString('base64')}`;
+    } catch (e) {
+      console.error('[StyleTransfer] Base64 conversion failed:', e);
+      return NextResponse.json({ error: 'Failed to process image' }, { status: 500 });
+    }
 
     const qwenResp = await fetch(SILICONFLOW_API, {
       method: 'POST',
@@ -51,7 +63,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'Qwen/Qwen-Image-Edit-2509',
         prompt: stylePrompt,
-        image: imageUrl,
+        image: imageBase64,
         image_size: '960x1280',
         batch_size: 1,
         num_inference_steps: 30,

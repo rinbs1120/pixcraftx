@@ -16,7 +16,7 @@ const BASIC_PALETTES = [
     id: 'pastel',
     label: 'Pastel',
     emoji: '🩷',
-    desc: 'Ink wash pastels, jade & cherry blossom',
+    desc: 'Soft pink, lavender & sky blue',
     thumbnail: '/styles/palette-pastel.jpg',
     credits: 2,
   },
@@ -24,7 +24,7 @@ const BASIC_PALETTES = [
     id: 'vivid',
     label: 'Vivid',
     emoji: '🎨',
-    desc: 'Dunhuang murals, imperial red & gold',
+    desc: 'Bold red, emerald & royal blue',
     thumbnail: '/styles/palette-vivid.jpg',
     credits: 2,
   },
@@ -32,7 +32,7 @@ const BASIC_PALETTES = [
     id: 'muted',
     label: 'Muted',
     emoji: '🌿',
-    desc: 'Song celadon, tang sancai, wabi-sabi',
+    desc: 'Sage green, terracotta & cream',
     thumbnail: '/styles/palette-muted.jpg',
     credits: 2,
   },
@@ -851,25 +851,14 @@ function AutoColorContent() {
                       </a>
                     )}
                   </div>
-                ) : styleResult ? (
+                ) : displayImage ? (
                   <div className="text-center w-full">
                     <div className="aspect-[3/4] max-w-[480px] mx-auto rounded-xl overflow-hidden border border-[#E5E0D5] bg-white shadow-sm">
-                      <img src={styleResult} alt="Styled result" className="w-full h-full object-contain" />
+                      <img src={displayImage} alt="Result" className="w-full h-full object-contain" />
                     </div>
                     <div className="mt-2 text-center">
                       <span className="text-[10px] text-muted-foreground">
-                        {productResult ? `${PRODUCTS.find(p => p.id === selectedProduct)?.label || 'Product'} ready ✨` : `${selectedStyleLabel} style applied ✨`}
-                      </span>
-                    </div>
-                  </div>
-                ) : autoColorResult ? (
-                  <div className="text-center w-full">
-                    <div className="aspect-[3/4] max-w-[480px] mx-auto rounded-xl overflow-hidden border border-[#E5E0D5] bg-white shadow-sm">
-                      <img src={autoColorResult} alt="Colored result" className="w-full h-full object-contain" />
-                    </div>
-                    <div className="mt-2 text-center">
-                      <span className="text-[10px] text-muted-foreground">
-                        {selectedStyleLabel} coloring done — pick a product below! ↓
+                        {productResult ? `${PRODUCTS.find(p => p.id === selectedProduct)?.label || 'Product'} ready ✨` : styleResult ? `${selectedStyleLabel} style applied ✨` : autoColorResult ? `${selectedStyleLabel} coloring done — pick a product below! ↓` : 'Select a style to start'}
                       </span>
                     </div>
                   </div>

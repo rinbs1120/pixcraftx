@@ -11,21 +11,21 @@ import sharp from 'sharp';
 // Style-specific prompt modifiers
 const STYLE_PROMPTS = {
   simple: {
-    prefix: "vector line art coloring page for kids, bold thick black outlines minimum 3pt weight, pure black ink on white paper, clean closed contours, complete line borders, simple shapes with large areas to color, isolated subject on plain white background, no background details, no decorative patterns, no texture fills, minimal elements,",
-    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, cartoon style outline only, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
+    prefix: "simple coloring page for young children, thin black outlines ONLY on pure white paper, NO solid black filled areas anywhere, large simple shapes with big white open spaces to color in, single isolated subject centered on page, completely blank white background with zero background elements, cartoon style, beginner level, very sparse and clean layout with lots of white space, outlines only no shading,",
+    suffix: ", OUTLINE ONLY no solid black fills, strictly monochrome thin outlines, no colors no shading no grayscale no filled areas no shadows no gradients, 90 percent of the image must be white space, only thin contour lines in black, every contour is a fully sealed closed loop, all regions fully enclosed for flood-fill coloring"
   },
   mandala: {
-    prefix: "circular mandala coloring page, fully radially symmetric pattern with 8-fold rotational symmetry, repeating geometric motifs radiating from center, pure black ink on white paper, consistent 1.5pt line weight, every element is mirrored and repeated around the center axis forming a complete circular design, concentric rings of ornamental patterns, decorative borders within the circle, circular frame,",
-    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no gradients, white background outside the circle, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
+    prefix: "circular mandala coloring page, fully radially symmetric pattern with 8-fold rotational symmetry, thin black outlines ONLY on pure white paper, NO solid black filled areas, repeating geometric motifs radiating from center drawn with outlines only, concentric rings of ornamental line patterns inside a circular frame, lots of white space between the outline patterns,",
+    suffix: ", OUTLINE ONLY no solid black fills, strictly monochrome thin outlines, no colors no shading no grayscale no filled areas no gradients, white background outside the circle, all patterns drawn with outline lines not solid fills, every contour is a fully sealed closed loop, all regions fully enclosed for flood-fill coloring"
   },
   intricate: {
-    prefix: "extremely detailed adult coloring page, ultra-fine hair-thin black outlines 0.5pt weight, maximum detail density, every area filled with intricate patterns like crosshatching stippling filigree micro-ornaments zentangle patterns, pure black ink on white paper, professional illustration, highly decorated subject with elaborate surface textures and background filled with ornamental details,",
-    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders including all background elements, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
+    prefix: "detailed adult coloring page, thin black outlines ONLY on pure white paper, NO solid black filled areas anywhere, fine detailed outlines with intricate ornamental patterns, zentangle inspired line decorations, filigree line work, every surface decorated with fine outline patterns but still mostly white space for coloring, elaborate border outlines,",
+    suffix: ", OUTLINE ONLY no solid black fills, strictly monochrome thin outlines, no colors no shading no grayscale no filled areas no shadows no gradients, must have plenty of white space between detailed patterns for coloring, all decorative elements drawn as outline lines not solid black fills, every contour is a fully sealed closed loop, all regions fully enclosed for flood-fill coloring"
   }
 };
 
 // Negative prompt to suppress color leakage in Kolors model
-const NEGATIVE_PROMPT = "color, colored, colorful, paint, painted, watercolor, filled, fill, shading, shadow, gradient, grayscale, grey, gray, tint, hue, saturation, pigment, watercolor wash, ink wash, tone, tonal, realistic, photograph, 3D render, illustration with color, dyed, stain, tinted, chromatic, polychrome, multicolor, any color, slightest color, color tint, color wash, pastel colors, bright colors, dark colors, warm colors, cool colors, green, blue, red, pink, yellow, orange, purple, brown, gold";
+const NEGATIVE_PROMPT = "color, colored, colorful, paint, painted, watercolor, filled, fill, filling, shading, shadow, gradient, grayscale, grey, gray, tint, hue, saturation, pigment, watercolor wash, ink wash, tone, tonal, realistic, photograph, 3D render, illustration with color, dyed, stain, tinted, chromatic, polychrome, multicolor, any color, slightest color, color tint, color wash, pastel colors, bright colors, dark colors, warm colors, cool colors, green, blue, red, pink, yellow, orange, purple, brown, gold, solid black, black fill, black background, dark background, ink fill, solid fill, silhouette, negative space, reverse outline, woodcut, block print";
 
 // Credit costs - Kolors is cheaper than FLUX
 const GENERATE_CREDIT_COST = 1;  // Unified: 50 steps, 1 credit (Kolors is free on SiliconFlow)
@@ -34,10 +34,68 @@ const GENERATE_CREDIT_COST = 1;  // Unified: 50 steps, 1 credit (Kolors is free 
 
 // Post-process: ensure pure B&W line art (remove any color leakage from Kolors)
 async function toPureBWLineArt(imageBuffer: Buffer): Promise<Buffer> {
-  return sharp(imageBuffer)
-    .grayscale()      // Remove all color channels
-    .normalize()      // Auto-stretch contrast (darkest→0, lightest→255)
-    .threshold(180)   // Force pure B&W: pixels > 180 → white, ≤ 180 → black
+  const { data, info } = await sharp(imageBuffer)
+    .grayscale()
+    .normalize()
+    .threshold(200)   // Higher threshold: more gray → white, only darkest pixels stay black
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const { width, height } = info;
+  const totalPixels = width * height;
+
+  // Remove large black filled areas - keep only thin lines
+  // Strategy: scan for connected black regions, if area > 3% of image, fill it white
+  // Lines are thin (1-5px wide), filled areas are large blobs
+  const MIN_FILL_RATIO = 0.03; // 3% of image area
+  const MIN_FILL_AREA = Math.floor(totalPixels * MIN_FILL_RATIO);
+
+  // Simple approach: for each black pixel, check if it's part of a large connected region
+  // Use a flood-fill approach with area tracking
+  const visited = new Uint8Array(totalPixels);
+  const BLACK = 0;
+  const WHITE = 255;
+
+  function idx(x: number, y: number) { return y * width + x; }
+
+  // Flood fill to find connected black region and measure its area
+  function floodFillArea(startX: number, startY: number): number[] {
+    const region: number[] = [];
+    const stack = [idx(startX, startY)];
+    while (stack.length > 0 && region.length < MIN_FILL_AREA + 1000) {
+      const i = stack.pop()!;
+      if (visited[i]) continue;
+      const x = i % width;
+      const y = Math.floor(i / width);
+      if (data[i] !== BLACK) continue;
+      visited[i] = 1;
+      region.push(i);
+      // 4-connectivity
+      if (x > 0 && !visited[idx(x-1, y)]) stack.push(idx(x-1, y));
+      if (x < width-1 && !visited[idx(x+1, y)]) stack.push(idx(x+1, y));
+      if (y > 0 && !visited[idx(x, y-1)]) stack.push(idx(x, y-1));
+      if (y < height-1 && !visited[idx(x, y+1)]) stack.push(idx(x, y+1));
+    }
+    return region;
+  }
+
+  // Scan and remove large filled areas
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = idx(x, y);
+      if (data[i] === BLACK && !visited[i]) {
+        const region = floodFillArea(x, y);
+        if (region.length >= MIN_FILL_AREA) {
+          // This is a large filled area, not a line - make it white
+          for (const ri of region) {
+            data[ri] = WHITE;
+          }
+        }
+      }
+    }
+  }
+
+  return sharp(Buffer.from(data), { raw: { width, height, channels: 1 } })
     .png()
     .toBuffer();
 }

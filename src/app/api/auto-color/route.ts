@@ -11,16 +11,16 @@ const SILICONFLOW_API = 'https://api.siliconflow.cn/v1/images/generations';
 
 const COLOR_PALETTES: Record<string, { prompt: string; negative: string }> = {
   pastel: {
-    prompt: 'CRITICAL RULE: DO NOT add any new objects, flowers, plants, birds, animals, patterns, or decorative elements. ONLY fill existing outlined areas with color. Keep the EXACT same subject and composition. Color this illustration with soft pastel tones: light pink, pale green, soft lavender, butter yellow, and sky blue. Gentle light colors with smooth soft gradients, clean flat color fills within the outlines, coloring book style, no new elements added',
-    negative: 'flowers, flower, floral, plant, plants, botanical, nature, garden, leaf, leaves, bird, birds, animal, animals, branch, branches, vine, vines, decorative pattern, ornament, new elements, added elements, extra elements, pattern overlay, texture overlay, dark colors, neon, harsh contrast, muddy, oversaturated, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
+    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A beautifully colored illustration with soft pastel colors, macaron shades of soft pink pale green lavender butter yellow and sky blue, gentle pearlescent light tones, smooth soft gradients, coloring book style, colors filled neatly within the outlines',
+    negative: 'dark colors, neon, harsh contrast, muddy, oversaturated, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
   },
   vivid: {
-    prompt: 'CRITICAL RULE: DO NOT add any new objects, flowers, plants, birds, animals, patterns, or decorative elements. ONLY fill existing outlined areas with color. Keep the EXACT same subject and composition. Color this illustration with bold vivid saturated colors: bright red, emerald green, royal blue, and gold yellow accents. Rich intense color fills, clean flat colors within the outlines, coloring book style, no new elements added',
-    negative: 'flowers, flower, floral, plant, plants, botanical, nature, garden, leaf, leaves, bird, birds, animal, animals, branch, branches, vine, vines, decorative pattern, ornament, new elements, added elements, extra elements, pattern overlay, texture overlay, muted, pastel, dull, grayscale, black and white, blurry, distorted, low quality, washed out, different subject, changed subject, new subject, extra subject, replaced subject',
+    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A vibrantly colored illustration with bold vivid colors, saturated bright red emerald green sapphire blue and gold yellow accents, clean flat color fills, coloring book style, colors filled neatly within the outlines',
+    negative: 'muted, pastel, dull, grayscale, black and white, blurry, distorted, low quality, washed out, different subject, changed subject, new subject, extra subject, replaced subject',
   },
   muted: {
-    prompt: 'CRITICAL RULE: DO NOT add any new objects, flowers, plants, birds, animals, patterns, or decorative elements. ONLY fill existing outlined areas with color. Keep the EXACT same subject and composition. Color this illustration with muted earthy tones: sage green, warm terracotta, soft indigo, cream white, and dusty bronze. Desaturated warm vintage colors, subtle and understated palette, clean flat color fills within the outlines, coloring book style, no new elements added',
-    negative: 'flowers, flower, floral, plant, plants, botanical, nature, garden, leaf, leaves, bird, birds, animal, animals, branch, branches, vine, vines, decorative pattern, ornament, new elements, added elements, extra elements, pattern overlay, texture overlay, neon, bright, vivid, oversaturated, harsh, garish, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
+    prompt: 'CRITICAL: Keep the EXACT same subject and composition as the original image. DO NOT change, replace, or add any subject. A beautifully colored illustration with muted earthy tones, desaturated warm colors of sage green terracotta soft indigo cream white and dusty bronze, subtle and sophisticated palette, coloring book style, colors filled neatly within the outlines',
+    negative: 'neon, bright, vivid, oversaturated, harsh, garish, grayscale, black and white, blurry, distorted, low quality, different subject, changed subject, new subject, extra subject, replaced subject',
   },
 };
 
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
         image_size: '960x1280',
         batch_size: 1,
         num_inference_steps: 30,
-        guidance_scale: 15,  // Higher to strictly follow prompt and avoid adding new elements
+        guidance_scale: 10,
       }),
     });
 

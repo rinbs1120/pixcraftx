@@ -65,7 +65,7 @@ function GenerateContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedStyle, setSelectedStyle] = useState<'simple' | 'mandala' | 'intricate'>('simple');
-  // Quality selector removed - always 50 steps (1 credit)
+  // Quality selector removed - unified 50 steps 1 credit
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
@@ -175,7 +175,7 @@ function GenerateContent() {
         body: JSON.stringify({
           prompt: prompt.trim(),
           style: selectedStyle,
-          // quality removed - unified 50 steps
+          // quality removed
           referenceImageUrl: referenceImage,
         }),
       });

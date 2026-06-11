@@ -41,7 +41,7 @@ const EXAMPLE_PROMPTS = [
   { emoji: '🐲', text: 'Chinese dragon soaring through clouds' },
   { emoji: '🏯', text: 'Pagoda temple on misty mountain' },
   { emoji: '🦋', text: 'Butterfly on peony flowers' },
-  { emoji: '🐾', text: 'Cute panda eating bamboo' },
+  { emoji: '🐰', text: 'Cute white rabbit in moonlit garden' },
   { emoji: '🌊', text: 'Koi fish swimming in lotus pond' },
   { emoji: '🌸', text: 'Cherry blossom branch with lanterns' },
   { emoji: '🧑', text: 'Girl in hanfu under moonlight' },

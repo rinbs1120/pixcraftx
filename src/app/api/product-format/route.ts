@@ -100,13 +100,54 @@ export async function POST(req: NextRequest) {
     if (!resultResp.ok) return NextResponse.json({ error: 'Failed to download result' }, { status: 500 });
     const resultBuffer = Buffer.from(await resultResp.arrayBuffer());
 
+    // Remove white background for fridge magnet and sticker products
+    let processedBuffer: Buffer = resultBuffer;
+    try {
+      console.log('[ProductFormat] Removing white background for', productType);
+      // Create alpha mask: white bg → transparent, colored → opaque
+      // 1. Get image metadata
+      const meta = await sharp(resultBuffer).metadata();
+      const w = meta.width || 960;
+      const h = meta.height || 1280;
+
+      // 2. Create mask: grayscale → threshold → negate (white areas become black=transparent)
+      const maskPng = await sharp(resultBuffer)
+        .grayscale()
+        .threshold(242)    // pixels > 242 brightness → white (background)
+        .negate()           // invert: white bg → black (transparent), colored → white (opaque)
+        .png()
+        .toBuffer();
+
+      // 3. Extract original RGB (3 channels) and combine with mask as alpha
+      const rgbOnly = await sharp(resultBuffer).removeAlpha().raw().toBuffer();
+      const maskRaw = await sharp(maskPng).raw().toBuffer();
+
+      // 4. Interleave RGB + Alpha into RGBA buffer
+      const rgba = new Uint8Array(w * h * 4);
+      const rgbArr = new Uint8Array(rgbOnly);
+      const maskArr = new Uint8Array(maskRaw);
+      for (let i = 0; i < w * h; i++) {
+        rgba[i * 4]     = rgbArr[i * 3];     // R
+        rgba[i * 4 + 1] = rgbArr[i * 3 + 1]; // G
+        rgba[i * 4 + 2] = rgbArr[i * 3 + 2]; // B
+        rgba[i * 4 + 3] = maskArr[i];          // A (from mask)
+      }
+
+      processedBuffer = await sharp(Buffer.from(rgba.buffer as ArrayBuffer) as any, { raw: { width: w, height: h, channels: 4 } })
+        .png()
+        .toBuffer();
+      console.log('[ProductFormat] Background removed, transparent PNG created');
+    } catch (e) {
+      console.warn('[ProductFormat] Background removal failed, keeping original:', e);
+    }
+
     // Upload to Supabase Storage
     let permanentUrl = genUrl;
     let storagePath: string | null = null;
     try {
       const ts = Date.now();
       const fp = `${userId}/product-${productType}-${ts}.png`;
-      const { error: upErr } = await supabase.storage.from('coloring-pages').upload(fp, resultBuffer, { contentType: 'image/png', upsert: false });
+      const { error: upErr } = await supabase.storage.from('coloring-pages').upload(fp, processedBuffer, { contentType: 'image/png', upsert: false });
       if (!upErr) {
         const { data: urlData } = supabase.storage.from('coloring-pages').getPublicUrl(fp);
         permanentUrl = urlData.publicUrl;

@@ -316,7 +316,23 @@ function AutoColorContent() {
       if (data.limit) setPageLimit(data.limit);
       if (data.plan) setPlan(data.plan);
     } catch {
-      setError('Network error creating product. Please try again.');
+      // Network error - try to recover from history after delay
+      // (API may still complete server-side even if client connection drops)
+      console.log('[ProductFormat] Network error, attempting recovery from history...');
+      await new Promise(r => setTimeout(r, 5000));
+      try {
+        const histRes = await fetch('/api/history');
+        if (histRes.ok) {
+          const histData = await histRes.json();
+          const latest = histData.generations?.find((g: any) => g.style === 'product-format');
+          if (latest?.image_url) {
+            setProductResult(latest.image_url);
+            setIsProductProcessing(false);
+            return;
+          }
+        }
+      } catch {}
+      setError('Network error creating product. The server may still be processing - check My Pages in a moment.');
     } finally {
       setIsProductProcessing(false);
     }

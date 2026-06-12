@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Call Qwen to generate product
-    console.log('[ProductFormat] Calling Qwen for', productType);
+    console.log('[ProductFormat] Calling Qwen for', productType, '| base64 len:', imageBase64.length);
     const qwenResp = await fetch(SILICONFLOW_API, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
       }),
     });
 
+    console.log('[ProductFormat] Qwen response status:', qwenResp.status);
     if (!qwenResp.ok) {
       const err = await qwenResp.text();
       console.error('[ProductFormat] Qwen error:', qwenResp.status, err);

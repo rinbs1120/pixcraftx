@@ -12,7 +12,7 @@ const personas = [
       'Turn their art into real keepsakes',
     ],
     color: '#FFB800',
-    bg: 'rgba(255, 184, 0, 0.08)',
+    bg: 'rgba(255, 184, 0, 0.06)',
   },
   {
     icon: GraduationCap,
@@ -24,8 +24,8 @@ const personas = [
       'Customize for your lesson plan',
       'Print-ready at 300 DPI for handouts',
     ],
-    color: '#9B59B6',
-    bg: 'rgba(155, 89, 182, 0.08)',
+    color: '#E8D5A0',
+    bg: 'rgba(232, 213, 160, 0.06)',
   },
   {
     icon: Palette,
@@ -37,20 +37,20 @@ const personas = [
       'Fridge magnets, stickers, canvas prints',
       'Commercial license included in Pro+',
     ],
-    color: '#2ECC71',
-    bg: 'rgba(46, 204, 113, 0.08)',
+    color: '#FFD666',
+    bg: 'rgba(255, 214, 102, 0.06)',
   },
 ];
 
 export function PerfectFor() {
   return (
     <section
-      className="py-16 md:py-24"
+      className="py-20 md:py-28"
       style={{ background: 'linear-gradient(180deg, #1A1A2E 0%, #24243E 100%)' }}
     >
       <div className="container mx-auto px-4 md:px-6 max-w-7xl">
         <div className="text-center mb-12">
-          <h2 className="font-display text-3xl md:text-[40px] text-white mb-4">
+          <h2 className="font-display text-[32px] md:text-[40px] text-white mb-4" style={{ letterSpacing: '-0.5px' }}>
             Perfect For
           </h2>
           <p className="text-gray-400 text-lg">
@@ -64,7 +64,7 @@ export function PerfectFor() {
             return (
               <div
                 key={p.title}
-                className="rounded-3xl p-8 border border-white/10 hover:border-[#FFB800]/30 transition-all hover:-translate-y-1"
+                className="rounded-2xl p-8 border border-white/10 hover:border-[#FFB800]/30 transition-all hover:-translate-y-1"
                 style={{ background: p.bg, backdropFilter: 'blur(10px)' }}
               >
                 <div className="text-4xl mb-4">{p.emoji}</div>

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
-const CRAYON_COLORS = ['#FFB800', '#FF6B6B', '#2ECC71', '#9B59B6', '#FFB800'];
+const CRAYON_COLORS = ['#FFB800', '#FFD666', '#E8D5A0', '#9B59B6', '#FFB800'];
 const MAX_PARTICLES = 50;
 
 interface Particle {

@@ -108,7 +108,7 @@ export function DownloadAuthButton({ href, compact = false }: { href: string; co
         disabled={downloading}
         className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all hover:translate-y-0.5 text-[#1A1A2E] disabled:opacity-50"
         style={{
-          background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+          background: '#FFB800',
           boxShadow: '0 2px 8px rgba(255,184,0,0.3)',
         }}
       >

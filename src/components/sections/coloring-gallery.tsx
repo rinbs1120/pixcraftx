@@ -73,9 +73,9 @@ function MarqueeRow({ items, direction }: { items: MarqueeItem[]; direction: 'le
 
 export function ColoringGallery() {
   return (
-    <section className="py-16 md:py-24 bg-[#F5F0E8] relative overflow-hidden">
+    <section className="py-20 md:py-28 bg-[#F5F0E8] relative overflow-hidden">
       <div className="container mx-auto px-4 md:px-6 max-w-6xl text-center mb-10 md:mb-14">
-        <h2 className="font-display text-3xl md:text-4xl text-foreground mb-4">
+        <h2 className="font-display text-[32px] md:text-[40px] text-foreground mb-4" style={{ letterSpacing: '-0.5px' }}>
           Popular Coloring Pages
         </h2>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto">
@@ -85,8 +85,8 @@ export function ColoringGallery() {
           href="/generate"
           className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all hover:translate-y-0.5 text-[#1A1A2E] mt-6"
           style={{
-            background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
-            boxShadow: '0 2px 8px rgba(255,184,0,0.3)',
+            background: '#FFB800',
+            boxShadow: '0 2px 12px rgba(255,184,0,0.3)',
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

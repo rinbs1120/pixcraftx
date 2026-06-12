@@ -104,7 +104,7 @@ export function TryItNow() {
             ))}
           </div>
           <div className="flex justify-center">
-            <button onClick={handleGenerate} disabled={isGenerating || !prompt.trim()} className="inline-flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg rounded-full transition-all hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 2px 8px rgba(255,184,0,0.3)' }}>
+            <button onClick={handleGenerate} disabled={isGenerating || !prompt.trim()} className="inline-flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg rounded-full transition-all hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed text-[#1A1A2E]" style={{ background: '#FFB800', boxShadow: '0 2px 8px rgba(255,184,0,0.25)' }}>
               {isGenerating ? (<><Loader2 className="w-5 h-5 animate-spin" />Generating...</>) : (<><Sparkles className="w-5 h-5" />Generate</>)}
             </button>
           </div>

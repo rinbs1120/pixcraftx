@@ -130,7 +130,7 @@ function HistoryContent() {
             <button
               onClick={() => router.push('/generate')}
               className="px-6 py-3 font-semibold rounded-full text-[#1A1A2E] hover:-translate-y-0.5 transition-all flex items-center gap-2"
-              style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 16px rgba(255,107,107,0.3)' }}
+              style={{ background: '#FFB800', boxShadow: '0 4px 16px rgba(255,184,0,0.25)' }}
             >
               <Sparkles className="w-4 h-4" />
               Create New
@@ -146,7 +146,7 @@ function HistoryContent() {
               <button
                 onClick={() => router.push('/generate')}
                 className="px-6 py-3 font-semibold rounded-full text-[#1A1A2E]"
-                style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}
+                style={{ background: '#FFB800' }}
               >
                 Get Started
               </button>

@@ -209,8 +209,8 @@ body {
   100% { transform: translateX(0); }
 }
 
-/* Hero card slide-in animation */
-@keyframes heroCardSlideIn {
+/* Hero transformation animation - 3-stage: line art → colored → fridge magnet */
+@keyframes heroTransformSlideIn {
   0% {
     opacity: 0;
     transform: translateX(40px) translateY(20px);
@@ -221,47 +221,86 @@ body {
   }
 }
 
-/* Coloring brush reveal animation - simulates brush painting over line art */
-@keyframes brushReveal {
-  0%, 15% {
-    clip-path: inset(0 100% 0 0);
+.hero-transform-slide-in {
+  animation: heroTransformSlideIn 0.6s ease-out both;
+}
+
+/* Gentle floating animation */
+
+/* Shimmer sweep for Hero transition */
+@keyframes heroShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+
+/* 3D product rotation for Hero showcase */
+@keyframes hero3DRotate {
+  0%, 100% {
+    transform: rotateY(-25deg) rotateX(5deg);
+  }
+  25% {
+    transform: rotateY(15deg) rotateX(-3deg);
   }
   50% {
-    clip-path: inset(0 0% 0 0);
+    transform: rotateY(25deg) rotateX(5deg);
   }
   75% {
-    clip-path: inset(0 0% 0 0);
-  }
-  90%, 100% {
-    clip-path: inset(0 100% 0 0);
+    transform: rotateY(-15deg) rotateX(-3deg);
   }
 }
 
-.coloring-brush-reveal {
-  animation: brushReveal 6s ease-in-out infinite;
+/* Typing cursor blink */
+@keyframes heroBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
-/* Brush stroke edge glow */
-@keyframes brushEdgeGlow {
-  0%, 15% {
-    opacity: 0;
-    left: 0%;
-  }
-  40% {
-    opacity: 0.8;
+/* Fade in for generated results */
+@keyframes heroFadeIn {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+}
+@keyframes heroFloat {
+  0%, 100% {
+    transform: translateY(0);
   }
   50% {
-    opacity: 0;
-    left: 97%;
-  }
-  75%, 100% {
-    opacity: 0;
-    left: 97%;
+    transform: translateY(-8px);
   }
 }
 
-.brush-stroke-edge {
-  animation: brushEdgeGlow 6s ease-in-out infinite;
+.animate-hero-float {
+  animation: heroFloat 4s ease-in-out infinite;
+}
+
+/* Color sweep shine effect */
+@keyframes colorSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+/* Sparkle twinkle */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+}
+
+.animate-sparkle {
+  animation: sparkle 1.5s ease-in-out infinite;
 }
 
 /* Invite banner slide-up animation */

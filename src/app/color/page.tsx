@@ -84,7 +84,7 @@ function ColorContent() {
   const baseHistoryIndexRef = useRef(-1);
   const opLogRef = useRef<Array<'color' | 'base'>>([]);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState('#FF6B6B');
+  const [selectedColor, setSelectedColor] = useState('#FFB800');
   const [tool, setTool] = useState<'fill' | 'pencil' | 'brush' | 'eraser' | 'eyedropper'>('fill');
   const [brushSize, setBrushSize] = useState(8);
   const [dlOpen, setDlOpen] = useState(false)
@@ -100,7 +100,7 @@ function ColorContent() {
   const gradientBarRef = useRef<HTMLDivElement>(null);
 
   // HSL state derived from selectedColor
-  const [hsl, setHsl] = useState<[number, number, number]>(() => hexToHsl('#FF6B6B'));
+  const [hsl, setHsl] = useState<[number, number, number]>(() => hexToHsl('#FFB800'));
 
   // Update HSL when color changes externally
   useEffect(() => {
@@ -803,7 +803,7 @@ function ColorContent() {
                     )}
                   </div>
                   <button onClick={handlePrint} className="px-3 py-2 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all text-xs font-medium"><Printer className="w-3.5 h-3.5" /> {!isSignedIn ? 'Sign in to Print' : 'Print'}</button>
-                  <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="px-3 py-2 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-1.5 transition-all text-xs font-medium disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}>
+                  <button onClick={handleSaveToHistory} disabled={saveStatus === 'saving'} className="px-3 py-2 rounded-xl text-[#1A1A2E] flex items-center justify-center gap-1.5 transition-all text-xs font-medium disabled:opacity-50" style={{ background: '#FFB800' }}>
                     {saveStatus === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Failed' : !isSignedIn ? 'Sign in to Save' : 'Save'}
                   </button>

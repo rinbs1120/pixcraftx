@@ -20,14 +20,14 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="py-16 md:py-20 bg-[#1A1A2E]">
+    <footer className="py-20 md:py-28 bg-[#1A1A2E]">
       <div className="container mx-auto px-4 md:px-6 max-w-[1440px]">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="PixCraftX logo">
                 <circle cx="16" cy="16" r="14" fill="#FFB800" opacity="0.15" />
-                <circle cx="11" cy="13" r="3.5" fill="#FF6B6B" />
+                <circle cx="11" cy="13" r="3.5" fill="#FFB800" />
                 <circle cx="21" cy="13" r="3.5" fill="#2ECC71" />
                 <circle cx="16" cy="21" r="3.5" fill="#FFB800" />
                 <circle cx="16" cy="13" r="2" fill="#1A1A2E" />
@@ -85,7 +85,7 @@ export function Footer() {
         <div className="pt-8 border-t border-[#2A2A3E]">
           <p className="text-center text-sm text-[#B0B0C0]">
             © {currentYear} PixCraftX. Made with{' '}
-            <span className="text-[#FF6B6B]">❤</span> for creators.
+            <span className="text-[#FFB800]">❤</span> for creators.
           </p>
           <p className="text-center text-xs text-[#808090] mt-2">
             Powered by AI. All generated content is AI-created.

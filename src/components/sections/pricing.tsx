@@ -118,15 +118,15 @@ export function Pricing() {
   const currentRank = PLAN_RANK[currentPlan] || 0;
 
   return (
-    <section id="pricing" className="py-16 md:py-24 bg-background">
+    <section id="pricing" className="py-20 md:py-28 bg-background">
       <div className="container mx-auto px-4 md:px-6 max-w-[1300px]">
         <div className="text-center mb-6">
-          <h2 className="font-display text-[32px] md:text-[40px] text-foreground mb-4">
+          <h2 className="font-display text-[32px] md:text-[40px] text-foreground mb-4" style={{ letterSpacing: '-0.5px' }}>
             Simple Pricing
           </h2>
           {isLaunchPromo && (
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#FFF3CC] border border-[#FFB800]">
-              <span className="text-sm font-semibold text-[#1A1A2E]">🎉 Launch Special</span>
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full" style={{ background: '#FFB80010', border: '1.5px solid #FFB80025' }}>
+              <span className="text-sm font-semibold" style={{ color: '#FFB800' }}>✦ Launch Special</span>
               <span className="text-sm text-[#8A8A9A]">Special pricing ends Sep 2026</span>
             </div>
           )}
@@ -142,7 +142,7 @@ export function Pricing() {
             return (
               <div
                 key={plan.name}
-                className={`relative rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col ${
+                className={`relative rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col ${
                   isCurrent
                     ? 'border-2 border-[#2ECC71] bg-[#E8FBF0]'
                     : plan.popular
@@ -161,7 +161,7 @@ export function Pricing() {
                 {plan.popular && !isCurrent && (
                   <div
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1 rounded-full text-xs font-bold text-[#1A1A2E]"
-                    style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}
+                    style={{ background: '#FFB800' }}
                   >
                     Popular
                   </div>
@@ -254,7 +254,7 @@ export function Pricing() {
                       }`}
                       style={
                         plan.buttonStyle === 'gradient'
-                          ? { background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 16px rgba(255,107,107,0.3)' }
+                          ? { background: '#FFB800', boxShadow: '0 4px 16px rgba(255,184,0,0.3)' }
                           : undefined
                       }
                     >
@@ -271,7 +271,7 @@ export function Pricing() {
                     }`}
                     style={
                       plan.buttonStyle === 'gradient'
-                        ? { background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 16px rgba(255,107,107,0.3)' }
+                        ? { background: '#FFB800', boxShadow: '0 4px 16px rgba(255,184,0,0.3)' }
                         : undefined
                     }
                   >

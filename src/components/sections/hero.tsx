@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Sparkles, Check, Pencil, Palette } from 'lucide-react';
@@ -40,8 +40,20 @@ const demoFlows = [
 ];
 
 const STEP_COUNT = 4;
-const STEP_DURATIONS = [3200, 2800, 2800, 4000];
+const STEP_DURATIONS = [3200, 2800, 2800, 4500];
 const WORD_TYPING_INTERVAL = 450;
+
+/* Dark theme colors */
+const dark = {
+  bg: '#1A1A2E',
+  surface: '#242438',
+  surfaceLight: '#2E2E48',
+  border: '#3A3A54',
+  text: '#E8E4F0',
+  textMuted: '#9894A8',
+  accent: '#FFB800',
+  accentSecondary: '#FF6B6B',
+};
 
 export function Hero() {
   const [phase, setPhase] = useState(0);
@@ -53,7 +65,7 @@ export function Hero() {
   const demo = demoFlows[demoIdx];
   const is3D = stepIdx === 3;
 
-  // Mechanical typing — word by word
+  // Mechanical typing
   useEffect(() => {
     if (stepIdx === 0) {
       setVisibleWords(0);
@@ -65,7 +77,7 @@ export function Hero() {
     }
   }, [stepIdx, demo.promptWords]);
 
-  // Phase auto-advance
+  // Auto-advance
   useEffect(() => {
     const timer = setTimeout(() => {
       setPhase(prev => (prev + 1) % totalPhases);
@@ -112,65 +124,84 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right: Mini App Demo */}
+          {/* Right: Mini App Demo — Dark theme, larger */}
           <div className="hidden lg:flex lg:justify-center lg:items-center">
-            <div className="relative rounded-2xl bg-white overflow-hidden" style={{ width: '480px', boxShadow: '0 16px 48px rgba(26,26,46,0.15), 0 4px 12px rgba(26,26,46,0.08)', animation: 'heroTransformSlideIn 0.8s ease-out both' }}>
-              {/* Window bar */}
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100" style={{ background: '#FAFAF7' }}>
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#FF6B6B' }} />
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#FFB800' }} />
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#2ECC71' }} />
+            <div
+              className="relative rounded-2xl overflow-hidden"
+              style={{
+                width: '540px',
+                background: dark.bg,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.25), 0 8px 20px rgba(0,0,0,0.15)',
+                animation: 'heroTransformSlideIn 0.8s ease-out both',
+              }}
+            >
+              {/* Window top bar — dark */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ background: dark.surface, borderColor: dark.border }}>
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#FF5F57' }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#FEBC2E' }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#28C840' }} />
                 </div>
-                <span className="font-display text-xs text-muted-foreground ml-2">PixCraftX</span>
-                <div className="ml-auto flex gap-1.5">
+                <span className="font-display text-xs ml-3" style={{ color: dark.textMuted }}>PixCraftX</span>
+                <div className="ml-auto flex gap-2">
                   {[0,1,2,3].map(i => (
-                    <div key={i} className="rounded-full transition-all duration-500" style={{ width: stepIdx===i?'18px':'6px', height:'6px', background: stepIdx>=i?(i===0?'#1A1A2E':i===1?'#FFB800':i===2?'#FF6B6B':'#2ECC71'):'#E5E0D5' }} />
+                    <div key={i} className="rounded-full transition-all duration-500" style={{
+                      width: stepIdx===i ? '24px' : '8px',
+                      height: '8px',
+                      background: stepIdx>=i
+                        ? (i===0 ? '#1A1A2E' : i===1 ? '#FFB800' : i===2 ? '#FF6B6B' : '#2ECC71')
+                        : dark.surfaceLight,
+                    }} />
                   ))}
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="relative" style={{ minHeight: '360px' }}>
+              {/* Content area */}
+              <div className="relative" style={{ minHeight: '420px' }}>
 
-                {/* STEP 0: Generate — typing prompt + line art result */}
-                <div className="absolute inset-0 flex flex-col transition-all duration-700" style={{ opacity: stepIdx===0?1:0, transform: stepIdx===0?'translateX(0)':'translateX(-30px)', pointerEvents: stepIdx===0?'auto':'none' }}>
-                  <div className="px-4 pt-4 pb-2">
-                    <div className="rounded-xl border border-gray-200 px-3 py-2.5 text-xs" style={{ background: '#FFFBF0', minHeight: '32px' }}>
-                      <span className="text-muted-foreground mr-1">✨</span>
+                {/* STEP 0: Generate */}
+                <div className="absolute inset-0 flex flex-col transition-all duration-700" style={{ opacity: stepIdx===0?1:0, transform: stepIdx===0?'translateX(0)':'translateX(-40px)', pointerEvents: stepIdx===0?'auto':'none' }}>
+                  <div className="px-5 pt-5 pb-3">
+                    <div className="rounded-xl px-4 py-3 text-sm" style={{ background: dark.surfaceLight, border: `1px solid ${dark.border}`, minHeight: '40px' }}>
+                      <span style={{ color: dark.accent }} className="mr-2">✨</span>
                       {demo.promptWords.map((word, i) => (
-                        <span key={i} className="inline transition-all duration-200" style={{ opacity: i < visibleWords ? 1 : 0, color: '#1A1A2E' }}>
+                        <span key={i} className="inline transition-all duration-200" style={{ opacity: i < visibleWords ? 1 : 0, color: dark.text }}>
                           {word}{i < demo.promptWords.length - 1 ? ' ' : ''}
                         </span>
                       ))}
-                      <span className="inline-block w-[2px] h-3 ml-0.5 align-middle" style={{ background: '#FFB800', animation: 'heroBlink 0.8s step-end infinite' }} />
+                      <span className="inline-block w-[2px] h-4 ml-0.5 align-middle" style={{ background: dark.accent, animation: 'heroBlink 0.8s step-end infinite' }} />
                     </div>
-                    <button className="mt-2 px-3 py-1.5 rounded-lg text-[10px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Generate Line Art</button>
+                    <button className="mt-3 px-4 py-2 rounded-lg text-xs font-bold text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Generate Line Art</button>
                   </div>
-                  <div className="flex-1 px-4 pb-4">
-                    <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: '#FFFBF0', maxHeight: '260px' }}>
+                  <div className="flex-1 px-5 pb-5">
+                    <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: dark.surfaceLight, maxHeight: '300px' }}>
                       <Image src={demo.images.lineart} alt="Generated line art" width={480} height={640} className="w-full h-full object-cover" style={{ opacity: stepIdx===0?1:0, animation: stepIdx===0?'heroFadeIn 0.8s ease-out 2.2s both':'none' }} />
                     </div>
                   </div>
                 </div>
 
                 {/* STEP 1: Color & Style */}
-                <div className="absolute inset-0 flex transition-all duration-700" style={{ opacity: stepIdx===1?1:0, transform: stepIdx===1?'translateX(0)':stepIdx<1?'translateX(30px)':'translateX(-30px)', pointerEvents: stepIdx===1?'auto':'none' }}>
-                  <div className="w-[140px] p-3 border-r border-gray-50" style={{ background: '#FDFCFA' }}>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Art Style</p>
+                <div className="absolute inset-0 flex transition-all duration-700" style={{ opacity: stepIdx===1?1:0, transform: stepIdx===1?'translateX(0)':stepIdx<1?'translateX(40px)':'translateX(-40px)', pointerEvents: stepIdx===1?'auto':'none' }}>
+                  <div className="w-[170px] p-4 border-r" style={{ background: dark.surface, borderColor: dark.border }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: dark.textMuted }}>Art Style</p>
                     {['Pastel', demo.styleName, 'Muted'].map((name) => {
                       const sel = name === demo.styleName;
                       return (
-                        <div key={name} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg mb-1 text-[10px]" style={{ background: sel?'#FFF3CC':'transparent', border: sel?'1.5px solid #FFB800':'1.5px solid transparent', fontWeight: sel?700:400, color: sel?'#1A1A2E':'#6B7280' }}>
-                          <div className="w-3 h-3 rounded-full" style={{ background: name==='Pastel'?'#FFD1DC':name===demo.styleName?'#FF6B6B':'#A8B5A0' }} />
+                        <div key={name} className="flex items-center gap-2 px-3 py-2 rounded-lg mb-1.5 text-xs" style={{
+                          background: sel ? `${dark.accent}15` : 'transparent',
+                          border: sel ? `1.5px solid ${dark.accent}` : `1.5px solid transparent`,
+                          fontWeight: sel ? 700 : 400,
+                          color: sel ? dark.accent : dark.textMuted,
+                        }}>
+                          <div className="w-3.5 h-3.5 rounded-full" style={{ background: name==='Pastel'?'#FFD1DC':name===demo.styleName?'#FF6B6B':'#A8B5A0' }} />
                           {name}
                         </div>
                       );
                     })}
-                    <button className="mt-2 w-full px-2 py-1.5 rounded-lg text-[9px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Color It!</button>
+                    <button className="mt-3 w-full px-3 py-2 rounded-lg text-[11px] font-bold text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Color It!</button>
                   </div>
-                  <div className="flex-1 p-3">
-                    <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: '#FFFBF0', maxHeight: '300px' }}>
+                  <div className="flex-1 p-4">
+                    <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: dark.surfaceLight, maxHeight: '360px' }}>
                       <Image src={demo.images.lineart} alt="Line art" width={480} height={640} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style={{ opacity: 0 }} />
                       <Image src={demo.images.colored} alt="Colored" width={480} height={640} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000" style={{ opacity: 1 }} />
                     </div>
@@ -178,74 +209,89 @@ export function Hero() {
                 </div>
 
                 {/* STEP 2: Product */}
-                <div className="absolute inset-0 flex transition-all duration-700" style={{ opacity: stepIdx===2?1:0, transform: stepIdx===2?'translateX(0)':stepIdx<2?'translateX(30px)':'translateX(-30px)', pointerEvents: stepIdx===2?'auto':'none' }}>
-                  <div className="w-[140px] p-3 border-r border-gray-50" style={{ background: '#FDFCFA' }}>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Product</p>
+                <div className="absolute inset-0 flex transition-all duration-700" style={{ opacity: stepIdx===2?1:0, transform: stepIdx===2?'translateX(0)':stepIdx<2?'translateX(40px)':'translateX(-40px)', pointerEvents: stepIdx===2?'auto':'none' }}>
+                  <div className="w-[170px] p-4 border-r" style={{ background: dark.surface, borderColor: dark.border }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: dark.textMuted }}>Product</p>
                     {[
-                      { name: 'Canvas Print', bg: '#E5E0D5' },
+                      { name: 'Canvas Print', bg: '#4A4A64' },
                       { name: demo.product, bg: demo.productColor },
-                      { name: demo.id==='panda'?'Fridge Magnet':'Sticker', bg: '#E5E0D5' },
+                      { name: demo.id==='panda'?'Fridge Magnet':'Sticker', bg: '#4A4A64' },
                     ].map((p) => {
                       const sel = p.name === demo.product;
                       return (
-                        <div key={p.name} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg mb-1 text-[10px]" style={{ background: sel?(demo.product==='Sticker'?'#FFE0E0':'#FFF3CC'):'transparent', border: sel?`1.5px solid ${demo.productColor}`:'1.5px solid transparent', fontWeight: sel?700:400, color: sel?'#1A1A2E':'#6B7280' }}>
-                          <div className="w-3 h-3 rounded" style={{ background: p.bg }} />
+                        <div key={p.name} className="flex items-center gap-2 px-3 py-2 rounded-lg mb-1.5 text-xs" style={{
+                          background: sel ? `${demo.productColor}18` : 'transparent',
+                          border: sel ? `1.5px solid ${demo.productColor}` : `1.5px solid transparent`,
+                          fontWeight: sel ? 700 : 400,
+                          color: sel ? demo.productColor : dark.textMuted,
+                        }}>
+                          <div className="w-3.5 h-3.5 rounded" style={{ background: p.bg }} />
                           {p.name}
                         </div>
                       );
                     })}
-                    <button className="mt-2 w-full px-2 py-1.5 rounded-lg text-[9px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Create Product</button>
+                    <button className="mt-3 w-full px-3 py-2 rounded-lg text-[11px] font-bold text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Create Product</button>
                   </div>
-                  <div className="flex-1 p-3">
-                    <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: '#FFFBF0', maxHeight: '300px' }}>
-                      <Image src={demo.images.product} alt={demo.product} width={480} height={640} className="absolute inset-0 w-full h-full object-contain transition-opacity duration-800" style={{ opacity: 1, background: '#FFFBF0' }} />
+                  <div className="flex-1 p-4">
+                    <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: dark.surfaceLight, maxHeight: '360px' }}>
+                      <Image src={demo.images.product} alt={demo.product} width={480} height={640} className="absolute inset-0 w-full h-full object-contain" style={{ opacity: 1 }} />
                     </div>
                   </div>
                 </div>
 
-                {/* STEP 3: 3D Showcase — transparent bg, real 3D rotation */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center transition-all duration-700" style={{ opacity: stepIdx===3?1:0, transform: stepIdx===3?'translateX(0) scale(1)':'translateX(30px) scale(0.95)', pointerEvents: stepIdx===3?'auto':'none', background: 'radial-gradient(ellipse at center, #F5F0E8 0%, #FFFBF0 70%)' }}>
-                  {/* Subtle surface reflection */}
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[200px] h-[30px] rounded-full" style={{ background: `radial-gradient(ellipse, ${demo.productColor}15 0%, transparent 70%)`, filter: 'blur(8px)' }} />
+                {/* STEP 3: 3D Showcase — dark stage, transparent product, real 3D rotation */}
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center transition-all duration-700"
+                  style={{
+                    opacity: stepIdx===3 ? 1 : 0,
+                    transform: stepIdx===3 ? 'translateX(0) scale(1)' : 'translateX(40px) scale(0.95)',
+                    pointerEvents: stepIdx===3 ? 'auto' : 'none',
+                    background: `radial-gradient(ellipse at 50% 40%, ${dark.surfaceLight} 0%, ${dark.bg} 70%)`,
+                  }}
+                >
+                  {/* Spotlight effect */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[200px] pointer-events-none" style={{ background: `radial-gradient(ellipse, ${demo.productColor}08 0%, transparent 70%)` }} />
 
-                  {/* 3D product */}
-                  <div style={{ perspective: '1000px' }}>
+                  {/* Reflection surface */}
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[220px] h-[20px] rounded-full pointer-events-none" style={{ background: `radial-gradient(ellipse, ${demo.productColor}20 0%, transparent 70%)`, filter: 'blur(10px)' }} />
+
+                  {/* 3D rotating product */}
+                  <div className="hero-3d-stage" style={{ perspective: '1200px' }}>
                     <div
+                      className="hero-3d-spinner"
                       style={{
                         transformStyle: 'preserve-3d',
-                        animation: is3D ? 'hero3DRotate 4s ease-in-out infinite' : 'none',
+                        animation: 'hero3DRotate 4s ease-in-out infinite',
                       }}
                     >
-                      <div className="relative" style={{ width: '180px', height: '240px' }}>
-                        {/* The product image — transparent PNG, no background */}
-                        <Image
-                          src={demo.images.product}
-                          alt={demo.product}
-                          width={480}
-                          height={640}
-                          className="w-full h-full object-contain"
-                          style={{
-                            filter: 'drop-shadow(0 8px 24px rgba(26,26,46,0.2))',
-                          }}
-                        />
-                        {/* Subtle edge highlight for 3D feel */}
-                        <div className="absolute inset-0 pointer-events-none rounded-lg" style={{ boxShadow: `0 0 0 1px ${demo.productColor}10, 0 12px 40px ${demo.productColor}20` }} />
-                      </div>
+                      <Image
+                        src={demo.images.product}
+                        alt={demo.product}
+                        width={480}
+                        height={640}
+                        style={{
+                          width: '200px',
+                          height: 'auto',
+                          filter: `drop-shadow(0 12px 32px rgba(0,0,0,0.35)) drop-shadow(0 4px 12px ${demo.productColor}30)`,
+                        }}
+                      />
                     </div>
                   </div>
 
                   {/* Status badges */}
-                  <div className="flex gap-2 mt-5">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-[#2ECC71]" style={{ background: '#E8F8F0' }}>✓ BG Removed</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>↓ Download</span>
+                  <div className="flex gap-3 mt-6">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-[#2ECC71]" style={{ background: '#2ECC7118', border: '1px solid #2ECC7130' }}>✓ BG Removed</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>↓ Download</span>
                   </div>
                 </div>
 
               </div>
 
-              {/* Bottom label */}
-              <div className="px-4 py-2.5 flex items-center justify-center border-t border-gray-50" style={{ background: '#FAFAF7' }}>
-                <span className="font-display text-xs px-3 py-1 rounded-full" style={{ color: demo.productColor, background: demo.product==='Sticker'?'#FFE0E0':'#FFF3CC' }}>{demo.product}</span>
+              {/* Bottom label — dark */}
+              <div className="px-5 py-3 flex items-center justify-center border-t" style={{ background: dark.surface, borderColor: dark.border }}>
+                <span className="font-display text-xs px-4 py-1.5 rounded-full" style={{ color: demo.productColor, background: `${demo.productColor}18`, border: `1px solid ${demo.productColor}30` }}>
+                  {demo.product}
+                </span>
               </div>
             </div>
           </div>

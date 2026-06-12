@@ -714,47 +714,9 @@ function AutoColorContent() {
                         </button>
                       )}
 
-                      {/* Product result: show download + remove background */}
+                      {/* Product result indicator - buttons in preview area below */}
                       {selectedProduct && selectedProduct !== 'canvas-print' && productResult && (
-                        <div className="space-y-2">
-                          <p className="text-[10px] text-center text-[#FFB800] font-medium">✨ Product ready!</p>
-                          <button
-                            onClick={() => {
-                              const url = transparentResult || productResult;
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `pixcraftx-${selectedProduct}-${transparentResult ? 'transparent' : ''}-${Date.now()}.png`;
-                              a.target = '_blank';
-                              document.body.appendChild(a);
-                              a.click();
-                              document.body.removeChild(a);
-                            }}
-                            className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 text-sm"
-                            style={{
-                              background: '#FFB800',
-                              boxShadow: '0 4px 12px rgba(255,184,0,0.25)',
-                            }}
-                          >
-                            <Download className="w-4 h-4" /> {transparentResult ? 'Download Transparent PNG' : `Download ${PRODUCTS.find(p => p.id === selectedProduct)?.label}`}
-                          </button>
-                          {/* Remove Background button - only show if not already done */}
-                          {!transparentResult && (
-                            <button
-                              onClick={handleRemoveBackground}
-                              disabled={isRemovingBg}
-                              className="w-full py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm border-2 border-[#FFB800] text-[#FFB800] hover:bg-[#FFB800]/5"
-                            >
-                              {isRemovingBg ? (
-                                <><Loader2 className="w-4 h-4 animate-spin" /> Removing background...</>
-                              ) : (
-                                <><Eraser className="w-4 h-4" /> Remove Background (Free)</>
-                              )}
-                            </button>
-                          )}
-                          {transparentResult && (
-                            <p className="text-[10px] text-center text-[#FFB800] font-medium">✨ Background removed! Download transparent PNG above.</p>
-                          )}
-                        </div>
+                        <p className="text-[10px] text-center text-[#FFB800] font-medium py-1">✨ Product ready — see preview ↓</p>
                       )}
                     </div>
                   )}

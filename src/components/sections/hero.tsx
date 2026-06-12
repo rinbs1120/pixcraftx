@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Sparkles, Check, Pencil, Palette } from 'lucide-react';
@@ -32,12 +32,31 @@ const steps = [
   },
 ];
 
-const STAGE_DURATION = 3000;
-const stageConfig = [
-  { label: 'Line Art', color: '#1A1A2E', icon: '✏️' },
-  { label: 'Color & Style', color: '#FFB800', icon: '🎨' },
-  { label: 'Fridge Magnet', color: '#FF6B6B', icon: '🧲' },
+/* Real transformation demo images */
+const demoGroups = [
+  {
+    id: 'panda',
+    name: 'Panda',
+    product: 'Sticker',
+    stages: [
+      { src: '/hero/panda-lineart.jpg', label: 'Line Art' },
+      { src: '/hero/panda-colored.jpg', label: 'Pop Art' },
+      { src: '/hero/panda-sticker.png', label: 'Sticker' },
+    ],
+  },
+  {
+    id: 'phoenix',
+    name: 'Phoenix',
+    product: 'Magnet',
+    stages: [
+      { src: '/hero/phoenix-lineart.jpg', label: 'Line Art' },
+      { src: '/hero/phoenix-colored.jpg', label: 'Vivid' },
+      { src: '/hero/phoenix-magnet.png', label: 'Fridge Magnet' },
+    ],
+  },
 ];
+
+const STAGE_DURATION = 3000;
 
 export function Hero() {
   const [stage, setStage] = useState(0);
@@ -49,18 +68,14 @@ export function Hero() {
     return () => clearInterval(timer);
   }, []);
 
-  const goToStage = useCallback((s: number) => {
-    setStage(s);
-  }, []);
-
   return (
     <section className="relative overflow-hidden pt-28 pb-16 md:pt-36 md:pb-24">
-      {/* Radial gradient decoration */}
+      {/* Background decoration - consistent with site */}
       <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full opacity-[0.12] pointer-events-none" style={{ background: 'radial-gradient(circle, #FFB800 0%, transparent 70%)' }} />
 
       <div className="container mx-auto px-4 md:px-6 max-w-[1440px]">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left: Text Content */}
+          {/* Left: Text Content - unchanged */}
           <div className="text-center lg:text-left">
             <h1 className="font-display text-4xl md:text-5xl lg:text-[56px] text-foreground leading-tight mb-6">
               Color It, Then Make It Yours
@@ -127,141 +142,109 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right: Animated Transformation Display */}
+          {/* Right: Two transformation demo cards */}
           <div className="hidden lg:flex lg:justify-center lg:items-center">
-            <div className="flex flex-col items-center">
-              {/* Main transformation card */}
-              <div className="relative hero-transform-slide-in">
-                <div className="relative animate-hero-float">
-                  <Link
-                    href="/generate"
-                    className="block relative rounded-2xl overflow-hidden bg-white transition-all duration-700 ease-in-out"
+            <div className="flex gap-5 items-end">
+              {demoGroups.map((group, groupIdx) => (
+                <div
+                  key={group.id}
+                  className="flex flex-col items-center"
+                  style={{
+                    animation: `heroTransformSlideIn 0.6s ease-out ${0.15 + groupIdx * 0.15}s both`,
+                  }}
+                >
+                  {/* Card - same style as site cards */}
+                  <div
+                    className="relative rounded-2xl overflow-hidden bg-white transition-shadow duration-300 hover:shadow-2xl"
                     style={{
-                      width: '360px',
-                      boxShadow: stage === 2
-                        ? '0 16px 48px rgba(26,26,46,0.25), 0 4px 12px rgba(255,107,107,0.15)'
-                        : '0 8px 24px rgba(26,26,46,0.1)',
+                      width: groupIdx === 0 ? '270px' : '250px',
+                      boxShadow: '0 8px 24px rgba(26,26,46,0.1)',
                     }}
                   >
-                    {/* Image container */}
-                    <div className="relative" style={{ background: '#FFFBF0' }}>
-                      <Image
-                        src="/styles/simple.jpg"
-                        alt="Coloring page transformation demo"
-                        width={512}
-                        height={683}
-                        className="w-full h-auto"
-                        priority
-                      />
-
-                      {/* Stage 1+: Color overlay with sweep animation */}
-                      <div
-                        className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(255,107,107,0.4) 0%, rgba(255,184,0,0.35) 30%, rgba(46,204,113,0.35) 60%, rgba(52,152,219,0.35) 100%)',
-                          mixBlendMode: 'multiply',
-                          opacity: stage >= 1 ? 1 : 0,
-                        }}
-                      />
-
-                      {/* Color sweep shine effect - appears when transitioning to stage 1 */}
-                      {stage >= 1 && (
-                        <div
-                          className="absolute inset-0 pointer-events-none"
-                          style={{
-                            background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%)',
-                            animation: 'colorSweep 1.5s ease-out forwards',
-                          }}
+                    {/* Image area */}
+                    <div className="relative" style={{ background: '#FFFBF0', aspectRatio: '3/4' }}>
+                      {group.stages.map((s, i) => (
+                        <Image
+                          key={i}
+                          src={s.src}
+                          alt={`${group.name} ${s.label}`}
+                          width={480}
+                          height={640}
+                          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+                          style={{ opacity: stage === i ? 1 : 0 }}
+                          priority={i === 0}
                         />
-                      )}
+                      ))}
 
-                      {/* Stage 2: Fridge magnet white border frame */}
+                      {/* Stage badge - matches site badge style (rounded-full, brand colors) */}
                       <div
-                        className="absolute inset-0 pointer-events-none transition-all duration-700 ease-in-out"
-                        style={{
-                          border: stage === 2 ? '14px solid white' : '0px solid white',
-                          borderRadius: stage === 2 ? '4px' : '16px',
-                          boxShadow: stage === 2 ? 'inset 0 2px 12px rgba(0,0,0,0.12)' : 'none',
-                        }}
-                      />
-                    </div>
-
-                    {/* Stage 2: Magnet icon at top */}
-                    <div
-                      className="absolute left-1/2 transition-all duration-700 ease-in-out"
-                      style={{
-                        top: stage === 2 ? '-6px' : '-26px',
-                        opacity: stage === 2 ? 1 : 0,
-                        transform: 'translateX(-50%)',
-                        zIndex: 10,
-                      }}
-                    >
-                      <div className="relative">
-                        <div className="w-10 h-5 rounded-t-full bg-gradient-to-b from-red-400 to-red-500 shadow-md" />
-                        <div className="w-10 h-[3px] bg-gradient-to-r from-gray-300 via-gray-400 to-gray-300 rounded-full" />
+                        className="absolute top-3 left-3 transition-all duration-500"
+                      >
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-[#1A1A2E]"
+                          style={{
+                            backgroundColor: stage === 0
+                              ? '#FFFFFF'
+                              : stage === 1
+                              ? '#FFF3CC'
+                              : '#FFE0E0',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          }}
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
+                            style={{
+                              backgroundColor: stage === 0
+                                ? '#1A1A2E'
+                                : stage === 1
+                                ? '#FFB800'
+                                : '#FF6B6B',
+                            }}
+                          >
+                            {stage + 1}
+                          </span>
+                          {group.stages[stage].label}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Stage 2: Subtle fridge background hint */}
-                    <div
-                      className="absolute inset-0 pointer-events-none transition-opacity duration-700"
-                      style={{
-                        background: 'radial-gradient(ellipse at center top, rgba(200,210,220,0.08) 0%, transparent 70%)',
-                        opacity: stage === 2 ? 1 : 0,
-                      }}
-                    />
-                  </Link>
-                </div>
-
-                {/* Stage badge floating on the right */}
-                <div
-                  className="absolute -right-3 top-12 px-3 py-1.5 rounded-full text-white text-xs font-bold shadow-lg transition-all duration-500 ease-in-out flex items-center gap-1.5"
-                  style={{
-                    backgroundColor: stageConfig[stage].color,
-                    transform: stage === 2 ? 'translateX(6px)' : 'translateX(0)',
-                  }}
-                >
-                  <span className="text-sm">{stageConfig[stage].icon}</span>
-                  {stageConfig[stage].label}
-                </div>
-
-                {/* Decorative sparkles for stage 1+ */}
-                {stage >= 1 && (
-                  <div className="absolute -top-2 -left-2 pointer-events-none">
-                    <Sparkles className="w-5 h-5 text-[#FFB800] animate-sparkle" />
+                    {/* Bottom progress bar - uses brand colors */}
+                    <div className="px-3 py-2 bg-white">
+                      <div className="flex gap-1.5">
+                        {group.stages.map((s, i) => (
+                          <div
+                            key={i}
+                            className="h-1.5 rounded-full flex-1 transition-all duration-500"
+                            style={{
+                              backgroundColor: stage >= i
+                                ? (i === 0 ? '#1A1A2E' : i === 1 ? '#FFB800' : '#FF6B6B')
+                                : '#E5E0D5',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Stage indicators */}
-              <div className="mt-6 flex items-center gap-6">
-                {stageConfig.map((s, i) => (
-                  <button
-                    key={s.label}
-                    onClick={() => goToStage(i)}
-                    className="flex flex-col items-center gap-1.5 group cursor-pointer"
+                  {/* Card label below - matches site label style */}
+                  <div
+                    className="mt-3 px-4 py-2 rounded-xl border-2 text-center"
+                    style={{
+                      borderColor: groupIdx === 0 ? '#FF6B6B' : '#FFB800',
+                      background: groupIdx === 0 ? '#FFE0E0' : '#FFF3CC',
+                    }}
                   >
-                    <div
-                      className="rounded-full transition-all duration-300"
-                      style={{
-                        width: stage === i ? '12px' : '8px',
-                        height: stage === i ? '12px' : '8px',
-                        backgroundColor: stage === i ? s.color : '#D1D5DB',
-                        boxShadow: stage === i ? `0 0 8px ${s.color}40` : 'none',
-                      }}
-                    />
-                    <span
-                      className="text-[11px] transition-all duration-300 whitespace-nowrap"
-                      style={{
-                        color: stage === i ? s.color : '#9CA3AF',
-                        fontWeight: stage === i ? 700 : 400,
-                      }}
-                    >
-                      {s.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: groupIdx === 0 ? '#FF6B6B' : '#FFB800' }}
+                      />
+                      <span className="font-display text-sm text-foreground">{group.name}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">→ {group.product}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

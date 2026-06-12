@@ -373,7 +373,7 @@ function GenerateContent() {
               {/* Line Style Section */}
               <div className="rounded-2xl p-4 shadow-sm border border-border" style={{ background: 'linear-gradient(135deg, #FFFBF0 0%, #FFF5E6 50%, #FFEFF5 100%)' }}>
                 <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-[#FF6B6B] text-white text-[10px] flex items-center justify-center font-bold">2</span>
+                  <span className="w-5 h-5 rounded-full bg-[#FFB800] text-[#1A1A2E] text-[10px] flex items-center justify-center font-bold">2</span>
                   Line Style
                 </h3>
 
@@ -411,7 +411,7 @@ function GenerateContent() {
                   onClick={handleGenerate}
                   disabled={isGenerating || !prompt.trim()}
                   className="w-full py-3 rounded-xl font-semibold text-[#1A1A2E] flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 text-sm"
-                  style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
+                  style={{ background: '#FFB800', boxShadow: '0 4px 12px rgba(255,184,0,0.25)' }}
                 >
                   {isGenerating ? (
                     <>
@@ -501,7 +501,7 @@ function GenerateContent() {
                   <Link
                     href={`/auto-color?src=${encodeURIComponent(generatedImageUrl)}`}
                     className="flex-1 py-2.5 rounded-xl text-[#1A1A2E] font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 text-sm"
-                    style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
+                    style={{ background: '#FFB800', boxShadow: '0 4px 12px rgba(255,184,0,0.25)' }}
                   >
                     <Sparkles className="w-4 h-4" />
                     Auto Color
@@ -622,7 +622,7 @@ function GenerateContent() {
               <Link
                 href="/pricing"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-[#1A1A2E] transition-all hover:-translate-y-0.5"
-                style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
+                style={{ background: '#FFB800', boxShadow: '0 4px 12px rgba(255,184,0,0.25)' }}
               >
                 View Plans
               </Link>

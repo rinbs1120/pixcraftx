@@ -13,7 +13,7 @@ export function CTA() {
         </p>
         <Link
           href="/generate"
-          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold text-lg rounded-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+          className="inline-flex items-center gap-2 px-8 py-4 bg-[#FFB800] text-[#1A1A2E] font-bold text-lg rounded-full shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
         >
           <Sparkles className="w-5 h-5" />
           Start Creating for Free

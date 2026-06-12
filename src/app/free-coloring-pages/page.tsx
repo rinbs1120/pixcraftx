@@ -35,7 +35,7 @@ export default function FreeColoringPages() {
             href="/generate"
             className="inline-flex items-center gap-2 px-7 py-3 rounded-full font-semibold text-base transition-all hover:translate-y-0.5 text-[#1A1A2E]"
             style={{
-              background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+              background: '#FFB800',
               boxShadow: '0 2px 8px rgba(255,184,0,0.3)',
             }}
           >

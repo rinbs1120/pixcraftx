@@ -50,7 +50,7 @@ export function FreePagesClient() {
                   : 'text-muted-foreground bg-white/60 hover:bg-white hover:text-foreground'
               }`}
               style={activeCategory === cat ? {
-                background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+                background: '#FFB800',
                 boxShadow: '0 2px 8px rgba(255,184,0,0.25)',
               } : {}}
             >
@@ -87,12 +87,12 @@ export function FreePagesClient() {
                     href={"/color?src=" + encodeURIComponent("https://pixcraftx.com" + sample.image)}
                     className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-full font-semibold text-[10px] transition-all text-[#1A1A2E]"
                     style={{
-                      background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
+                      background: '#FFB800',
                     }}
                   >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.1 0 2-.9 2-2 0-.5-.18-.96-.5-1.33-.3-.35-.5-.81-.5-1.33 0-1.1.9-2 2-2h2.36C19.86 15.34 22 13.13 22 10c0-4.42-4.48-8-10-8z" fill="#F5F0E8" stroke="#1A1A2E" strokeWidth="1.5"/>
-                      <circle cx="8" cy="9" r="1.8" fill="#FF6B6B"/>
+                      <circle cx="8" cy="9" r="1.8" fill="#FFB800"/>
                       <circle cx="12" cy="6.5" r="1.8" fill="#FFB800"/>
                       <circle cx="16" cy="9" r="1.8" fill="#2ECC71"/>
                       <circle cx="7.5" cy="13" r="1.8" fill="#9B59B6"/>

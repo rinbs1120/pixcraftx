@@ -85,7 +85,7 @@ export function Footer() {
         <div className="pt-8 border-t border-[#2A2A3E]">
           <p className="text-center text-sm text-[#B0B0C0]">
             © {currentYear} PixCraftX. Made with{' '}
-            <span className="text-[#FF6B6B]">❤</span> for creators.
+            <span className="text-[#FFB800]">❤</span> for creators.
           </p>
           <p className="text-center text-xs text-[#808090] mt-2">
             Powered by AI. All generated content is AI-created.

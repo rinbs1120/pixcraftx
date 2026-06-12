@@ -24,7 +24,7 @@ function generateStrokes(styleId: string): Stroke[] {
 
   if (styleId === 'simple') {
     // Simple: Bold & Easy - thick strokes, warm colors, large areas
-    const colors = ['#FFB800', '#FF6B6B', '#2ECC71', '#FF9F43', '#FFD93D', '#FF6B6B', '#2ECC71', '#FFB800'];
+    const colors = ['#FFB800', '#FFD666', '#E8D5A0', '#FF9F43', '#FFD93D', '#E8D5A0', '#C4A862', '#FFB800'];
     const regions = [
       // Large sweeping strokes covering different areas
       { cx: 0.3, cy: 0.25, rx: 0.18, ry: 0.12 },

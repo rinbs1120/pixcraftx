@@ -108,7 +108,7 @@ function StepIndicator({ current }: { current: number }) {
               i + 1 < current
                 ? 'bg-green-500 text-white'
                 : i + 1 === current
-                ? 'bg-gradient-to-r from-[#FFB800] to-[#FF6B6B] text-white shadow-md'
+                ? 'bg-[#FFB800] text-[#1A1A2E] shadow-md'
                 : 'bg-gray-200 text-gray-400'
             )}
           >
@@ -423,7 +423,7 @@ function AutoColorContent() {
                     <span
                       className={cn(
                         'w-5 h-5 rounded-full text-white text-[10px] flex items-center justify-center font-bold',
-                        sourceImage ? 'bg-green-500' : 'bg-gradient-to-r from-[#FFB800] to-[#FF6B6B]'
+                        sourceImage ? 'bg-green-500' : 'bg-[#FFB800]'
                       )}
                     >
                       {sourceImage ? <Check className="w-3 h-3" /> : '1'}
@@ -467,7 +467,7 @@ function AutoColorContent() {
                           <div className="text-center py-4">
                             <ImageIcon className="w-8 h-8 mx-auto mb-1 text-muted-foreground/30" />
                             <p className="text-xs text-muted-foreground">No pages yet</p>
-                            <Link href="/generate" className="text-xs text-[#FF6B6B] hover:underline mt-1 inline-block">
+                            <Link href="/generate" className="text-xs text-[#FFB800] hover:underline mt-1 inline-block">
                               Generate one →
                             </Link>
                           </div>
@@ -603,8 +603,8 @@ function AutoColorContent() {
                       disabled={isProcessing || !selectedStyle || !sourceImage}
                       className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 text-sm"
                       style={{
-                        background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
-                        boxShadow: '0 4px 12px rgba(255,107,107,0.3)',
+                        background: '#FFB800',
+                        boxShadow: '0 4px 12px rgba(255,184,0,0.25)',
                       }}
                     >
                       {isProcessing ? (
@@ -825,9 +825,9 @@ function AutoColorContent() {
                 ) : (
                   <div className="text-center text-muted-foreground">
                     <div className="relative mb-4">
-                      <Palette className="w-16 h-16 mx-auto text-[#FF6B6B]/20" />
+                      <Palette className="w-16 h-16 mx-auto text-[#FFB800]/20" />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <Paintbrush className="w-6 h-6 text-[#FF6B6B]/40" />
+                        <Paintbrush className="w-6 h-6 text-[#FFB800]/40" />
                       </div>
                     </div>
                     <p className="text-lg font-semibold mb-1 text-foreground/60">
@@ -845,7 +845,7 @@ function AutoColorContent() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleDownload}
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-sm"
+                    className="flex-1 py-3 rounded-xl bg-[#FFB800] text-[#1A1A2E] font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-sm"
                   >
                     <Download className="w-4 h-4" />
                     Download
@@ -853,7 +853,7 @@ function AutoColorContent() {
                   <Link
                     href={`/color?src=${encodeURIComponent(styleResult || autoColorResult || '')}`}
                     className="py-3 px-6 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-[#1A1A2E] transition-all hover:-translate-y-0.5 text-sm"
-                    style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 12px rgba(255,107,107,0.3)' }}
+                    style={{ background: '#FFB800', boxShadow: '0 4px 12px rgba(255,184,0,0.25)' }}
                   >
                     <Palette className="w-4 h-4" />
                     Color It!
@@ -926,7 +926,7 @@ export default function AutoColorPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <Loader2 className="w-8 h-8 animate-spin text-[#FF6B6B]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#FFB800]" />
         </div>
       }
     >

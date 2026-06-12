@@ -11,7 +11,7 @@ const demoFlows = [
   {
     id: 'panda',
     product: 'Sticker',
-    productColor: '#FF6B6B',
+    productColor: '#FFD666',
     promptWords: ['Cute', 'panda', 'eating', 'bamboo'],
     styleName: 'Pop Art',
     images: {
@@ -47,7 +47,7 @@ const dark = {
   text: '#E8E4F0',
   textMuted: '#9894A8',
   accent: '#FFB800',
-  accentSecondary: '#FF6B6B',
+  accentSecondary: '#FFD666',
 };
 
 export function Hero() {
@@ -157,7 +157,7 @@ export function Hero() {
                       width: stepIdx===i ? '24px' : '8px',
                       height: '8px',
                       background: stepIdx>=i
-                        ? (i===0 ? '#1A1A2E' : i===1 ? '#FFB800' : i===2 ? '#FF6B6B' : '#2ECC71')
+                        ? (i===0 ? '#1A1A2E' : i===1 ? '#FFB800' : i===2 ? '#FFD666' : '#E8D5A0')
                         : dark.surfaceLight,
                     }} />
                   ))}
@@ -201,7 +201,7 @@ export function Hero() {
                           fontWeight: sel ? 700 : 400,
                           color: sel ? dark.accent : dark.textMuted,
                         }}>
-                          <div className="w-3.5 h-3.5 rounded-full" style={{ background: name==='Pastel'?'#FFD1DC':name===demo.styleName?'#FF6B6B':'#A8B5A0' }} />
+                          <div className="w-3.5 h-3.5 rounded-full" style={{ background: name==='Pastel'?'#FFD1DC':name===demo.styleName?'#FFB800':'#A8B5A0' }} />
                           {name}
                         </div>
                       );

@@ -484,7 +484,7 @@ function GenerateContent() {
                   <button
                     onClick={handleGenerate}
                     disabled={isGenerating}
-                    className="py-2.5 px-4 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all disabled:opacity-50 text-sm"
+                    className="flex-1 py-2.5 rounded-xl border-2 border-[#E5E0D5] text-foreground flex items-center justify-center gap-1.5 hover:border-[#FFB800] transition-all disabled:opacity-50 text-sm"
                   >
                     <RotateCcw className="w-4 h-4" />
                     Regenerate
@@ -492,7 +492,7 @@ function GenerateContent() {
 
                   <Link
                     href={`/color?src=${encodeURIComponent(generatedImageUrl)}`}
-                    className="flex-1 py-2.5 rounded-xl text-foreground font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 text-sm border-2 border-[#E5E0D5] hover:border-[#FFB800]"
+                    className="flex-1 py-2.5 rounded-xl text-foreground font-semibold flex items-center justify-center gap-1.5 transition-all hover:border-[#FFB800] text-sm border-2 border-[#E5E0D5]"
                   >
                     <Palette className="w-4 h-4" />
                     Manual Color
@@ -500,17 +500,17 @@ function GenerateContent() {
 
                   <Link
                     href={`/auto-color?src=${encodeURIComponent(generatedImageUrl)}`}
-                    className="flex-1 py-2.5 rounded-xl text-[#1A1A2E] font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 text-sm"
+                    className="flex-1 py-2.5 rounded-xl text-[#1A1A2E] font-semibold flex items-center justify-center gap-1.5 transition-all text-sm"
                     style={{ background: '#FFB800', boxShadow: '0 4px 12px rgba(255,184,0,0.25)' }}
                   >
                     <Sparkles className="w-4 h-4" />
                     Auto Color
                   </Link>
 
-                  <div className="relative">
+                  <div className="relative flex-1">
                     <button
                       onClick={() => { if (canExportPDF(plan)) { setDlOpen(!dlOpen); } else { handleDownload(); } }}
-                      className="py-2.5 px-4 rounded-xl bg-[#1A1A2E] text-white font-semibold flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90 transition-all text-sm"
+                      className="w-full py-2.5 rounded-xl bg-[#1A1A2E] text-white font-semibold flex items-center justify-center gap-1.5 hover:bg-[#1A1A2E]/90 transition-all text-sm"
                     >
                       <Download className="w-4 h-4" />
                       Download

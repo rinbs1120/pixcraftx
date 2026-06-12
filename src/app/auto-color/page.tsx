@@ -552,7 +552,7 @@ function AutoColorContent() {
                         autoColorResult || styleResult
                           ? 'bg-green-500'
                           : sourceImage
-                          ? 'bg-gradient-to-r from-[#8B5CF6] to-[#EC4899]'
+                          ? 'bg-[#FFB800]'
                           : 'bg-gray-300'
                       )}
                     >
@@ -591,7 +591,7 @@ function AutoColorContent() {
                             'w-full flex items-center gap-2.5 p-2 rounded-xl border-2 transition-all text-left',
                             selectedStyle === item.id && selectedStyleType === item.type
                               ? item.type === 'art'
-                                ? 'border-[#8B5CF6] bg-[#8B5CF6]/5 shadow-sm'
+                                ? 'border-[#FFB800] bg-[#FFB800]/5 shadow-sm'
                                 : 'border-[#FFB800] bg-[#FFB800]/5 shadow-sm'
                               : 'border-[#E5E0D5] hover:border-[#FFB800]/50'
                           )}
@@ -603,7 +603,7 @@ function AutoColorContent() {
                             <div className="text-xs font-semibold text-foreground flex items-center gap-1">
                               {item.emoji} {item.label}
                               {item.type === 'art' && (
-                                <span className="text-[8px] bg-[#8B5CF6]/10 text-[#8B5CF6] px-1 py-0.5 rounded-full">ART</span>
+                                <span className="text-[8px] bg-[#FFB800]/10 text-[#FFB800] px-1 py-0.5 rounded-full">ART</span>
                               )}
                             </div>
                             <div className="text-[10px] text-muted-foreground truncate">{item.desc}</div>
@@ -650,7 +650,7 @@ function AutoColorContent() {
                           'w-5 h-5 rounded-full text-white text-[10px] flex items-center justify-center font-bold',
                           selectedProduct
                             ? 'bg-green-500'
-                            : 'bg-gradient-to-r from-[#10B981] to-[#3B82F6]'
+                            : 'bg-[#FFB800]'
                         )}
                       >
                         {selectedProduct ? <Check className="w-3 h-3" /> : '3'}
@@ -672,8 +672,8 @@ function AutoColorContent() {
                               'w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left',
                               p.available
                                 ? selectedProduct === p.id
-                                  ? 'border-[#10B981] bg-[#10B981]/5 shadow-sm'
-                                  : 'border-[#E5E0D5] hover:border-[#10B981]/50'
+                                  ? 'border-[#FFB800] bg-[#FFB800]/5 shadow-sm'
+                                  : 'border-[#E5E0D5] hover:border-[#FFB800]/50'
                                 : 'border-[#E5E0D5] opacity-60 cursor-not-allowed'
                             )}
                           >
@@ -704,8 +704,8 @@ function AutoColorContent() {
                           onClick={handleDownload}
                           className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 text-sm"
                           style={{
-                            background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
-                            boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                            background: '#FFB800',
+                            boxShadow: '0 4px 12px rgba(255,184,0,0.25)',
                           }}
                         >
                           <Download className="w-4 h-4" /> Download Canvas Print
@@ -719,8 +719,8 @@ function AutoColorContent() {
                           disabled={isProductProcessing}
                           className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm"
                           style={{
-                            background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
-                            boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                            background: '#FFB800',
+                            boxShadow: '0 4px 12px rgba(255,184,0,0.25)',
                           }}
                         >
                           {isProductProcessing ? (
@@ -734,7 +734,7 @@ function AutoColorContent() {
                       {/* Product result: show download + remove background */}
                       {selectedProduct && selectedProduct !== 'canvas-print' && productResult && (
                         <div className="space-y-2">
-                          <p className="text-[10px] text-center text-green-600 font-medium">✨ Product ready!</p>
+                          <p className="text-[10px] text-center text-[#FFB800] font-medium">✨ Product ready!</p>
                           <button
                             onClick={() => {
                               const url = transparentResult || productResult;
@@ -748,15 +748,29 @@ function AutoColorContent() {
                             }}
                             className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 text-sm"
                             style={{
-                              background: transparentResult
-                                ? 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)'
-                                : 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
-                              boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
+                              background: '#FFB800',
+                              boxShadow: '0 4px 12px rgba(255,184,0,0.25)',
                             }}
                           >
                             <Download className="w-4 h-4" /> {transparentResult ? 'Download Transparent PNG' : `Download ${PRODUCTS.find(p => p.id === selectedProduct)?.label}`}
                           </button>
-
+                          {/* Remove Background button - only show if not already done */}
+                          {!transparentResult && (
+                            <button
+                              onClick={handleRemoveBackground}
+                              disabled={isRemovingBg}
+                              className="w-full py-2 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm border-2 border-[#FFB800] text-[#FFB800] hover:bg-[#FFB800]/5"
+                            >
+                              {isRemovingBg ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" /> Removing background...</>
+                              ) : (
+                                <><Eraser className="w-4 h-4" /> Remove Background (Free)</>
+                              )}
+                            </button>
+                          )}
+                          {transparentResult && (
+                            <p className="text-[10px] text-center text-[#FFB800] font-medium">✨ Background removed! Download transparent PNG above.</p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -781,8 +795,8 @@ function AutoColorContent() {
                 {isProcessing ? (
                   <div className="text-center">
                     <div className="relative mb-6">
-                      <div className="w-20 h-20 mx-auto rounded-full border-4 border-[#8B5CF6]/20 border-t-[#8B5CF6] animate-spin" />
-                      <Sparkles className="w-7 h-7 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#8B5CF6]" />
+                      <div className="w-20 h-20 mx-auto rounded-full border-4 border-[#FFB800]/20 border-t-[#FFB800] animate-spin" />
+                      <Sparkles className="w-7 h-7 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#FFB800]" />
                     </div>
                     <p className="text-lg font-semibold text-foreground mb-2">
                       'AI is styling your page...'
@@ -844,19 +858,10 @@ function AutoColorContent() {
               {/* Quick actions below preview */}
               {(autoColorResult || styleResult) && (
                 <div className="space-y-2">
-                  {/* Row 1: Download + Remove BG side by side */}
                   <div className="flex gap-2">
                     <button
                       onClick={handleDownload}
-                      className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all text-sm text-[#1A1A2E]"
-                      style={{
-                        background: transparentResult
-                          ? '#9B59B6'
-                          : '#FFB800',
-                        boxShadow: transparentResult
-                          ? '0 4px 12px rgba(155,89,182,0.25)'
-                          : '0 4px 12px rgba(255,184,0,0.25)',
-                      }}
+                      className="flex-1 py-2.5 rounded-xl bg-[#FFB800] text-[#1A1A2E] font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-all text-sm"
                     >
                       <Download className="w-4 h-4" />
                       {transparentResult ? 'Transparent' : 'Download'}
@@ -865,7 +870,7 @@ function AutoColorContent() {
                       <button
                         onClick={handleRemoveBackground}
                         disabled={isRemovingBg}
-                        className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm border-2 border-[#8B5CF6] text-[#8B5CF6] hover:bg-[#8B5CF6]/5"
+                        className="flex-1 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all hover:-translate-y-0.5 disabled:opacity-50 text-sm border-2 border-[#FFB800] text-[#FFB800] hover:bg-[#FFB800]/5"
                       >
                         {isRemovingBg ? (
                           <><Loader2 className="w-4 h-4 animate-spin" /> Removing...</>
@@ -876,17 +881,10 @@ function AutoColorContent() {
                     )}
                   </div>
                   {transparentResult && (
-                    <p className="text-[10px] text-center text-purple-600 font-medium">✨ Background removed! Download transparent PNG above.</p>
+                    <p className="text-[10px] text-center text-[#FFB800] font-medium">
+                      ✨ Background removed! Download transparent PNG above.
+                    </p>
                   )}
-                  {/* Row 2: Color It! full width, same py-3 height */}
-                  <Link
-                    href={`/color?src=${encodeURIComponent(styleResult || autoColorResult || '')}`}
-                    className="w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-1.5 text-[#1A1A2E] transition-all hover:-translate-y-0.5 text-sm"
-                    style={{ background: '#FFB800', boxShadow: '0 4px 12px rgba(255,184,0,0.25)' }}
-                  >
-                    <Palette className="w-4 h-4" />
-                    Color It!
-                  </Link>
                 </div>
               )}
 

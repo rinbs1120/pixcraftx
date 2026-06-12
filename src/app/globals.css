@@ -226,6 +226,16 @@ body {
 }
 
 /* Gentle floating animation */
+
+/* Shimmer sweep for Hero transition */
+@keyframes heroShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
 @keyframes heroFloat {
   0%, 100% {
     transform: translateY(0);

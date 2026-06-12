@@ -16,7 +16,7 @@ const steps = [
   },
   {
     number: 3,
-    title: 'Color & Style',
+    title: 'Color & Merch',
     description: 'Apply colors and art styles with one click',
     icon: Sparkles,
   },

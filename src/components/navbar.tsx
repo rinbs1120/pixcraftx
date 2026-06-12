@@ -74,7 +74,7 @@ export function Navbar() {
             </Link>
             <Link href="/auto-color" className="text-muted-foreground hover:text-primary transition-colors font-medium"
             >
-              Color & Style
+              Color & Merch
             </Link>
             {isSignedIn && (
               <Link href="/history" className="text-muted-foreground hover:text-primary transition-colors font-medium">

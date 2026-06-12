@@ -297,7 +297,7 @@ export function Pricing() {
 
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            💡 Generate: <strong>1 cr</strong> · Color & Style: <strong>3 cr</strong> · Fridge Magnet: <strong>2 cr</strong> · Sticker: <strong>2 cr</strong> · Canvas Print: <strong>0 cr</strong> · Reference: <strong>5 cr</strong>
+            💡 Generate: <strong>1 cr</strong> · Color & Merch: <strong>3 cr</strong> · Fridge Magnet: <strong>2 cr</strong> · Sticker: <strong>2 cr</strong> · Canvas Print: <strong>0 cr</strong> · Reference: <strong>5 cr</strong>
           </p>
         </div>
       </div>

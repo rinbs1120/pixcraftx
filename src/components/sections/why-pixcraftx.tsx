@@ -13,7 +13,7 @@ const highlights = [
   },
   {
     icon: Palette,
-    tag: 'Color & Style',
+    tag: 'Color & Merch',
     text: 'Apply 3 color palettes or 4 art styles with one click. Pastel, Pop Art, City Pop, and more.',
   },
   {

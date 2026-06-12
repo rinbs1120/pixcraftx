@@ -15,7 +15,7 @@ const faqs = [
   {
     question: 'How does it work?',
     answer:
-      'Three simple steps: (1) Generate — type a description and AI creates clean line art. (2) Color & Style — apply color palettes or art styles like Pop Art and City Pop with one click. (3) Turn into Merch — transform your colored art into fridge magnets, stickers, or canvas prints, ready to download.',
+      'Three simple steps: (1) Generate — type a description and AI creates clean line art. (2) Color & Merch — apply color palettes or art styles like Pop Art and City Pop with one click. (3) Turn into Merch — transform your colored art into fridge magnets, stickers, or canvas prints, ready to download.',
   },
   {
     question: 'Is it free?',

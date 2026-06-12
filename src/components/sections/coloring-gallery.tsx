@@ -4,14 +4,16 @@ import React from 'react';
 import Image from 'next/image';
 import { themes } from '@/data/coloring-themes';
 
-// Flatten all samples for marquee display (42 images from 14 themes × 3)
+// Only show Oriental Fantasy themes on homepage
 interface MarqueeItem {
   name: string;
   image: string;
   slug: string;
 }
 
-const allItems: MarqueeItem[] = themes.flatMap(theme =>
+const allItems: MarqueeItem[] = themes
+  .filter(theme => theme.category === 'Oriental Fantasy')
+  .flatMap(theme =>
   theme.samples.map((sample, i) => ({
     name: `${theme.h1} #${i + 1}`,
     image: sample,
@@ -76,10 +78,10 @@ export function ColoringGallery() {
     <section className="py-20 md:py-28 bg-[#F5F0E8] relative overflow-hidden">
       <div className="container mx-auto px-4 md:px-6 max-w-6xl text-center mb-10 md:mb-14">
         <h2 className="font-display text-[32px] md:text-[40px] text-foreground mb-4" style={{ letterSpacing: '-0.5px' }}>
-          Popular Coloring Pages
+          Oriental Fantasy Coloring Pages
         </h2>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-          A peek at our most-loved coloring pages. Want something unique? Create your own!
+          Dragons, phoenixes, koi fish, pagodas & more — Eastern-inspired line art ready to color and turn into merch.
         </p>
         <a
           href="/generate"

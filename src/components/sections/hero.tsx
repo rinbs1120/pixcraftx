@@ -3,14 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Sparkles, Check, Pencil, Palette } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
-const stepsData = [
-  { number: 1, title: 'Describe or Upload', description: 'Type what you want, or upload a reference photo', icon: Pencil },
-  { number: 2, title: 'Generate Line Art', description: 'AI creates a clean line art from your idea', icon: Sparkles },
-  { number: 3, title: 'Color & Style', description: 'Apply colors and art styles with one click', icon: Sparkles },
-  { number: 4, title: 'Turn into Merch', description: 'Make fridge magnets, stickers, or canvas prints', icon: Palette },
-];
+
 
 const demoFlows = [
   {
@@ -91,25 +86,24 @@ export function Hero() {
 
       <div className="container mx-auto px-4 md:px-6 max-w-[1440px]">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left: Text — visually enhanced with brand colors */}
+          {/* Left: Text — brand-forward, poster-style, single accent color */}
           <div className="text-center lg:text-left">
-            {/* Decorative accent dots */}
-            <div className="flex gap-2 justify-center lg:justify-start mb-6">
-              <div className="w-3 h-3 rounded-full" style={{ background: '#FFB800' }} />
-              <div className="w-3 h-3 rounded-full" style={{ background: '#2ECC71' }} />
-              <div className="w-3 h-3 rounded-full" style={{ background: '#FF6B6B' }} />
+            {/* Eyebrow label */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8" style={{ background: '#FFB80010', border: '1.5px solid #FFB80025' }}>
+              <div className="w-2 h-2 rounded-full" style={{ background: '#FFB800' }} />
+              <span className="text-sm font-semibold tracking-wide" style={{ color: '#FFB800' }}>AI-Powered Creative Studio</span>
             </div>
 
-            <h1 className="font-display text-3xl md:text-4xl lg:text-[48px] leading-tight mb-6 whitespace-nowrap">
-              <span style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Color It,</span>
-              {' '}
-              <span className="text-foreground">Then Make It Yours</span>
+            <h1 className="font-display text-4xl md:text-5xl lg:text-[52px] leading-[1.08] mb-7" style={{ letterSpacing: '-1px' }}>
+              <span style={{ color: '#FFB800' }}>Color It,</span>
+              <br />
+              Then Make It Yours
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-              Generate stunning <span style={{ color: '#FFB800', fontWeight: 600 }}>line art</span>, color it with
-              <span style={{ color: '#FF6B6B', fontWeight: 600 }}> AI styles</span>, then turn it into
-              <span style={{ color: '#2ECC71', fontWeight: 600 }}> fridge magnets, stickers, and canvas prints</span>.
+            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+              Turn your imagination into stunning <span className="font-semibold text-foreground">line art</span>,
+              color it with <span className="font-semibold text-foreground">AI styles</span>,
+              then transform it into <span className="font-semibold" style={{ color: '#FFB800' }}>fridge magnets, stickers &amp; canvas prints</span>.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
@@ -117,49 +111,25 @@ export function Hero() {
                 href="/generate"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg rounded-full transition-all hover:-translate-y-1 hover:shadow-xl text-[#1A1A2E]"
                 style={{
-                  background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)',
-                  boxShadow: '0 4px 20px rgba(255,107,107,0.35), 0 2px 8px rgba(255,184,0,0.2)',
+                  background: '#FFB800',
+                  boxShadow: '0 4px 24px rgba(255,184,0,0.35)',
                 }}
               >
                 <Sparkles className="w-5 h-5" />Start Creating — Free
               </Link>
+              <Link
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 px-6 py-4 font-semibold text-base rounded-full transition-all hover:-translate-y-0.5 text-foreground"
+                style={{ border: '1.5px solid #E5E7EB' }}
+              >
+                See How It Works <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
 
-            {/* Trust Badges — with colored pill backgrounds */}
-            <div className="flex flex-wrap gap-3 justify-center lg:justify-start mb-10">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: '#2ECC7112', color: '#2ECC71', border: '1px solid #2ECC7125' }}>
-                <Check className="w-3.5 h-3.5" />No credit card
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: '#FFB80012', color: '#FFB800', border: '1px solid #FFB80025' }}>
-                <Check className="w-3.5 h-3.5" />2 free credits
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: '#FF6B6B12', color: '#FF6B6B', border: '1px solid #FF6B6B25' }}>
-                <Check className="w-3.5 h-3.5" />Ready to print
-              </span>
-            </div>
-
-            {/* How It Works — with colored step accents */}
-            <div className="border-t border-border/50 pt-8">
-              <h3 className="font-display text-lg text-foreground mb-5">How It Works</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {stepsData.map((step, idx) => { const Icon = step.icon; const stepColors = ['#1A1A2E', '#FFB800', '#FF6B6B', '#2ECC71']; const color = stepColors[idx]; return (
-                  <div key={step.number} className="flex gap-3 items-start">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: `${color}12`, border: `1.5px solid ${color}30` }}>
-                        <Icon className="w-5 h-5" style={{ color }} />
-                      </div>
-                      <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center" style={{ background: color }}>
-                        {step.number}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm text-foreground">{step.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
-                    </div>
-                  </div>
-                ); })}
-              </div>
-            </div>
+            {/* Minimal trust line */}
+            <p className="text-sm text-muted-foreground">
+              No credit card · 2 free credits · Ready to print
+            </p>
           </div>
 
           {/* Right: Mini App Demo — Dark theme, larger */}

@@ -188,7 +188,7 @@ export function Hero() {
                   </div>
                 </div>
 
-                {/* STEP 1: Color & Style */}
+                {/* STEP 1: Color & Merch */}
                 <div className="absolute inset-0 flex transition-all duration-700" style={{ opacity: stepIdx===1?1:0, transform: stepIdx===1?'translateX(0)':stepIdx<1?'translateX(40px)':'translateX(-40px)', pointerEvents: stepIdx===1?'auto':'none' }}>
                   <div className="w-[170px] p-4 border-r" style={{ background: dark.surface, borderColor: dark.border }}>
                     <p className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: dark.textMuted }}>Art Style</p>

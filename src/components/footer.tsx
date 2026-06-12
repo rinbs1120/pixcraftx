@@ -27,9 +27,9 @@ export function Footer() {
             <Link href="/" className="flex items-center gap-2 mb-4">
               <svg className="w-8 h-8" viewBox="0 0 32 32" fill="none" role="img" aria-label="PixCraftX logo">
                 <circle cx="16" cy="16" r="14" fill="#FFB800" opacity="0.15" />
-                <circle cx="11" cy="13" r="3.5" fill="#FF6B6B" />
-                <circle cx="21" cy="13" r="3.5" fill="#2ECC71" />
-                <circle cx="16" cy="21" r="3.5" fill="#FFB800" />
+                <circle cx="11" cy="13" r="3.5" fill="#FFB800" />
+                <circle cx="21" cy="13" r="3.5" fill="#E8D5A0" />
+                <circle cx="16" cy="21" r="3.5" fill="#FFD666" />
                 <circle cx="16" cy="13" r="2" fill="#1A1A2E" />
               </svg>
               <span className="font-display text-xl">

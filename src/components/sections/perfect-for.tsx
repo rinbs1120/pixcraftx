@@ -12,7 +12,7 @@ const personas = [
       'Turn their art into real keepsakes',
     ],
     color: '#FFB800',
-    bg: 'rgba(255, 184, 0, 0.08)',
+    bg: 'rgba(255, 184, 0, 0.06)',
   },
   {
     icon: GraduationCap,
@@ -24,8 +24,8 @@ const personas = [
       'Customize for your lesson plan',
       'Print-ready at 300 DPI for handouts',
     ],
-    color: '#9B59B6',
-    bg: 'rgba(155, 89, 182, 0.08)',
+    color: '#E8D5A0',
+    bg: 'rgba(232, 213, 160, 0.06)',
   },
   {
     icon: Palette,
@@ -37,8 +37,8 @@ const personas = [
       'Fridge magnets, stickers, canvas prints',
       'Commercial license included in Pro+',
     ],
-    color: '#2ECC71',
-    bg: 'rgba(46, 204, 113, 0.08)',
+    color: '#FFD666',
+    bg: 'rgba(255, 214, 102, 0.06)',
   },
 ];
 

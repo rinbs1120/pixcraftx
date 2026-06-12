@@ -48,7 +48,7 @@ export function HowItWorks() {
                 <div className="relative mb-4">
                   <div
                     className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}
+                    style={{ background: '#FFB800' }}
                   >
                     <Icon className="w-7 h-7 text-[#1A1A2E]" />
                   </div>

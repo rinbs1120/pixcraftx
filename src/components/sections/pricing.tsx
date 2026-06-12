@@ -125,8 +125,8 @@ export function Pricing() {
             Simple Pricing
           </h2>
           {isLaunchPromo && (
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#FFF3CC] border border-[#FFB800]">
-              <span className="text-sm font-semibold text-[#1A1A2E]">🎉 Launch Special</span>
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full" style={{ background: '#FFB80010', border: '1.5px solid #FFB80025' }}>
+              <span className="text-sm font-semibold" style={{ color: '#FFB800' }}>✦ Launch Special</span>
               <span className="text-sm text-[#8A8A9A]">Special pricing ends Sep 2026</span>
             </div>
           )}
@@ -161,7 +161,7 @@ export function Pricing() {
                 {plan.popular && !isCurrent && (
                   <div
                     className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1 rounded-full text-xs font-bold text-[#1A1A2E]"
-                    style={{ background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)' }}
+                    style={{ background: '#FFB800' }}
                   >
                     Popular
                   </div>
@@ -254,7 +254,7 @@ export function Pricing() {
                       }`}
                       style={
                         plan.buttonStyle === 'gradient'
-                          ? { background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 16px rgba(255,107,107,0.3)' }
+                          ? { background: '#FFB800', boxShadow: '0 4px 16px rgba(255,184,0,0.3)' }
                           : undefined
                       }
                     >
@@ -271,7 +271,7 @@ export function Pricing() {
                     }`}
                     style={
                       plan.buttonStyle === 'gradient'
-                        ? { background: 'linear-gradient(135deg, #FFB800 0%, #FF6B6B 100%)', boxShadow: '0 4px 16px rgba(255,107,107,0.3)' }
+                        ? { background: '#FFB800', boxShadow: '0 4px 16px rgba(255,184,0,0.3)' }
                         : undefined
                     }
                   >

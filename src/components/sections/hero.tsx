@@ -179,7 +179,7 @@ export function Hero() {
                       ))}
                       <span className="inline-block w-[2px] h-4 ml-0.5 align-middle" style={{ background: dark.accent, animation: 'heroBlink 0.8s step-end infinite' }} />
                     </div>
-                    <button className="mt-3 px-4 py-2 rounded-lg text-xs font-bold text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Generate Line Art</button>
+                    <button className="mt-3 px-4 py-2 rounded-lg text-xs font-bold text-[#1A1A2E]" style={{ background: '#FFB800' }}>Generate Line Art</button>
                   </div>
                   <div className="flex-1 px-5 pb-5">
                     <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: dark.surfaceLight, maxHeight: '300px' }}>
@@ -206,7 +206,7 @@ export function Hero() {
                         </div>
                       );
                     })}
-                    <button className="mt-3 w-full px-3 py-2 rounded-lg text-[11px] font-bold text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Color It!</button>
+                    <button className="mt-3 w-full px-3 py-2 rounded-lg text-[11px] font-bold text-[#1A1A2E]" style={{ background: '#FFB800' }}>Color It!</button>
                   </div>
                   <div className="flex-1 p-4">
                     <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: dark.surfaceLight, maxHeight: '360px' }}>
@@ -238,7 +238,7 @@ export function Hero() {
                         </div>
                       );
                     })}
-                    <button className="mt-3 w-full px-3 py-2 rounded-lg text-[11px] font-bold text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>Create Product</button>
+                    <button className="mt-3 w-full px-3 py-2 rounded-lg text-[11px] font-bold text-[#1A1A2E]" style={{ background: '#FFB800' }}>Create Product</button>
                   </div>
                   <div className="flex-1 p-4">
                     <div className="relative rounded-xl overflow-hidden" style={{ aspectRatio: '3/4', background: dark.surfaceLight, maxHeight: '360px' }}>
@@ -289,7 +289,7 @@ export function Hero() {
                   {/* Status badges */}
                   <div className="flex gap-3 mt-6">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-[#2ECC71]" style={{ background: '#2ECC7118', border: '1px solid #2ECC7130' }}>✓ BG Removed</span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-[#1A1A2E]" style={{ background: 'linear-gradient(135deg, #FFB800, #FF6B6B)' }}>↓ Download</span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-[#1A1A2E]" style={{ background: '#FFB800' }}>↓ Download</span>
                   </div>
                 </div>
 

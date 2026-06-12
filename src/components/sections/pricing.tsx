@@ -118,10 +118,10 @@ export function Pricing() {
   const currentRank = PLAN_RANK[currentPlan] || 0;
 
   return (
-    <section id="pricing" className="py-16 md:py-24 bg-background">
+    <section id="pricing" className="py-20 md:py-28 bg-background">
       <div className="container mx-auto px-4 md:px-6 max-w-[1300px]">
         <div className="text-center mb-6">
-          <h2 className="font-display text-[32px] md:text-[40px] text-foreground mb-4">
+          <h2 className="font-display text-[32px] md:text-[40px] text-foreground mb-4" style={{ letterSpacing: '-0.5px' }}>
             Simple Pricing
           </h2>
           {isLaunchPromo && (
@@ -142,7 +142,7 @@ export function Pricing() {
             return (
               <div
                 key={plan.name}
-                className={`relative rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col ${
+                className={`relative rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 flex flex-col ${
                   isCurrent
                     ? 'border-2 border-[#2ECC71] bg-[#E8FBF0]'
                     : plan.popular

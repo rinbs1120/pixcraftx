@@ -56,9 +56,9 @@ export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-16 md:py-24 bg-muted/30">
+    <section className="py-20 md:py-28 bg-muted/30">
       <div className="container mx-auto px-4 md:px-6 max-w-4xl">
-        <h2 className="font-display text-3xl md:text-4xl text-center mb-12 text-foreground">
+        <h2 className="font-display text-[32px] md:text-[40px] text-center mb-12 text-foreground" style={{ letterSpacing: '-0.5px' }}>
           Frequently Asked Questions
         </h2>
 

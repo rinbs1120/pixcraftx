@@ -45,12 +45,12 @@ const personas = [
 export function PerfectFor() {
   return (
     <section
-      className="py-16 md:py-24"
+      className="py-20 md:py-28"
       style={{ background: 'linear-gradient(180deg, #1A1A2E 0%, #24243E 100%)' }}
     >
       <div className="container mx-auto px-4 md:px-6 max-w-7xl">
         <div className="text-center mb-12">
-          <h2 className="font-display text-3xl md:text-[40px] text-white mb-4">
+          <h2 className="font-display text-[32px] md:text-[40px] text-white mb-4" style={{ letterSpacing: '-0.5px' }}>
             Perfect For
           </h2>
           <p className="text-gray-400 text-lg">
@@ -64,7 +64,7 @@ export function PerfectFor() {
             return (
               <div
                 key={p.title}
-                className="rounded-3xl p-8 border border-white/10 hover:border-[#FFB800]/30 transition-all hover:-translate-y-1"
+                className="rounded-2xl p-8 border border-white/10 hover:border-[#FFB800]/30 transition-all hover:-translate-y-1"
                 style={{ background: p.bg, backdropFilter: 'blur(10px)' }}
               >
                 <div className="text-4xl mb-4">{p.emoji}</div>

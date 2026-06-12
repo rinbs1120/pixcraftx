@@ -25,14 +25,14 @@ const highlights = [
 
 export function WhyPixCraftX() {
   return (
-    <section className="py-16 md:py-24 bg-background">
+    <section className="py-20 md:py-28 bg-background">
       <div className="container mx-auto px-4 md:px-6 max-w-[1440px]">
         {/* Section header with eyebrow */}
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 text-sm font-semibold" style={{ background: '#FFB80010', border: '1.5px solid #FFB80025', color: '#FFB800' }}>
             ✦ Why Us
           </span>
-          <h2 className="font-display text-3xl md:text-[40px] text-foreground" style={{ letterSpacing: '-0.5px' }}>
+          <h2 className="font-display text-[32px] md:text-[40px] text-foreground" style={{ letterSpacing: '-0.5px' }}>
             Why PixCraftX?
           </h2>
         </div>

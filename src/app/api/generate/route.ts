@@ -34,10 +34,53 @@ const GENERATE_CREDIT_COST = 1;  // Unified: 50 steps, 1 credit
 
 // Post-process: ensure pure B&W line art (remove any color leakage from Kolors)
 async function toPureBWLineArt(imageBuffer: Buffer): Promise<Buffer> {
-  return sharp(imageBuffer)
-    .grayscale()      // Remove all color channels
-    .normalize()      // Auto-stretch contrast (darkest→0, lightest→255)
-    .threshold(180)   // Force pure B&W: pixels > 180 → white, ≤ 180 → black
+  // Step 1: Grayscale & normalize
+  const normalized = await sharp(imageBuffer)
+    .grayscale()
+    .normalize()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  // Step 2: Detect if image is predominantly dark (inverted: black bg + white lines)
+  // Sample edge pixels to determine background color
+  const { data, info } = normalized;
+  const width = info.width;
+  const height = info.height;
+  let darkPixels = 0;
+  let sampleCount = 0;
+  // Sample 4 edges (top/bottom rows, left/right columns)
+  for (let x = 0; x < width; x += Math.max(1, Math.floor(width / 50))) {
+    // Top edge
+    const topIdx = x;
+    if (data[topIdx] < 128) darkPixels++;
+    sampleCount++;
+    // Bottom edge
+    const botIdx = (height - 1) * width + x;
+    if (data[botIdx] < 128) darkPixels++;
+    sampleCount++;
+  }
+  for (let y = 0; y < height; y += Math.max(1, Math.floor(height / 50))) {
+    // Left edge
+    const leftIdx = y * width;
+    if (data[leftIdx] < 128) darkPixels++;
+    sampleCount++;
+    // Right edge
+    const rightIdx = y * width + (width - 1);
+    if (data[rightIdx] < 128) darkPixels++;
+    sampleCount++;
+  }
+
+  const isDarkBackground = darkPixels / sampleCount > 0.5;
+  console.log(`[BW Post-process] Dark pixels: ${darkPixels}/${sampleCount}, Inverted: ${isDarkBackground}`);
+
+  // Step 3: Apply threshold, invert if dark background detected
+  let pipeline = sharp(imageBuffer).grayscale().normalize();
+  if (isDarkBackground) {
+    // Invert: black bg + white lines → white bg + black lines
+    pipeline = pipeline.negate();
+  }
+  return pipeline
+    .threshold(180)
     .png()
     .toBuffer();
 }

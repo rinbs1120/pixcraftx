@@ -8,38 +8,89 @@ import { auth } from '@clerk/nextjs/server';
 import sharp from 'sharp';
 
 // ============================================================
-// STYLE PROMPTS
-// Key principle: POSITIVE framing, distinct visual concepts per style
-// Kolors responds to WHAT to draw, not what NOT to draw
+// STYLE PROMPTS - Define HOW to render (visual approach only)
+// Key principle: SEPARATE style from composition
+// - Style controls: line weight, detail level, rendering approach
+// - Composition is determined dynamically based on user prompt content
+// - Kolors responds to positive visual descriptions, NOT negations
 // ============================================================
 const STYLE_PROMPTS = {
   simple: {
-    prefix: "coloring book page for young children, cute cartoon animal style, bold black outlines, very simple shapes, large empty white areas inside shapes for crayon coloring, single centered subject, plain white paper background,",
-    suffix: ", black and white outline drawing only, white background, no solid filled black areas, every area should be empty and ready to color"
+    // Visual approach: bold, kid-friendly, simple
+    prefix: "children's coloring book page, cute cartoon style, bold thick black outlines, simple rounded shapes, large empty areas for crayon coloring,",
+    // Reinforce coloring page format (positive framing only)
+    suffix: ", black and white outline drawing, white background, all shapes have empty white interiors ready for coloring"
   },
   mandala: {
-    prefix: "circular mandala coloring page for adults, symmetrical radial pattern, decorative geometric design with repeating motifs, centered on page, medium weight lines, white paper,",
-    suffix: ", black and white outline drawing only, white background, perfectly symmetrical left and right"
+    // Visual approach: symmetrical radial pattern inspired by the subject
+    prefix: "circular mandala coloring page design inspired by, symmetrical radial pattern with repeating motifs, decorative geometric design, medium weight lines,",
+    // Mandala-specific framing
+    suffix: ", black and white outline drawing, white background, perfectly symmetrical, circular frame"
   },
   intricate: {
-    prefix: "detailed adult coloring book page, ornate decorative patterns inside all shapes, fine thin pen lines, intricate scrollwork and floral motifs within the subject, professional ink illustration, single centered subject, white paper,",
-    suffix: ", black and white outline drawing only, white background, rich interior patterns and textures for detailed coloring"
+    // Visual approach: fine detail, ornate patterns inside shapes
+    prefix: "detailed adult coloring book page, fine thin pen lines, ornate decorative scrollwork and patterns inside all shapes, professional ink illustration,",
+    // Reinforce coloring page format
+    suffix: ", black and white outline drawing, white background, rich interior detail patterns inside all shapes"
   }
 };
 
 // ============================================================
-// NEGATIVE PROMPT
-// Principle: MINIMAL - only suppress what we absolutely cannot post-process away
-// DO NOT include scenery/landscape words - they conflict with user prompts and cause blank images
-// DO NOT include "background" - confuses the model
-// Post-processing handles: dark backgrounds, color leaks, solid fills
+// NEGATIVE PROMPT - Minimal, only suppress what post-processing can't fix
+// Principle: Kolors ignores most negative prompts; over-specific negatives cause blank images
+// Only list what we absolutely cannot post-process away (color, photo-realism, 3D, shading)
+// Scenery/background: NOT suppressed here -> handled by prompt construction + post-processing
 // ============================================================
 const NEGATIVE_PROMPT = "color, colored, colorful, watercolor, oil painting, photograph, realistic photo, 3D render, shading, shadow, gradient, grayscale";
 
 // ============================================================
+// SCENERY DETECTION
+// Words that indicate the user wants a scene with background, not an isolated subject.
+// Covers: nature, architecture, weather, spatial relationships, atmosphere
+// If matched -> render as scenic coloring page (let the scene be)
+// If not matched -> render as isolated subject on white paper (clean for coloring)
+// ============================================================
+const SCENERY_PATTERN = /\b(mountain|mountains|forest|garden|gardens|beaches?|ocean|river|pond|clouds?|sky|trees?|flowers?|field|meadow|sunset|sunrise|rain|snow|rainbow|landscape|underwater|volcano|castle|temples?|palace|island|waterfall|village|city|bridge|tower|gate|coral|reef|lake|cave|cliff|valley|swamp|desert|waves?|sea|shore|coast|hill|jungle|grove|park|lanterns?|moonlight|moonlit|enchanted|floating|fairy|sitting on|standing (in|on|by)|flying (over|through|above)|swimming in|running through|perched on|leaping (through|over|from)|surrounded by|amidst|among|beside|beneath|above the|in the (sky|water|air|cloud|sea|ocean|forest|garden|field|rain|snow|mist|fog)|with (clouds|mountains|trees|flowers|stars|waves|buildings|lanterns|cherry|lotus|bamboo|pine|coral))\b/i;
+
+// ============================================================
+// PROMPT BUILDER - Dynamic construction based on user input
+// Handles: scene vs isolated subject, mandala transformation,
+// user-typed "mandala" detection, reference image bypass
+// ============================================================
+function buildPrompt(userPrompt: string, style: string, hasReference: boolean): string {
+  // Reference images: AILabTools handles line art natively
+  if (hasReference) return userPrompt;
+
+  const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.simple;
+
+  // ---- MANDALA STYLE: Transform subject into mandala design ----
+  if (style === 'mandala') {
+    // If user already mentioned "mandala" in their prompt, don't double up
+    if (/mandala/i.test(userPrompt)) {
+      return `circular mandala coloring page, symmetrical radial pattern with repeating motifs, decorative geometric design, medium weight lines, ${userPrompt}, black and white outline drawing, white background, perfectly symmetrical, circular frame`;
+    }
+    // Transform the subject into a mandala-inspired design
+    return `${styleConfig.prefix} ${userPrompt} ${styleConfig.suffix}`;
+  }
+
+  // ---- SIMPLE & INTRICATE: Detect scene vs isolated subject ----
+  const isScenePrompt = SCENERY_PATTERN.test(userPrompt);
+
+  if (isScenePrompt) {
+    // User described a scene (e.g., "Owl in enchanted forest", "Dragon soaring through clouds")
+    // -> Render as a coloring page scene, let the background elements be part of the page
+    return `${styleConfig.prefix} ${userPrompt}, scenic coloring page composition ${styleConfig.suffix}`;
+  } else {
+    // User just described a subject (e.g., "Dragon", "Cat", "Butterfly")
+    // -> Render as isolated subject on clean white paper for easy coloring
+    return `${styleConfig.prefix} ${userPrompt}, centered subject alone on white paper ${styleConfig.suffix}`;
+  }
+}
+
+// ============================================================
 // POST-PROCESSING: Smart B&W conversion
 // Handles: dark background auto-invert, blank image detection,
-// overfilled image edge extraction, adaptive threshold per style
+// overfilled image recovery (all styles), adaptive threshold per style
 // ============================================================
 async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): Promise<Buffer> {
   // Step 1: Grayscale & normalize for analysis
@@ -52,7 +103,6 @@ async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): P
   const { data, info } = normalized;
   const width = info.width;
   const height = info.height;
-  const pixelCount = width * height;
 
   // Step 2: Sample edge pixels to detect dark background
   let darkEdgePixels = 0;
@@ -79,15 +129,12 @@ async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): P
   }
 
   // Step 4: Adaptive threshold by style
-  // Simple: higher (bold lines survive, faint noise removed)
-  // Intricate: lower (preserve fine thin lines)
-  // Mandala: medium
   const baseThreshold = style === 'intricate' ? 130 : style === 'mandala' ? 150 : 160;
 
   // Step 5: Apply threshold
   let resultBuffer = await pipeline.threshold(baseThreshold).png().toBuffer();
 
-  // Step 6: Analyze result - check for blank or overfilled images
+  // Step 6: Analyze result
   const resultStats = await sharp(resultBuffer)
     .grayscale()
     .raw()
@@ -96,7 +143,7 @@ async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): P
   const resultData = resultStats.data;
   let whitePixels = 0;
   let blackPixels = 0;
-  for (let i = 0; i < resultData.length; i += 4) { // sample every 4th pixel for speed
+  for (let i = 0; i < resultData.length; i += 4) {
     if (resultData[i] > 200) whitePixels++;
     else blackPixels++;
   }
@@ -106,15 +153,13 @@ async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): P
 
   console.log(`[BW] Style: ${style}, DarkBG: ${isDarkBackground}, Threshold: ${baseThreshold}, Black%: ${(blackRatio * 100).toFixed(1)}%, White%: ${(whiteRatio * 100).toFixed(1)}%`);
 
-  // Step 7: Blank image recovery (>95% white = model produced nothing useful)
+  // Step 7: Blank image recovery (>95% white)
   if (whiteRatio > 0.95) {
     console.log('[BW] Blank image detected - trying lower threshold');
-    // Retry with much lower threshold to catch faint lines
     let retryPipeline = sharp(imageBuffer).grayscale().normalize();
     if (isDarkBackground) retryPipeline = retryPipeline.negate();
     const retryBuffer = await retryPipeline.threshold(80).png().toBuffer();
 
-    // Check retry result
     const retryStats = await sharp(retryBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
     let retryBlack = 0;
     let retryTotal = 0;
@@ -123,171 +168,148 @@ async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): P
       retryTotal++;
     }
     if (retryBlack / retryTotal > 0.02) {
-      // Found some content with lower threshold
       console.log(`[BW] Recovery successful with threshold 80, black%: ${(retryBlack / retryTotal * 100).toFixed(1)}%`);
       resultBuffer = retryBuffer;
     } else {
-      // Still blank - return the normalized grayscale without threshold (at least user can see something)
-      console.log('[BW] Still blank after recovery - returning grayscale without threshold');
+      console.log('[BW] Still blank after recovery - returning high-contrast grayscale');
       let fallbackPipeline = sharp(imageBuffer).grayscale().normalize();
       if (isDarkBackground) fallbackPipeline = fallbackPipeline.negate();
-      // Increase contrast significantly to make faint lines visible
       resultBuffer = await fallbackPipeline.linear(2.5, -180).png().toBuffer();
     }
   }
-  // Step 8: Overfilled image recovery (>40% black = too much solid fill)
-  // For Simple style: extract edges only using Laplacian
-  else if (blackRatio > 0.4 && style === 'simple') {
-    console.log(`[BW] Overfilled Simple image (${(blackRatio * 100).toFixed(1)}% black) - extracting edges`);
-    // Use Laplacian edge detection to convert solid fills to outlines
-    resultBuffer = await sharp(imageBuffer)
-      .grayscale()
-      .normalize()
-      .convolve({
-        width: 3,
-        height: 3,
-        kernel: [0, -1, 0, -1, 4, -1, 0, -1, 0] // Laplacian edge detection
-      })
-      .threshold(30)
-      .png()
-      .toBuffer();
+  // Step 8: Overfilled image recovery (style-dependent thresholds)
+  // Simple: >25% black = overfilled (should be mostly white)
+  // Mandala: >40% black = overfilled (some density expected)
+  // Intricate: >45% black = overfilled (lots of detail expected but not solid fill)
+  else if (blackRatio > getOverfillThreshold(style)) {
+    console.log(`[BW] Overfilled ${style} image (${(blackRatio * 100).toFixed(1)}% black) - recovering`);
 
-    // Verify the edge extraction produced something
-    const edgeStats = await sharp(resultBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
-    let edgeBlack = 0;
-    let edgeTotal = 0;
-    for (let i = 0; i < edgeStats.data.length; i += 4) {
-      if (edgeStats.data[i] <= 200) edgeBlack++;
-      edgeTotal++;
+    // Recovery step 1: Try lower threshold
+    let lowerPipeline = sharp(imageBuffer).grayscale().normalize();
+    if (isDarkBackground) lowerPipeline = lowerPipeline.negate();
+    const lowerThreshold = style === 'intricate' ? 90 : style === 'mandala' ? 110 : 120;
+    const lowerBuffer = await lowerPipeline.threshold(lowerThreshold).png().toBuffer();
+
+    const lowerStats = await sharp(lowerBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
+    let lowerBlack = 0;
+    let lowerTotal = 0;
+    for (let i = 0; i < lowerStats.data.length; i += 4) {
+      if (lowerStats.data[i] <= 200) lowerBlack++;
+      lowerTotal++;
     }
-    const edgeBlackRatio = edgeBlack / edgeTotal;
-    if (edgeBlackRatio < 0.01 || edgeBlackRatio > 0.6) {
-      // Edge extraction failed (too little or too much) - fall back to threshold result
-      console.log(`[BW] Edge extraction produced ${(edgeBlackRatio * 100).toFixed(1)}% black - reverting to threshold`);
-      let fallbackPipeline = sharp(imageBuffer).grayscale().normalize();
-      if (isDarkBackground) fallbackPipeline = fallbackPipeline.negate();
-      resultBuffer = await fallbackPipeline.threshold(baseThreshold).png().toBuffer();
+    const lowerBlackRatio = lowerBlack / lowerTotal;
+
+    if (lowerBlackRatio > 0.02 && lowerBlackRatio <= getOverfillThreshold(style)) {
+      console.log(`[BW] Lower threshold (${lowerThreshold}) recovery: ${(lowerBlackRatio * 100).toFixed(1)}% black - acceptable`);
+      resultBuffer = lowerBuffer;
+    } else {
+      // Recovery step 2: Laplacian edge extraction
+      console.log(`[BW] Lower threshold insufficient (${(lowerBlackRatio * 100).toFixed(1)}%) - trying edge extraction`);
+      let edgePipeline = sharp(imageBuffer).grayscale().normalize();
+      if (isDarkBackground) edgePipeline = edgePipeline.negate();
+      const edgeBuffer = await edgePipeline
+        .convolve({
+          width: 3,
+          height: 3,
+          kernel: [0, -1, 0, -1, 4, -1, 0, -1, 0]
+        })
+        .threshold(style === 'intricate' ? 20 : 30)
+        .png()
+        .toBuffer();
+
+      const edgeStats = await sharp(edgeBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
+      let edgeBlack = 0;
+      let edgeTotal = 0;
+      for (let i = 0; i < edgeStats.data.length; i += 4) {
+        if (edgeStats.data[i] <= 200) edgeBlack++;
+        edgeTotal++;
+      }
+      const edgeBlackRatio = edgeBlack / edgeTotal;
+
+      if (edgeBlackRatio >= 0.02 && edgeBlackRatio <= 0.5) {
+        console.log(`[BW] Edge extraction successful: ${(edgeBlackRatio * 100).toFixed(1)}% black`);
+        resultBuffer = edgeBuffer;
+      } else {
+        // Recovery step 3: Grayscale fallback
+        console.log(`[BW] Edge extraction failed (${(edgeBlackRatio * 100).toFixed(1)}%) - using grayscale fallback`);
+        let fallbackPipeline = sharp(imageBuffer).grayscale().normalize();
+        if (isDarkBackground) fallbackPipeline = fallbackPipeline.negate();
+        resultBuffer = await fallbackPipeline.linear(1.8, -100).png().toBuffer();
+      }
     }
   }
+
+  // Step 9: Final cleanup - ensure pure black & white
+  resultBuffer = await sharp(resultBuffer)
+    .threshold(128)
+    .png()
+    .toBuffer();
 
   return resultBuffer;
 }
 
-const REFERENCE_COST = 5;  // AILabTools ~$0.02
-
-const PLAN_LIMITS = {
-  free: 2,
-  starter: 60,
-  pro: 300,
-  business: 1000,
-};
-
-const GENERATE_CREDIT_COST = 1;
-
-async function moderatePrompt(prompt: string, externalId?: string): Promise<'allow' | 'flag' | 'deny'> {
-  const apiKey = process.env.CREEM_API_KEY;
-  if (!apiKey) {
-    console.warn('[Moderation] CREEM_API_KEY not set, skipping moderation');
-    return 'allow';
-  }
-  try {
-    const baseUrl = apiKey.startsWith('creem_test_') ? 'https://test-api.creem.io' : 'https://api.creem.io';
-    const res = await fetch(`${baseUrl}/v1/moderation/prompt`, {
-      method: 'POST',
-      headers: { 'x-api-key': apiKey, 'content-type': 'application/json' },
-      body: JSON.stringify({ prompt, ...(externalId ? { external_id: externalId } : {}) }),
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!res.ok) { console.error(`[Moderation] API returned ${res.status}`); return 'deny'; }
-    const data = await res.json();
-    console.log(`[Moderation] Decision: ${data.decision} for prompt: "${prompt.slice(0, 50)}..."`);
-    return data.decision;
-  } catch (err) {
-    console.error('[Moderation] Error:', err);
-    return 'deny';
+// Overfill threshold by style
+function getOverfillThreshold(style: string): number {
+  switch (style) {
+    case 'simple': return 0.25;
+    case 'mandala': return 0.40;
+    case 'intricate': return 0.45;
+    default: return 0.35;
   }
 }
 
+// ============================================================
+// POST ROUTE: Generate coloring page
+// ============================================================
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
     const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Please sign in to generate coloring pages' }, { status: 401 });
+    if (!userId) { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
+    const body = await req.json();
+    const { prompt, style: rawStyle = 'simple', referenceImageUrl } = body;
+    const style = ['simple', 'mandala', 'intricate'].includes(rawStyle) ? rawStyle : 'simple';
+
+    if (!prompt?.trim()) {
+      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
 
-    let prompt = '';
-    let style = 'simple';
-    let referenceImageUrl: string | null = null;
-    const contentType = req.headers.get('content-type') || '';
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      prompt = (formData.get('prompt') as string || '').trim();
-      style = (formData.get('style') as string || 'simple');
-      referenceImageUrl = formData.get('referenceImageUrl') as string || null;
-    } else {
-      const body = await req.json();
-      prompt = (body.prompt || '').trim();
-      style = body.style || 'simple';
-      referenceImageUrl = body.referenceImageUrl || null;
-    }
-
-    if (!prompt || prompt.length === 0) {
-      return NextResponse.json({ error: 'Please enter a description' }, { status: 400 });
-    }
-    if (prompt.length > 500) {
-      return NextResponse.json({ error: 'Description too long (max 500 characters)' }, { status: 400 });
-    }
-
-    const moderationDecision = await moderatePrompt(prompt, `user_${userId}`);
-    if (moderationDecision === 'flag') {
-      console.warn('[Moderation] Flagged but allowing:', prompt.slice(0, 50));
-    }
-    if (moderationDecision === 'deny') {
-      return NextResponse.json({ error: 'Your prompt could not be processed. Please revise and try again.' }, { status: 400 });
-    }
-
-    const { data: subData } = await supabase.from('subscriptions').select('plan, status').eq('user_id', userId).single();
-    let plan = 'free';
-    if (subData && subData.status === 'active') { plan = subData.plan || 'free'; }
-
+    // --- Credit check ---
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const { data: usageData } = await supabase.from('user_usage').select('pages_used, bonus_credits').eq('user_id', userId).eq('month', currentMonth).single();
+    const { data: usageData } = await supabase
+      .from('user_usage')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('month', currentMonth)
+      .single();
+
+    const plan = usageData?.plan || 'free';
     const pagesUsed = usageData?.pages_used || 0;
     const bonusCredits = usageData?.bonus_credits || 0;
-    const baseLimit = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS] || 2;
-    const limit = baseLimit + bonusCredits;
-    let creditCost = referenceImageUrl ? REFERENCE_COST : GENERATE_CREDIT_COST;
+    const refTrialUsed = usageData?.ref_trial_used || false;
 
-    // Reference image free trial: first reference image is free
-    let refTrialUsed = false;
-    let refTrialApplied = false;
-    if (referenceImageUrl) {
-      const { data: trialData } = await supabase.from('user_usage').select('ref_trial_used').eq('user_id', userId).eq('month', currentMonth).single();
-      refTrialUsed = trialData?.ref_trial_used || false;
-      if (!refTrialUsed) {
-        refTrialApplied = true;
-        creditCost = 0; // Free trial!
-      }
-    }
+    const limits: Record<string, number> = { free: 2, starter: 60, pro: 300, business: 1000 };
+    const limit = (limits[plan] || 2) + bonusCredits;
+    const baseCost = 1;
+    const refExtraCost = 5;
+    const refTrialApplied = !!referenceImageUrl && !refTrialUsed;
+    const creditCost = refTrialApplied ? baseCost : (referenceImageUrl ? baseCost + refExtraCost : baseCost);
 
-    if (creditCost > 0 && pagesUsed + creditCost > limit) {
-      return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: creditCost, plan }, { status: 429 });
+    if (pagesUsed + creditCost > limit) {
+      return NextResponse.json({ error: 'Monthly limit reached', limit, used: pagesUsed, needed: creditCost, plan }, { status: 429 });
     }
 
     // ============================================================
-    // BUILD PROMPT - No scenery stripping, trust the coloring page framing
+    // BUILD PROMPT - Dynamic construction based on user input
     // ============================================================
-    const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.simple;
-    let fullPrompt: string;
-    if (referenceImageUrl) {
-      fullPrompt = prompt; // AILabTools handles line art natively, just pass user prompt
-    } else {
-      fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
-    }
+    const fullPrompt = buildPrompt(prompt.trim(), style, !!referenceImageUrl);
 
-    console.log(`[Generate] Style: ${style}, Has reference: ${!!referenceImageUrl}, Full prompt: "${fullPrompt.slice(0, 120)}..."`);
+    const isScenePrompt = SCENERY_PATTERN.test(prompt.trim());
+    console.log(`[Generate] Style: ${style}, Scene: ${isScenePrompt}, Has reference: ${!!referenceImageUrl}, Full prompt: "${fullPrompt.slice(0, 150)}..."`);
 
     if (referenceImageUrl) {
       // ===== AILabTools "Photo to Coloring Page" API =====
@@ -297,7 +319,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Reference image service not configured' }, { status: 500 });
       }
 
-      // Convert base64 data URL to Buffer
       const base64Match = referenceImageUrl.match(/^data:image\/(\w+);base64,(.+)$/);
       if (!base64Match) {
         return NextResponse.json({ error: 'Invalid reference image format' }, { status: 400 });
@@ -305,14 +326,12 @@ export async function POST(req: NextRequest) {
       const imageExt = base64Match[1] === 'jpeg' ? 'jpg' : base64Match[1];
       const imageBuffer = Buffer.from(base64Match[2], 'base64');
 
-      // Build multipart form data
       const formData = new FormData();
       const imageBlob = new Blob([imageBuffer], { type: `image/${imageExt}` });
       formData.append('image', imageBlob, `reference.${imageExt}`);
       formData.append('prompt', fullPrompt);
       formData.append('image_size', 'auto');
 
-      // Submit - returns task_id immediately (async)
       const submitRes = await fetch('https://www.ailabapi.com/api/image/effects/photo-to-line-art', {
         method: 'POST',
         headers: { 'ailabapi-api-key': ailabApiKey },
@@ -329,7 +348,6 @@ export async function POST(req: NextRequest) {
 
       const taskId = submitData.task_id;
 
-      // Store pending job in generation_history
       const { data: historyEntry } = await supabase
         .from('generation_history')
         .insert({
@@ -342,7 +360,6 @@ export async function POST(req: NextRequest) {
         .select('id')
         .single();
 
-      // Deduct credits (or mark trial used)
       if (refTrialApplied) {
         if (usageData) {
           await supabase.from('user_usage').update({ ref_trial_used: true, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
@@ -376,7 +393,7 @@ export async function POST(req: NextRequest) {
     }
 
     const inferenceSteps = 50;
-    const kolorsImageSize = '960x1280'; // 3:4 vertical
+    const kolorsImageSize = '960x1280';
 
     console.log(`[Generate] Model: SiliconFlow Kolors, Steps: ${inferenceSteps}, Credit cost: ${creditCost}`);
 
@@ -392,7 +409,7 @@ export async function POST(req: NextRequest) {
         image_size: kolorsImageSize,
         batch_size: 1,
         num_inference_steps: inferenceSteps,
-        guidance_scale: 15, // Higher for better instruction following
+        guidance_scale: 15,
         negative_prompt: NEGATIVE_PROMPT,
       }),
     });
@@ -419,7 +436,6 @@ export async function POST(req: NextRequest) {
     try {
       const imageResponse = await fetch(tempImageUrl);
       let imageBuffer: ArrayBuffer | Buffer = await imageResponse.arrayBuffer();
-      // Post-process: smart B&W conversion with all recovery logic
       try {
         const bwBuffer = await toPureBWLineArt(Buffer.from(imageBuffer), style);
         imageBuffer = bwBuffer;
@@ -481,7 +497,6 @@ export async function GET(req: NextRequest) {
     const ailabApiKey = process.env.AILABTOOLS_API_KEY;
     if (!ailabApiKey) { return NextResponse.json({ error: 'Reference image service not configured' }, { status: 500 }); }
 
-    // Poll AILabTools async task result
     const pollRes = await fetch(
       `https://www.ailabapi.com/api/common/query-async-task-result?task_id=${requestId}`,
       { headers: { 'ailabapi-api-key': ailabApiKey } }
@@ -496,12 +511,10 @@ export async function GET(req: NextRequest) {
 
     const taskStatus = pollData.task_status;
 
-    // 0=queued, 1=processing
     if (taskStatus === 0 || taskStatus === 1) {
       return NextResponse.json({ status: 'processing' });
     }
 
-    // 2=completed
     if (taskStatus === 2) {
       const imageUrl =
         pollData.data?.result_urls?.[0] ||
@@ -515,7 +528,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ status: 'failed', error: 'No image in result' });
       }
 
-      // Download and upload to Supabase Storage
       let permanentUrl = imageUrl;
       let storagePath: string | null = null;
 
@@ -536,7 +548,6 @@ export async function GET(req: NextRequest) {
         console.error('[Poll] Storage upload failed:', storageErr);
       }
 
-      // Update generation_history
       await supabase.from('generation_history')
         .update({ image_url: permanentUrl, storage_path: storagePath, status: 'completed' })
         .eq('fal_request_id', requestId)

@@ -38,7 +38,7 @@ const styles = [
 
 
 const EXAMPLE_PROMPTS = [
-  { emoji: '🐲', text: 'Chinese dragon soaring through clouds' },
+  { emoji: '🐲', text: 'Dragon soaring through clouds' },
   { emoji: '🏯', text: 'Pagoda temple on misty mountain' },
   { emoji: '🦋', text: 'Butterfly on peony flowers' },
   { emoji: '🐰', text: 'Cute white rabbit in moonlit garden' },
@@ -318,7 +318,7 @@ function GenerateContent() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="e.g. Chinese dragon soaring through clouds..."
+                  placeholder="e.g. Dragon soaring through clouds..."
                   className="w-full p-3 rounded-xl border-2 border-[#E5E0D5] bg-white text-sm resize-none focus:outline-none focus:border-[#FFB800] transition-colors min-h-[80px]"
                   rows={3}
                 />

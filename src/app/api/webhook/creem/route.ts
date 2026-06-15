@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 
 const isTestMode = process.env.NEXT_PUBLIC_CREEM_TEST_MODE === 'true';
 
+// Plan tier ranking for upgrade detection
+const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, business: 3 };
+
 const PRODUCT_PLAN_MAP: Record<string, string> = isTestMode
   ? {
       'prod_7lVPw6BIdARHnHp0q8NUq': 'starter',
@@ -44,7 +47,16 @@ export const POST = Webhook({
 
     const currentMonth = new Date().toISOString().slice(0, 7);
 
-    // 更新user_usage表
+    // 检查是否为升级（plan tier提升）
+    const { data: existingSub } = await supabase
+      .from('subscriptions')
+      .select('plan')
+      .eq('user_id', userId)
+      .single();
+    const oldPlan = existingSub?.plan || 'free';
+    const isUpgrade = (PLAN_RANK[plan] || 0) > (PLAN_RANK[oldPlan] || 0);
+
+    // 更新user_usage表 — 升级时重置已用额度为0
     const { data: existingUsage } = await supabase
       .from('user_usage')
       .select('*')
@@ -53,9 +65,14 @@ export const POST = Webhook({
       .single();
 
     if (existingUsage) {
+      const updateData: Record<string, any> = { plan, updated_at: new Date().toISOString() };
+      if (isUpgrade) {
+        updateData.pages_used = 0; // 升级重置额度
+        console.log(`[Creem] Upgrade detected: ${oldPlan} → ${plan}, resetting monthly usage to 0`);
+      }
       await supabase
         .from('user_usage')
-        .update({ plan, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('user_id', userId)
         .eq('month', currentMonth);
     } else {

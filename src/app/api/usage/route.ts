@@ -9,6 +9,8 @@ const PLAN_LIMITS = {
   business: 1000,
 };
 
+const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, business: 3 };
+
 export async function GET() {
   try {
     const { userId } = await auth();
@@ -40,10 +42,35 @@ export async function GET() {
     const currentMonth = new Date().toISOString().slice(0, 7);
     const { data: usageData } = await supabase
       .from('user_usage')
-      .select('pages_used, ref_trial_used, bonus_credits')
+      .select('pages_used, ref_trial_used, bonus_credits, plan')
       .eq('user_id', userId)
       .eq('month', currentMonth)
       .single();
+
+    // 自动检测升级：如果subscription的plan比usage记录的plan高，重置已用额度
+    if (usageData && usageData.plan && plan !== usageData.plan) {
+      const currentRank = PLAN_RANK[plan] || 0;
+      const recordedRank = PLAN_RANK[usageData.plan] || 0;
+      if (currentRank > recordedRank) {
+        console.log(`[Usage] Auto-upgrade detected: ${usageData.plan} → ${plan}, resetting pages_used`);
+        await supabase
+          .from('user_usage')
+          .update({ pages_used: 0, plan, updated_at: new Date().toISOString() })
+          .eq('user_id', userId)
+          .eq('month', currentMonth);
+        // Re-fetch with reset values
+        const { data: resetData } = await supabase
+          .from('user_usage')
+          .select('pages_used, ref_trial_used, bonus_credits')
+          .eq('user_id', userId)
+          .eq('month', currentMonth)
+          .single();
+        if (resetData) {
+          // Override usageData with reset values
+          Object.assign(usageData, resetData);
+        }
+      }
+    }
 
     const pagesUsed = usageData?.pages_used || 0;
     const refTrialUsed = usageData?.ref_trial_used || false;

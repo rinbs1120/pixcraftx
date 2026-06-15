@@ -389,8 +389,8 @@ function GenerateContent() {
                           : "border-[#E5E0D5] hover:border-[#FFB800]/50"
                       )}
                     >
-                      <div className="aspect-[3/4] bg-gray-100">
-                        <img src={style.thumbnail} alt={style.label} className="w-full h-full object-cover" />
+                      <div className="aspect-[3/4] bg-white">
+                        <img src={style.thumbnail} alt={style.label} className="w-full h-full object-contain" />
                       </div>
                       <div className="p-1.5 text-center">
                         <div className="text-[10px] font-semibold text-foreground">{style.emoji} {style.label}</div>

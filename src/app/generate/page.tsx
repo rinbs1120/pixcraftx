@@ -383,7 +383,7 @@ function GenerateContent() {
                       key={style.id}
                       onClick={() => setSelectedStyle(style.id)}
                       className={cn(
-                        "rounded-xl border-2 overflow-hidden transition-all",
+                        "rounded-xl border-2 overflow-hidden transition-all bg-white",
                         selectedStyle === style.id
                           ? "border-[#FFB800] shadow-sm"
                           : "border-[#E5E0D5] hover:border-[#FFB800]/50"

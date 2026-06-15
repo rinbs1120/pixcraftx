@@ -6,42 +6,41 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
 import sharp from 'sharp';
+import { fal } from '@fal-ai/client';
 
 // ============================================================
 // STYLE PROMPTS - Define HOW to render (visual approach only)
 // Key principle: SEPARATE style from composition
 // - Style controls: line weight, detail level, rendering approach
 // - Composition is determined dynamically based on user prompt content
-// - Kolors responds to positive visual descriptions, NOT negations
+// - FLUX Schnell follows "coloring page" prompts natively — no negative prompt needed
 // ============================================================
 const STYLE_PROMPTS = {
   simple: {
     // Visual approach: bold, kid-friendly, simple
     prefix: "children's coloring book page, cute cartoon style, bold thick black outlines, simple rounded shapes, large empty areas for crayon coloring,",
-    // Reinforce coloring page format (positive framing only)
-    suffix: ", black and white outline drawing, white background, all shapes have empty white interiors ready for coloring"
+    // FLUX follows positive framing well — specify what we WANT, not what to avoid
+    suffix: ", black and white outline drawing only, pure white background, all shapes have empty white interiors ready for coloring, no shading no gradients no colors"
   },
   mandala: {
     // Visual approach: symmetrical radial pattern inspired by the subject
     prefix: "circular mandala coloring page design inspired by, symmetrical radial pattern with repeating motifs, decorative geometric design, medium weight lines,",
     // Mandala-specific framing
-    suffix: ", black and white outline drawing, white background, perfectly symmetrical, circular frame"
+    suffix: ", black and white outline drawing only, pure white background, perfectly symmetrical, circular frame, no shading no colors"
   },
   intricate: {
     // Visual approach: fine detail, ornate patterns inside shapes
     prefix: "detailed adult coloring book page, fine thin pen lines, ornate decorative scrollwork and patterns inside all shapes, professional ink illustration,",
     // Reinforce coloring page format
-    suffix: ", black and white outline drawing, white background, rich interior detail patterns inside all shapes"
+    suffix: ", black and white outline drawing only, pure white background, rich interior detail patterns inside all shapes, no shading no gradients no colors"
   }
 };
 
 // ============================================================
-// NEGATIVE PROMPT - Minimal, only suppress what post-processing can't fix
-// Principle: Kolors ignores most negative prompts; over-specific negatives cause blank images
-// Only list what we absolutely cannot post-process away (color, photo-realism, 3D, shading)
-// Scenery/background: NOT suppressed here -> handled by prompt construction + post-processing
+// NEGATIVE PROMPT - Not used with FLUX Schnell (not supported)
+// FLUX follows "coloring page / line art" instructions natively.
+// Constraints (no color, no shading, no photo) are in STYLE_PROMPTS suffix as positive framing.
 // ============================================================
-const NEGATIVE_PROMPT = "color, colored, colorful, watercolor, oil painting, photograph, realistic photo, 3D render, shading, shadow, gradient, grayscale";
 
 // ============================================================
 // SCENERY DETECTION
@@ -385,46 +384,34 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ===== Text-to-image: SiliconFlow Kolors =====
-    const siliconflowApiKey = process.env.SILICONFLOW_API_KEY;
-    if (!siliconflowApiKey) {
-      console.error('[Generate] SILICONFLOW_API_KEY not configured');
+    // ===== Text-to-image: fal.ai FLUX Schnell =====
+    const falKey = process.env.FAL_KEY;
+    if (!falKey) {
+      console.error('[Generate] FAL_KEY not configured');
       return NextResponse.json({ error: 'Image generation service not configured' }, { status: 500 });
     }
+    fal.config({ credentials: falKey });
 
-    const inferenceSteps = 50;
-    const kolorsImageSize = '960x1280';
+    console.log(`[Generate] Model: fal-ai/flux/schnell, Steps: 4, Guidance: 3.5, Credit cost: ${creditCost}`);
 
-    console.log(`[Generate] Model: SiliconFlow Kolors, Steps: ${inferenceSteps}, Credit cost: ${creditCost}`);
-
-    const sfResponse = await fetch('https://api.siliconflow.cn/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${siliconflowApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'Kwai-Kolors/Kolors',
+    // FLUX Schnell: 4 steps, guidance_scale 3.5, portrait_4_3 (960x1280 equivalent)
+    // No negative_prompt — FLUX doesn't support it; constraints are in the prompt itself
+    const result = await fal.subscribe('fal-ai/flux/schnell', {
+      input: {
         prompt: fullPrompt,
-        image_size: kolorsImageSize,
-        batch_size: 1,
-        num_inference_steps: inferenceSteps,
-        guidance_scale: 15,
-        negative_prompt: NEGATIVE_PROMPT,
-      }),
+        image_size: 'portrait_4_3',
+        num_inference_steps: 4,
+        guidance_scale: 3.5,
+        num_images: 1,
+        enable_safety_checker: true,
+        output_format: 'png',
+      },
     });
 
-    if (!sfResponse.ok) {
-      const errorText = await sfResponse.text();
-      console.error('[Generate] SiliconFlow API error:', sfResponse.status, errorText);
-      return NextResponse.json({ error: 'Image generation failed', details: errorText.slice(0, 200) }, { status: 500 });
-    }
-
-    const sfData = await sfResponse.json();
-    const tempImageUrl = sfData.images?.[0]?.url;
+    const tempImageUrl = result.data?.images?.[0]?.url;
 
     if (!tempImageUrl) {
-      console.error('[Generate] No image URL in SiliconFlow response:', JSON.stringify(sfData).slice(0, 300));
+      console.error('[Generate] No image URL in FLUX response:', JSON.stringify(result).slice(0, 300));
       return NextResponse.json({ error: 'Image generation failed - no image returned' }, { status: 500 });
     }
 
@@ -439,7 +426,7 @@ export async function POST(req: NextRequest) {
       try {
         const bwBuffer = await toPureBWLineArt(Buffer.from(imageBuffer), style);
         imageBuffer = bwBuffer;
-        console.log('[Generate] B&W post-processing applied');
+        console.log('[Generate] B&W post-processing applied (FLUX Schnell)');
       } catch (ppErr) {
         console.error('[Generate] B&W post-processing failed, using raw:', ppErr);
       }

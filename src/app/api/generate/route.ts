@@ -7,82 +7,170 @@ import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
 import sharp from 'sharp';
 
-// Style-specific prompt modifiers
-// Style-specific prompt modifiers
+// ============================================================
+// STYLE PROMPTS
+// Key principle: POSITIVE framing, distinct visual concepts per style
+// Kolors responds to WHAT to draw, not what NOT to draw
+// ============================================================
 const STYLE_PROMPTS = {
   simple: {
-    prefix: "vector line art coloring page, bold thick black outlines minimum 3pt weight, pure black ink on white paper, clean closed contours, complete line borders, simple shapes with large areas to color, isolated subject on plain white background,",
-    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, cartoon style outline only, subject only, no background scenery, no landscape, no plants, no trees, no flowers, no environment, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
+    prefix: "coloring book page for young children, cute cartoon animal style, bold black outlines, very simple shapes, large empty white areas inside shapes for crayon coloring, single centered subject, plain white paper background,",
+    suffix: ", black and white outline drawing only, white background, no solid filled black areas, every area should be empty and ready to color"
   },
   mandala: {
-    prefix: "vector line art coloring page, symmetrical mandala pattern, pure black ink on white paper, consistent medium line weight, clean closed contours, complete line borders, circular geometric design,",
-    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no gradients, white background, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
+    prefix: "circular mandala coloring page for adults, symmetrical radial pattern, decorative geometric design with repeating motifs, centered on page, medium weight lines, white paper,",
+    suffix: ", black and white outline drawing only, white background, perfectly symmetrical left and right"
   },
   intricate: {
-    prefix: "vector line art coloring page for adults, fine detailed black outlines, intricate patterns, pure black ink on white paper, professional illustration, clean closed contours, complete line borders, distinct separated elements,",
-    suffix: ", strictly monochrome, no colors, no shading, no grayscale, no filled areas, no shadows, no gradients, white background, subject only, no background scenery, no landscape, no plants, no trees, no flowers, no environment, every contour is a fully sealed closed loop with no openings, every shape has complete connected borders, no broken lines, no open strokes, no gaps between any lines, all regions are fully enclosed for flood-fill coloring"
+    prefix: "detailed adult coloring book page, ornate decorative patterns inside all shapes, fine thin pen lines, intricate scrollwork and floral motifs within the subject, professional ink illustration, single centered subject, white paper,",
+    suffix: ", black and white outline drawing only, white background, rich interior patterns and textures for detailed coloring"
   }
 };
 
-// Negative prompt to suppress color leakage in Kolors model
-const NEGATIVE_PROMPT = "color, colored, colorful, paint, painted, watercolor, filled, fill, shading, shadow, gradient, grayscale, grey, gray, tint, hue, saturation, pigment, watercolor wash, ink wash, tone, tonal, realistic, photograph, 3D render, illustration with color, dyed, stain, tinted, chromatic, polychrome, multicolor, any color, slightest color, color tint, color wash, pastel colors, bright colors, dark colors, warm colors, cool colors, green, blue, red, pink, yellow, orange, purple, brown, gold, landscape, scenery, forest, trees, plants, flowers, leaves, grass, mountains, clouds, sky, ground, background scenery, environment, habitat, nature";
+// ============================================================
+// NEGATIVE PROMPT
+// Principle: MINIMAL - only suppress what we absolutely cannot post-process away
+// DO NOT include scenery/landscape words - they conflict with user prompts and cause blank images
+// DO NOT include "background" - confuses the model
+// Post-processing handles: dark backgrounds, color leaks, solid fills
+// ============================================================
+const NEGATIVE_PROMPT = "color, colored, colorful, watercolor, oil painting, photograph, realistic photo, 3D render, shading, shadow, gradient, grayscale";
 
-// Credit costs - Kolors is cheaper than FLUX
-const GENERATE_CREDIT_COST = 1;  // Unified: 50 steps, 1 credit
-
-
-
-// Post-process: ensure pure B&W line art (remove any color leakage from Kolors)
-async function toPureBWLineArt(imageBuffer: Buffer): Promise<Buffer> {
-  // Step 1: Grayscale & normalize
+// ============================================================
+// POST-PROCESSING: Smart B&W conversion
+// Handles: dark background auto-invert, blank image detection,
+// overfilled image edge extraction, adaptive threshold per style
+// ============================================================
+async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): Promise<Buffer> {
+  // Step 1: Grayscale & normalize for analysis
   const normalized = await sharp(imageBuffer)
     .grayscale()
     .normalize()
     .raw()
     .toBuffer({ resolveWithObject: true });
 
-  // Step 2: Detect if image is predominantly dark (inverted: black bg + white lines)
-  // Sample edge pixels to determine background color
   const { data, info } = normalized;
   const width = info.width;
   const height = info.height;
-  let darkPixels = 0;
-  let sampleCount = 0;
-  // Sample 4 edges (top/bottom rows, left/right columns)
-  for (let x = 0; x < width; x += Math.max(1, Math.floor(width / 50))) {
-    // Top edge
-    const topIdx = x;
-    if (data[topIdx] < 128) darkPixels++;
-    sampleCount++;
-    // Bottom edge
-    const botIdx = (height - 1) * width + x;
-    if (data[botIdx] < 128) darkPixels++;
-    sampleCount++;
-  }
-  for (let y = 0; y < height; y += Math.max(1, Math.floor(height / 50))) {
-    // Left edge
-    const leftIdx = y * width;
-    if (data[leftIdx] < 128) darkPixels++;
-    sampleCount++;
-    // Right edge
-    const rightIdx = y * width + (width - 1);
-    if (data[rightIdx] < 128) darkPixels++;
-    sampleCount++;
-  }
+  const pixelCount = width * height;
 
-  const isDarkBackground = darkPixels / sampleCount > 0.5;
-  console.log(`[BW Post-process] Dark pixels: ${darkPixels}/${sampleCount}, Inverted: ${isDarkBackground}`);
+  // Step 2: Sample edge pixels to detect dark background
+  let darkEdgePixels = 0;
+  let edgeSampleCount = 0;
+  const xStep = Math.max(1, Math.floor(width / 50));
+  const yStep = Math.max(1, Math.floor(height / 50));
 
-  // Step 3: Apply threshold, invert if dark background detected
+  for (let x = 0; x < width; x += xStep) {
+    if (data[x] < 128) darkEdgePixels++;
+    if (data[(height - 1) * width + x] < 128) darkEdgePixels++;
+    edgeSampleCount += 2;
+  }
+  for (let y = 0; y < height; y += yStep) {
+    if (data[y * width] < 128) darkEdgePixels++;
+    if (data[y * width + width - 1] < 128) darkEdgePixels++;
+    edgeSampleCount += 2;
+  }
+  const isDarkBackground = darkEdgePixels / edgeSampleCount > 0.5;
+
+  // Step 3: Build base pipeline
   let pipeline = sharp(imageBuffer).grayscale().normalize();
   if (isDarkBackground) {
-    // Invert: black bg + white lines → white bg + black lines
     pipeline = pipeline.negate();
   }
-  return pipeline
-    .threshold(180)
-    .png()
-    .toBuffer();
+
+  // Step 4: Adaptive threshold by style
+  // Simple: higher (bold lines survive, faint noise removed)
+  // Intricate: lower (preserve fine thin lines)
+  // Mandala: medium
+  const baseThreshold = style === 'intricate' ? 130 : style === 'mandala' ? 150 : 160;
+
+  // Step 5: Apply threshold
+  let resultBuffer = await pipeline.threshold(baseThreshold).png().toBuffer();
+
+  // Step 6: Analyze result - check for blank or overfilled images
+  const resultStats = await sharp(resultBuffer)
+    .grayscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const resultData = resultStats.data;
+  let whitePixels = 0;
+  let blackPixels = 0;
+  for (let i = 0; i < resultData.length; i += 4) { // sample every 4th pixel for speed
+    if (resultData[i] > 200) whitePixels++;
+    else blackPixels++;
+  }
+  const totalSampled = whitePixels + blackPixels;
+  const blackRatio = blackPixels / totalSampled;
+  const whiteRatio = whitePixels / totalSampled;
+
+  console.log(`[BW] Style: ${style}, DarkBG: ${isDarkBackground}, Threshold: ${baseThreshold}, Black%: ${(blackRatio * 100).toFixed(1)}%, White%: ${(whiteRatio * 100).toFixed(1)}%`);
+
+  // Step 7: Blank image recovery (>95% white = model produced nothing useful)
+  if (whiteRatio > 0.95) {
+    console.log('[BW] Blank image detected - trying lower threshold');
+    // Retry with much lower threshold to catch faint lines
+    let retryPipeline = sharp(imageBuffer).grayscale().normalize();
+    if (isDarkBackground) retryPipeline = retryPipeline.negate();
+    const retryBuffer = await retryPipeline.threshold(80).png().toBuffer();
+
+    // Check retry result
+    const retryStats = await sharp(retryBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
+    let retryBlack = 0;
+    let retryTotal = 0;
+    for (let i = 0; i < retryStats.data.length; i += 4) {
+      if (retryStats.data[i] <= 200) retryBlack++;
+      retryTotal++;
+    }
+    if (retryBlack / retryTotal > 0.02) {
+      // Found some content with lower threshold
+      console.log(`[BW] Recovery successful with threshold 80, black%: ${(retryBlack / retryTotal * 100).toFixed(1)}%`);
+      resultBuffer = retryBuffer;
+    } else {
+      // Still blank - return the normalized grayscale without threshold (at least user can see something)
+      console.log('[BW] Still blank after recovery - returning grayscale without threshold');
+      let fallbackPipeline = sharp(imageBuffer).grayscale().normalize();
+      if (isDarkBackground) fallbackPipeline = fallbackPipeline.negate();
+      // Increase contrast significantly to make faint lines visible
+      resultBuffer = await fallbackPipeline.linear(2.5, -180).png().toBuffer();
+    }
+  }
+  // Step 8: Overfilled image recovery (>40% black = too much solid fill)
+  // For Simple style: extract edges only using Laplacian
+  else if (blackRatio > 0.4 && style === 'simple') {
+    console.log(`[BW] Overfilled Simple image (${(blackRatio * 100).toFixed(1)}% black) - extracting edges`);
+    // Use Laplacian edge detection to convert solid fills to outlines
+    resultBuffer = await sharp(imageBuffer)
+      .grayscale()
+      .normalize()
+      .convolve({
+        width: 3,
+        height: 3,
+        kernel: [0, -1, 0, -1, 4, -1, 0, -1, 0] // Laplacian edge detection
+      })
+      .threshold(30)
+      .png()
+      .toBuffer();
+
+    // Verify the edge extraction produced something
+    const edgeStats = await sharp(resultBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
+    let edgeBlack = 0;
+    let edgeTotal = 0;
+    for (let i = 0; i < edgeStats.data.length; i += 4) {
+      if (edgeStats.data[i] <= 200) edgeBlack++;
+      edgeTotal++;
+    }
+    const edgeBlackRatio = edgeBlack / edgeTotal;
+    if (edgeBlackRatio < 0.01 || edgeBlackRatio > 0.6) {
+      // Edge extraction failed (too little or too much) - fall back to threshold result
+      console.log(`[BW] Edge extraction produced ${(edgeBlackRatio * 100).toFixed(1)}% black - reverting to threshold`);
+      let fallbackPipeline = sharp(imageBuffer).grayscale().normalize();
+      if (isDarkBackground) fallbackPipeline = fallbackPipeline.negate();
+      resultBuffer = await fallbackPipeline.threshold(baseThreshold).png().toBuffer();
+    }
+  }
+
+  return resultBuffer;
 }
 
 const REFERENCE_COST = 5;  // AILabTools ~$0.02
@@ -94,7 +182,7 @@ const PLAN_LIMITS = {
   business: 1000,
 };
 
-
+const GENERATE_CREDIT_COST = 1;
 
 async function moderatePrompt(prompt: string, externalId?: string): Promise<'allow' | 'flag' | 'deny'> {
   const apiKey = process.env.CREEM_API_KEY;
@@ -131,14 +219,12 @@ export async function POST(req: NextRequest) {
 
     let prompt = '';
     let style = 'simple';
-    // quality parameter removed - unified 50 steps 1 credit
     let referenceImageUrl: string | null = null;
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
       prompt = (formData.get('prompt') as string || '').trim();
       style = (formData.get('style') as string || 'simple');
-      // quality parameter removed
       referenceImageUrl = formData.get('referenceImageUrl') as string || null;
     } else {
       const body = await req.json();
@@ -190,6 +276,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not enough credits', limit, used: pagesUsed, needed: creditCost, plan }, { status: 429 });
     }
 
+    // ============================================================
+    // BUILD PROMPT - No scenery stripping, trust the coloring page framing
+    // ============================================================
     const styleConfig = STYLE_PROMPTS[style as keyof typeof STYLE_PROMPTS] || STYLE_PROMPTS.simple;
     let fullPrompt: string;
     if (referenceImageUrl) {
@@ -198,7 +287,7 @@ export async function POST(req: NextRequest) {
       fullPrompt = `${styleConfig.prefix} ${prompt} ${styleConfig.suffix}`;
     }
 
-    console.log(`[Generate] Style: ${style}, Has reference: ${!!referenceImageUrl}, Prompt: "${prompt.slice(0, 80)}..."`);
+    console.log(`[Generate] Style: ${style}, Has reference: ${!!referenceImageUrl}, Full prompt: "${fullPrompt.slice(0, 120)}..."`);
 
     if (referenceImageUrl) {
       // ===== AILabTools "Photo to Coloring Page" API =====
@@ -255,7 +344,6 @@ export async function POST(req: NextRequest) {
 
       // Deduct credits (or mark trial used)
       if (refTrialApplied) {
-        // Mark free trial as used, no credit deduction
         if (usageData) {
           await supabase.from('user_usage').update({ ref_trial_used: true, plan, updated_at: new Date().toISOString() }).eq('user_id', userId).eq('month', currentMonth);
         } else {
@@ -280,15 +368,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ===== Text-to-image: SiliconFlow Kolors (Chinese model for better Oriental understanding) =====
+    // ===== Text-to-image: SiliconFlow Kolors =====
     const siliconflowApiKey = process.env.SILICONFLOW_API_KEY;
     if (!siliconflowApiKey) {
       console.error('[Generate] SILICONFLOW_API_KEY not configured');
       return NextResponse.json({ error: 'Image generation service not configured' }, { status: 500 });
     }
 
-    const inferenceSteps = 50;  // Unified: always 50 steps
-    const kolorsImageSize = '960x1280'; // 3:4 vertical, closest to our 1200x1600 requirement
+    const inferenceSteps = 50;
+    const kolorsImageSize = '960x1280'; // 3:4 vertical
 
     console.log(`[Generate] Model: SiliconFlow Kolors, Steps: ${inferenceSteps}, Credit cost: ${creditCost}`);
 
@@ -304,7 +392,7 @@ export async function POST(req: NextRequest) {
         image_size: kolorsImageSize,
         batch_size: 1,
         num_inference_steps: inferenceSteps,
-        guidance_scale: 12,
+        guidance_scale: 15, // Higher for better instruction following
         negative_prompt: NEGATIVE_PROMPT,
       }),
     });
@@ -323,7 +411,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Image generation failed - no image returned' }, { status: 500 });
     }
 
-    // Try to download and upload to Supabase Storage
+    // Download and upload to Supabase Storage
     let permanentUrl = tempImageUrl;
     let storagePath: string | null = null;
     let storageFailed = false;
@@ -331,16 +419,16 @@ export async function POST(req: NextRequest) {
     try {
       const imageResponse = await fetch(tempImageUrl);
       let imageBuffer: ArrayBuffer | Buffer = await imageResponse.arrayBuffer();
-      // Post-process: ensure pure B&W line art (Kolors often leaks color)
+      // Post-process: smart B&W conversion with all recovery logic
       try {
-        const bwBuffer = await toPureBWLineArt(Buffer.from(imageBuffer));
+        const bwBuffer = await toPureBWLineArt(Buffer.from(imageBuffer), style);
         imageBuffer = bwBuffer;
         console.log('[Generate] B&W post-processing applied');
       } catch (ppErr) {
         console.error('[Generate] B&W post-processing failed, using raw:', ppErr);
       }
       const timestamp = Date.now();
-      const responseContentType = 'image/png'; // sharp outputs PNG after B&W processing
+      const responseContentType = 'image/png';
       const fileExt = 'png';
       const filePath = `${userId}/${style}-${timestamp}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('coloring-pages').upload(filePath, imageBuffer, { contentType: responseContentType, upsert: false });

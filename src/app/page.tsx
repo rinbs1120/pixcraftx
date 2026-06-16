@@ -2,7 +2,6 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { InviteBanner } from '@/components/invite-banner';
 import { Hero } from '@/components/sections/hero';
-import { ColoringGallery } from '@/components/sections/coloring-gallery';
 import { PerfectFor } from '@/components/sections/perfect-for';
 import { WhyPixCraftX } from '@/components/sections/why-pixcraftx';
 import { Pricing } from '@/components/sections/pricing';
@@ -19,7 +18,6 @@ export default function HomePage() {
         <div id="how-it-works">
           <HowItWorks />
         </div>
-        <ColoringGallery />
         <PerfectFor />
         <WhyPixCraftX />
         <Pricing />

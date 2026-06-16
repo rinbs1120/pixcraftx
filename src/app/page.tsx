@@ -6,6 +6,7 @@ import { PerfectFor } from '@/components/sections/perfect-for';
 import { WhyPixCraftX } from '@/components/sections/why-pixcraftx';
 import { Pricing } from '@/components/sections/pricing';
 import { FAQ } from '@/components/sections/faq';
+import { ColoringGallery } from '@/components/sections/coloring-gallery';
 import { HowItWorks } from '@/components/sections/how-it-works';
 
 export default function HomePage() {
@@ -18,6 +19,7 @@ export default function HomePage() {
         <div id="how-it-works">
           <HowItWorks />
         </div>
+        <ColoringGallery />
         <PerfectFor />
         <WhyPixCraftX />
         <Pricing />

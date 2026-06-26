@@ -87,9 +87,10 @@ function buildPrompt(userPrompt: string, style: string, hasReference: boolean): 
 }
 
 // ============================================================
-// POST-PROCESSING: Smart B&W conversion
-// Handles: dark background auto-invert, blank image detection,
-// overfilled image recovery (all styles), adaptive threshold per style
+// POST-PROCESSING v2: High-quality line art enhancement
+// Replaces hard threshold binary with contrast-enhanced grayscale
+// Preserves line weight variation and fine detail
+// Handles: dark background auto-invert, blank/overfilled recovery
 // ============================================================
 async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): Promise<Buffer> {
   // Step 1: Grayscale & normalize for analysis
@@ -121,19 +122,46 @@ async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): P
   }
   const isDarkBackground = darkEdgePixels / edgeSampleCount > 0.5;
 
-  // Step 3: Build base pipeline
-  let pipeline = sharp(imageBuffer).grayscale().normalize();
+  // Step 3: Build base pipeline — grayscale + normalize + invert if needed
+  let basePipeline = sharp(imageBuffer).grayscale().normalize();
   if (isDarkBackground) {
-    pipeline = pipeline.negate();
+    basePipeline = basePipeline.negate();
   }
 
-  // Step 4: Adaptive threshold by style
-  const baseThreshold = style === 'intricate' ? 130 : style === 'mandala' ? 150 : 160;
+  // Step 4: Style-adaptive contrast enhancement (NO threshold)
+  // Instead of forcing pure B&W, we enhance contrast to make lines crisp
+  // while preserving subtle line weight variations
+  let contrastMultiplier: number, brightnessOffset: number;
+  switch (style) {
+    case 'simple':
+      // Simple: strong contrast, lines should be bold and clear
+      contrastMultiplier = 2.0;
+      brightnessOffset = -60;
+      break;
+    case 'intricate':
+      // Intricate: moderate contrast, preserve fine thin lines
+      contrastMultiplier = 1.6;
+      brightnessOffset = -40;
+      break;
+    case 'mandala':
+      // Mandala: balanced contrast
+      contrastMultiplier = 1.8;
+      brightnessOffset = -50;
+      break;
+    default:
+      contrastMultiplier = 1.8;
+      brightnessOffset = -50;
+  }
 
-  // Step 5: Apply threshold
-  let resultBuffer = await pipeline.threshold(baseThreshold).png().toBuffer();
+  // Apply contrast + brightness → sharpen → normalize (preserves grayscale)
+  let resultBuffer = await basePipeline
+    .linear(contrastMultiplier, brightnessOffset)
+    .sharpen({ sigma: 0.8, m1: 0.5, m2: 0.3 })
+    .normalize()
+    .png({ quality: 100, compressionLevel: 6 })
+    .toBuffer();
 
-  // Step 6: Analyze result
+  // Step 5: Analyze result — check if image is blank or overfilled
   const resultStats = await sharp(resultBuffer)
     .grayscale()
     .raw()
@@ -142,119 +170,99 @@ async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): P
   const resultData = resultStats.data;
   let whitePixels = 0;
   let blackPixels = 0;
+  let midPixels = 0;
   for (let i = 0; i < resultData.length; i += 4) {
-    if (resultData[i] > 200) whitePixels++;
-    else blackPixels++;
+    if (resultData[i] > 230) whitePixels++;
+    else if (resultData[i] < 40) blackPixels++;
+    else midPixels++;
   }
-  const totalSampled = whitePixels + blackPixels;
-  const blackRatio = blackPixels / totalSampled;
-  const whiteRatio = whitePixels / totalSampled;
+  const totalPixels = whitePixels + blackPixels + midPixels;
+  const blackRatio = blackPixels / totalPixels;
+  const whiteRatio = whitePixels / totalPixels;
 
-  console.log(`[BW] Style: ${style}, DarkBG: ${isDarkBackground}, Threshold: ${baseThreshold}, Black%: ${(blackRatio * 100).toFixed(1)}%, White%: ${(whiteRatio * 100).toFixed(1)}%`);
+  console.log(`[LineArt v2] Style: ${style}, DarkBG: ${isDarkBackground}, Black%: ${(blackRatio * 100).toFixed(1)}%, Mid%: ${(midPixels / totalPixels * 100).toFixed(1)}%, White%: ${(whiteRatio * 100).toFixed(1)}%`);
 
-  // Step 7: Blank image recovery (>95% white)
-  if (whiteRatio > 0.95) {
-    console.log('[BW] Blank image detected - trying lower threshold');
+  // Step 6: Blank image recovery (>97% white)
+  if (whiteRatio > 0.97) {
+    console.log('[LineArt v2] Blank image detected - trying stronger contrast');
     let retryPipeline = sharp(imageBuffer).grayscale().normalize();
     if (isDarkBackground) retryPipeline = retryPipeline.negate();
-    const retryBuffer = await retryPipeline.threshold(80).png().toBuffer();
+    resultBuffer = await retryPipeline
+      .linear(3.0, -200)
+      .sharpen({ sigma: 1.0, m1: 0.8, m2: 0.4 })
+      .normalize()
+      .png({ quality: 100, compressionLevel: 6 })
+      .toBuffer();
 
-    const retryStats = await sharp(retryBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
-    let retryBlack = 0;
+    // Re-check
+    const retryStats = await sharp(resultBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
+    let retryNonWhite = 0;
     let retryTotal = 0;
     for (let i = 0; i < retryStats.data.length; i += 4) {
-      if (retryStats.data[i] <= 200) retryBlack++;
+      if (retryStats.data[i] < 230) retryNonWhite++;
       retryTotal++;
     }
-    if (retryBlack / retryTotal > 0.02) {
-      console.log(`[BW] Recovery successful with threshold 80, black%: ${(retryBlack / retryTotal * 100).toFixed(1)}%`);
-      resultBuffer = retryBuffer;
-    } else {
-      console.log('[BW] Still blank after recovery - returning high-contrast grayscale');
-      let fallbackPipeline = sharp(imageBuffer).grayscale().normalize();
-      if (isDarkBackground) fallbackPipeline = fallbackPipeline.negate();
-      resultBuffer = await fallbackPipeline.linear(2.5, -180).png().toBuffer();
-    }
-  }
-  // Step 8: Overfilled image recovery (style-dependent thresholds)
-  // Simple: >25% black = overfilled (should be mostly white)
-  // Mandala: >40% black = overfilled (some density expected)
-  // Intricate: >45% black = overfilled (lots of detail expected but not solid fill)
-  else if (blackRatio > getOverfillThreshold(style)) {
-    console.log(`[BW] Overfilled ${style} image (${(blackRatio * 100).toFixed(1)}% black) - recovering`);
-
-    // Recovery step 1: Try lower threshold
-    let lowerPipeline = sharp(imageBuffer).grayscale().normalize();
-    if (isDarkBackground) lowerPipeline = lowerPipeline.negate();
-    const lowerThreshold = style === 'intricate' ? 90 : style === 'mandala' ? 110 : 120;
-    const lowerBuffer = await lowerPipeline.threshold(lowerThreshold).png().toBuffer();
-
-    const lowerStats = await sharp(lowerBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
-    let lowerBlack = 0;
-    let lowerTotal = 0;
-    for (let i = 0; i < lowerStats.data.length; i += 4) {
-      if (lowerStats.data[i] <= 200) lowerBlack++;
-      lowerTotal++;
-    }
-    const lowerBlackRatio = lowerBlack / lowerTotal;
-
-    if (lowerBlackRatio > 0.02 && lowerBlackRatio <= getOverfillThreshold(style)) {
-      console.log(`[BW] Lower threshold (${lowerThreshold}) recovery: ${(lowerBlackRatio * 100).toFixed(1)}% black - acceptable`);
-      resultBuffer = lowerBuffer;
-    } else {
-      // Recovery step 2: Laplacian edge extraction
-      console.log(`[BW] Lower threshold insufficient (${(lowerBlackRatio * 100).toFixed(1)}%) - trying edge extraction`);
+    if (retryNonWhite / retryTotal < 0.01) {
+      // Still blank — last resort: edge extraction as grayscale
+      console.log('[LineArt v2] Still blank - using edge extraction');
       let edgePipeline = sharp(imageBuffer).grayscale().normalize();
       if (isDarkBackground) edgePipeline = edgePipeline.negate();
-      const edgeBuffer = await edgePipeline
-        .convolve({
-          width: 3,
-          height: 3,
-          kernel: [0, -1, 0, -1, 4, -1, 0, -1, 0]
-        })
-        .threshold(style === 'intricate' ? 20 : 30)
-        .png()
+      resultBuffer = await edgePipeline
+        .convolve({ width: 3, height: 3, kernel: [0, -1, 0, -1, 4, -1, 0, -1, 0] })
+        .normalize()
+        .png({ quality: 100, compressionLevel: 6 })
         .toBuffer();
-
-      const edgeStats = await sharp(edgeBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
-      let edgeBlack = 0;
-      let edgeTotal = 0;
-      for (let i = 0; i < edgeStats.data.length; i += 4) {
-        if (edgeStats.data[i] <= 200) edgeBlack++;
-        edgeTotal++;
-      }
-      const edgeBlackRatio = edgeBlack / edgeTotal;
-
-      if (edgeBlackRatio >= 0.02 && edgeBlackRatio <= 0.5) {
-        console.log(`[BW] Edge extraction successful: ${(edgeBlackRatio * 100).toFixed(1)}% black`);
-        resultBuffer = edgeBuffer;
-      } else {
-        // Recovery step 3: Grayscale fallback
-        console.log(`[BW] Edge extraction failed (${(edgeBlackRatio * 100).toFixed(1)}%) - using grayscale fallback`);
-        let fallbackPipeline = sharp(imageBuffer).grayscale().normalize();
-        if (isDarkBackground) fallbackPipeline = fallbackPipeline.negate();
-        resultBuffer = await fallbackPipeline.linear(1.8, -100).png().toBuffer();
-      }
     }
   }
 
-  // Step 9: Final cleanup - ensure pure black & white
+  // Step 7: Overfilled image recovery
+  const overfillThreshold = style === 'simple' ? 0.30 : style === 'mandala' ? 0.45 : 0.50;
+  if (blackRatio > overfillThreshold) {
+    console.log(`[LineArt v2] Overfilled ${style} image (${(blackRatio * 100).toFixed(1)}% black) - recovering`);
+
+    // Try lighter contrast first
+    let lighterPipeline = sharp(imageBuffer).grayscale().normalize();
+    if (isDarkBackground) lighterPipeline = lighterPipeline.negate();
+    const lighterBuffer = await lighterPipeline
+      .linear(1.3, -20)
+      .sharpen({ sigma: 0.6, m1: 0.4, m2: 0.2 })
+      .normalize()
+      .png({ quality: 100, compressionLevel: 6 })
+      .toBuffer();
+
+    const lighterStats = await sharp(lighterBuffer).grayscale().raw().toBuffer({ resolveWithObject: true });
+    let lighterBlack = 0;
+    let lighterTotal = 0;
+    for (let i = 0; i < lighterStats.data.length; i += 4) {
+      if (lighterStats.data[i] < 40) lighterBlack++;
+      lighterTotal++;
+    }
+    const lighterBlackRatio = lighterBlack / lighterTotal;
+
+    if (lighterBlackRatio > 0.02 && lighterBlackRatio <= overfillThreshold) {
+      console.log(`[LineArt v2] Lighter contrast recovery: ${(lighterBlackRatio * 100).toFixed(1)}% - acceptable`);
+      resultBuffer = lighterBuffer;
+    } else {
+      // Fallback: edge extraction to pull out just the lines
+      console.log(`[LineArt v2] Lighter contrast insufficient - using edge extraction`);
+      let edgePipeline = sharp(imageBuffer).grayscale().normalize();
+      if (isDarkBackground) edgePipeline = edgePipeline.negate();
+      resultBuffer = await edgePipeline
+        .convolve({ width: 3, height: 3, kernel: [0, -1, 0, -1, 4, -1, 0, -1, 0] })
+        .normalize()
+        .png({ quality: 100, compressionLevel: 6 })
+        .toBuffer();
+    }
+  }
+
+  // Step 8: Final white point adjustment — push near-white to pure white for clean background
+  // This cleans up the background without destroying line detail
   resultBuffer = await sharp(resultBuffer)
-    .threshold(128)
-    .png()
+    .linear(1.1, -10)
+    .png({ quality: 100, compressionLevel: 6 })
     .toBuffer();
 
   return resultBuffer;
-}
-
-// Overfill threshold by style
-function getOverfillThreshold(style: string): number {
-  switch (style) {
-    case 'simple': return 0.25;
-    case 'mandala': return 0.40;
-    case 'intricate': return 0.45;
-    default: return 0.35;
-  }
 }
 
 // ============================================================
@@ -426,9 +434,9 @@ export async function POST(req: NextRequest) {
       try {
         const bwBuffer = await toPureBWLineArt(Buffer.from(imageBuffer), style);
         imageBuffer = bwBuffer;
-        console.log('[Generate] B&W post-processing applied (FLUX Schnell)');
+        console.log('[Generate] Line art v2 contrast enhancement applied (FLUX Schnell)');
       } catch (ppErr) {
-        console.error('[Generate] B&W post-processing failed, using raw:', ppErr);
+        console.error('[Generate] Line art v2 post-processing failed, using raw:', ppErr);
       }
       const timestamp = Date.now();
       const responseContentType = 'image/png';

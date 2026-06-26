@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { themes } from '@/data/coloring-themes';
 
-// Only show Oriental Fantasy themes on homepage
+// Show all available themes on homepage
 interface MarqueeItem {
   name: string;
   image: string;
@@ -12,7 +12,6 @@ interface MarqueeItem {
 }
 
 const allItems: MarqueeItem[] = themes
-  .filter(theme => theme.category === 'Oriental Fantasy')
   .flatMap(theme =>
   theme.samples.map((sample, i) => ({
     name: `${theme.h1} #${i + 1}`,
@@ -21,8 +20,8 @@ const allItems: MarqueeItem[] = themes
   }))
 );
 
-// 42 items → 3 rows of 14
-const ROW_SIZE = 14;
+// ~48 items → 3 rows
+const ROW_SIZE = 16;
 const row1 = allItems.slice(0, ROW_SIZE);
 const row2 = allItems.slice(ROW_SIZE, ROW_SIZE * 2);
 const row3 = allItems.slice(ROW_SIZE * 2);
@@ -78,10 +77,10 @@ export function ColoringGallery() {
     <section className="py-20 md:py-28 bg-[#F5F0E8] relative overflow-hidden">
       <div className="container mx-auto px-4 md:px-6 max-w-6xl text-center mb-10 md:mb-14">
         <h2 className="font-display text-[32px] md:text-[40px] text-foreground mb-4" style={{ letterSpacing: '-0.5px' }}>
-          Oriental Fantasy Coloring Pages
+          Free Coloring Pages
         </h2>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-          Dragons, phoenixes, koi fish, pagodas & more — Eastern-inspired line art ready to color and turn into merch.
+          Animals, fantasy, mandalas & more — free printable line art ready to color and turn into merch.
         </p>
         <a
           href="/generate"

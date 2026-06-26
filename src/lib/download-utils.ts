@@ -1,7 +1,59 @@
 import { jsPDF } from 'jspdf';
 
+// ============================================================
+// Download Quality: 2 tiers
+// - Free: compressed resolution + watermark
+// - Paid (Starter/Pro/Business): full resolution, no watermark
+// Paid tier differences are in features (PDF, credits), NOT download quality
+// ============================================================
+
+const FREE_SCALE = 0.5; // Free users get 50% resolution
+
+/** Load image from blob */
+function loadImage(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(blob);
+  });
+}
+
+/** Add PixCraftX watermark to canvas */
+function applyWatermark(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  ctx.save();
+  const fontSize = Math.max(16, Math.floor(width / 25));
+  ctx.font = `${fontSize}px Arial, sans-serif`;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const text = 'PixCraftX';
+  const textWidth = ctx.measureText(text).width;
+  const stepX = textWidth + 60;
+  const stepY = fontSize * 4;
+
+  ctx.translate(width / 2, height / 2);
+  ctx.rotate(-Math.PI / 6);
+
+  for (let y = -height; y < height; y += stepY) {
+    for (let x = -width; x < width; x += stepX) {
+      ctx.fillText(text, x, y);
+    }
+  }
+  ctx.restore();
+}
+
+/** Check if user has a paid plan */
+function isPaidPlan(plan: string): boolean {
+  return ['starter', 'pro', 'business'].includes(plan);
+}
+
 /**
- * Download image as PNG with optional watermark for free users
+ * Download image as PNG
+ * - Free: 50% resolution + watermark
+ * - Paid: full resolution, no watermark
  */
 export async function downloadPNG(
   imageUrl: string,
@@ -11,13 +63,14 @@ export async function downloadPNG(
   try {
     const response = await fetch(imageUrl);
     const blob = await response.blob();
-    
-    // Starter+: download clean image
-    if (plan !== 'free') {
+    const pngFilename = filename.endsWith('.png') ? filename : `${filename}.png`;
+
+    // Paid users: full resolution direct download
+    if (isPaidPlan(plan)) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename.endsWith('.png') ? filename : `${filename}.png`;
+      a.download = pngFilename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -25,68 +78,43 @@ export async function downloadPNG(
       return;
     }
 
-    // Free users: add watermark
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(blob);
-    });
+    // Free users: compress + watermark
+    const img = await loadImage(blob);
+    const targetWidth = Math.round(img.naturalWidth * FREE_SCALE);
+    const targetHeight = Math.round(img.naturalHeight * FREE_SCALE);
 
     const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
     const ctx = canvas.getContext('2d')!;
-    
-    ctx.drawImage(img, 0, 0);
-    
-    // Add watermark
-    ctx.save();
-    const fontSize = Math.max(16, Math.floor(canvas.width / 25));
-    ctx.font = `${fontSize}px Arial, sans-serif`;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    const text = 'PixCraftX';
-    const textWidth = ctx.measureText(text).width;
-    const stepX = textWidth + 60;
-    const stepY = fontSize * 4;
-    
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(-Math.PI / 6);
-    
-    for (let y = -canvas.height; y < canvas.height; y += stepY) {
-      for (let x = -canvas.width; x < canvas.width; x += stepX) {
-        ctx.fillText(text, x, y);
-      }
-    }
-    ctx.restore();
-    
-    canvas.toBlob((watermarkedBlob) => {
-      if (!watermarkedBlob) {
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+    applyWatermark(ctx, targetWidth, targetHeight);
+
+    canvas.toBlob((processedBlob) => {
+      if (!processedBlob) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = filename.endsWith('.png') ? filename : `${filename}.png`;
+        a.download = pngFilename;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         return;
       }
-      const url = window.URL.createObjectURL(watermarkedBlob);
+      const url = window.URL.createObjectURL(processedBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename.endsWith('.png') ? filename : `${filename}.png`;
+      a.download = pngFilename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     }, 'image/png');
-    
+
     URL.revokeObjectURL(img.src);
   } catch (err) {
     console.error('PNG download failed:', err);
@@ -95,7 +123,8 @@ export async function downloadPNG(
 }
 
 /**
- * Download image as PDF (Pro+ only)
+ * Download image as PDF (Pro/Business only)
+ * Always full resolution
  */
 export async function downloadPDF(
   imageUrl: string,
@@ -104,15 +133,7 @@ export async function downloadPDF(
   try {
     const response = await fetch(imageUrl);
     const blob = await response.blob();
-    
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(blob);
-    });
+    const img = await loadImage(blob);
 
     const pdf = new jsPDF({
       orientation: 'portrait',
@@ -146,10 +167,10 @@ export async function downloadPDF(
     const dataUrl = canvas.toDataURL('image/png');
 
     pdf.addImage(dataUrl, 'PNG', x, y, drawWidth, drawHeight);
-    
+
     const pdfFilename = filename.replace(/\.png$/i, '') + '.pdf';
     pdf.save(pdfFilename);
-    
+
     URL.revokeObjectURL(img.src);
   } catch (err) {
     console.error('PDF download failed:', err);
@@ -157,10 +178,14 @@ export async function downloadPDF(
   }
 }
 
+// ============================================================
+// Permission helpers
+// ============================================================
+
 export function canExportPDF(plan: string): boolean {
   return ['pro', 'business'].includes(plan);
 }
 
 export function hasNoWatermark(plan: string): boolean {
-  return ['starter', 'pro', 'business'].includes(plan);
+  return isPaidPlan(plan);
 }

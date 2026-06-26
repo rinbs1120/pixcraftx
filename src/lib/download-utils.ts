@@ -2,12 +2,10 @@ import { jsPDF } from 'jspdf';
 
 // ============================================================
 // Download Quality: 2 tiers
-// - Free: compressed resolution + watermark
+// - Free: full resolution + watermark
 // - Paid (Starter/Pro/Business): full resolution, no watermark
-// Paid tier differences are in features (PDF, credits), NOT download quality
+// Quality is always full resolution — only watermark differs
 // ============================================================
-
-const FREE_SCALE = 0.5; // Free users get 50% resolution
 
 /** Load image from blob */
 function loadImage(blob: Blob): Promise<HTMLImageElement> {
@@ -52,7 +50,7 @@ function isPaidPlan(plan: string): boolean {
 
 /**
  * Download image as PNG
- * - Free: 50% resolution + watermark
+ * - Free: full resolution + watermark
  * - Paid: full resolution, no watermark
  */
 export async function downloadPNG(
@@ -65,7 +63,7 @@ export async function downloadPNG(
     const blob = await response.blob();
     const pngFilename = filename.endsWith('.png') ? filename : `${filename}.png`;
 
-    // Paid users: full resolution direct download
+    // Paid users: full resolution direct download, no watermark
     if (isPaidPlan(plan)) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -78,20 +76,15 @@ export async function downloadPNG(
       return;
     }
 
-    // Free users: compress + watermark
+    // Free users: full resolution + watermark
     const img = await loadImage(blob);
-    const targetWidth = Math.round(img.naturalWidth * FREE_SCALE);
-    const targetHeight = Math.round(img.naturalHeight * FREE_SCALE);
-
     const canvas = document.createElement('canvas');
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
     const ctx = canvas.getContext('2d')!;
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-    applyWatermark(ctx, targetWidth, targetHeight);
+    ctx.drawImage(img, 0, 0);
+    applyWatermark(ctx, canvas.width, canvas.height);
 
     canvas.toBlob((processedBlob) => {
       if (!processedBlob) {
@@ -124,7 +117,7 @@ export async function downloadPNG(
 
 /**
  * Download image as PDF (Pro/Business only)
- * Always full resolution
+ * Full resolution
  */
 export async function downloadPDF(
   imageUrl: string,

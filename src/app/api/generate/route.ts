@@ -92,7 +92,9 @@ function buildPrompt(userPrompt: string, style: string, hasReference: boolean): 
 // Preserves line weight variation and fine detail
 // Handles: dark background auto-invert, blank/overfilled recovery
 // ============================================================
-async function toPureBWLineArt(imageBuffer: Buffer, style: string = 'simple'): Promise<Buffer> {
+// DEPRECATED: Post-processing removed — raw model output serves full quality
+// Keeping function for reference only; not called in production
+async function toPureBWLineArt_DEPRECATED(imageBuffer: Buffer, style: string = 'simple'): Promise<Buffer> {
   // Step 1: Grayscale & normalize for analysis
   const normalized = await sharp(imageBuffer)
     .grayscale()
@@ -430,14 +432,9 @@ export async function POST(req: NextRequest) {
 
     try {
       const imageResponse = await fetch(tempImageUrl);
-      let imageBuffer: ArrayBuffer | Buffer = await imageResponse.arrayBuffer();
-      try {
-        const bwBuffer = await toPureBWLineArt(Buffer.from(imageBuffer), style);
-        imageBuffer = bwBuffer;
-        console.log('[Generate] Line art v2 contrast enhancement applied (FLUX Schnell)');
-      } catch (ppErr) {
-        console.error('[Generate] Line art v2 post-processing failed, using raw:', ppErr);
-      }
+      const imageBuffer = await imageResponse.arrayBuffer();
+      // No post-processing — serve raw model output at full quality
+      console.log('[Generate] Using raw FLUX Schnell output (no post-processing)');
       const timestamp = Date.now();
       const responseContentType = 'image/png';
       const fileExt = 'png';

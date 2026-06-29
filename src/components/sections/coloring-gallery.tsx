@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { themes } from '@/data/coloring-themes';
 
-// Show all available themes on homepage
+// Show cottagecore themes on homepage gallery
 interface MarqueeItem {
   name: string;
   image: string;
@@ -12,6 +12,7 @@ interface MarqueeItem {
 }
 
 const allItems: MarqueeItem[] = themes
+  .filter(theme => theme.category === 'Cottagecore')
   .flatMap(theme =>
   theme.samples.map((sample, i) => ({
     name: `${theme.h1} #${i + 1}`,
@@ -20,11 +21,10 @@ const allItems: MarqueeItem[] = themes
   }))
 );
 
-// ~48 items → 3 rows
-const ROW_SIZE = 16;
+// 30 items → 2 rows of 15
+const ROW_SIZE = 15;
 const row1 = allItems.slice(0, ROW_SIZE);
 const row2 = allItems.slice(ROW_SIZE, ROW_SIZE * 2);
-const row3 = allItems.slice(ROW_SIZE * 2);
 
 function ColoringCard({ item }: { item: MarqueeItem }) {
   return (
@@ -80,7 +80,7 @@ export function ColoringGallery() {
           Free Coloring Pages
         </h2>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-          Animals, fantasy, mandalas & more — free printable line art ready to color and turn into merch.
+          Cottage gardens, woodland animals, lavender fields & more — free printable line art ready to color and turn into merch.
         </p>
         <a
           href="/generate"
@@ -100,7 +100,6 @@ export function ColoringGallery() {
       <div className="space-y-4">
         <MarqueeRow items={row1} direction="left" />
         <MarqueeRow items={row2} direction="right" />
-        {row3.length > 0 && <MarqueeRow items={row3} direction="left" />}
       </div>
     </section>
   );
